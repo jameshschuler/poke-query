@@ -12,39 +12,43 @@ import { eq, sql } from "drizzle-orm";
 export async function queriesRoutes(fastify: FastifyTypebox) {
   const server = fastify.withTypeProvider<TypeBoxTypeProvider>();
 
-  server.post("/", { schema: CreateQuerySchema }, async (request, reply) => {
-    try {
-      const { title, query, description, isPublic } = request.body;
-      const userId = request.user.id;
+  server.post(
+    "/",
+    { preHandler: [fastify.authenticate], schema: CreateQuerySchema },
+    async (request, reply) => {
+      try {
+        const { title, query, description, isPublic } = request.body;
+        const userId = request.user.id;
 
-      // Generate the "Extensible Brain" data
-      const metadata = generateMetadata(query);
+        // Generate the "Extensible Brain" data
+        const metadata = generateMetadata(query);
 
-      const [newQuery] = await fastify.db
-        .insert(searchQueries)
-        .values({
-          creatorId: userId,
-          title,
-          query,
-          description,
-          isPublic,
-          metadata,
-        })
-        .returning();
+        const [newQuery] = await fastify.db
+          .insert(searchQueries)
+          .values({
+            creatorId: userId,
+            title,
+            query,
+            description,
+            isPublic,
+            metadata,
+          })
+          .returning();
 
-      if (newQuery) {
-        return reply.code(201).send({ id: newQuery.id });
-      } else {
+        if (newQuery) {
+          return reply.code(201).send({ id: newQuery.id });
+        } else {
+          return reply.code(400).send({ error: "Failed to create query" });
+        }
+      } catch (error) {
         return reply.code(400).send({ error: "Failed to create query" });
       }
-    } catch (error) {
-      return reply.code(400).send({ error: "Failed to create query" });
-    }
-  });
+    },
+  );
 
   server.post(
     "/:id/fork",
-    { schema: ForkQuerySchema },
+    { preHandler: [fastify.authenticate], schema: ForkQuerySchema },
     async (request, reply) => {
       try {
         const { id } = request.params as { id: string };

@@ -8,6 +8,7 @@ import { authRoutes } from "./modules/auth/auth.routes.js";
 import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import fastifyCookie from "@fastify/cookie";
 import { queriesRoutes } from "./modules/queries/queries.routes.js";
+import { communityRoutes } from "./modules/community/community.routes.js";
 
 export async function buildApp() {
   const fastify = Fastify({
@@ -28,6 +29,7 @@ export async function buildApp() {
   await fastify.register(authRoutes, { prefix: "/auth" });
   await fastify.register(userRoutes, { prefix: "/api/v1/users" });
   await fastify.register(queriesRoutes, { prefix: "/api/v1/queries" });
+  await fastify.register(communityRoutes, { prefix: "/api/v1/community" });
 
   return fastify;
 }
