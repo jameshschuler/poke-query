@@ -1,11 +1,11 @@
 {
-  "id": "f636f926-d20b-4dbd-b056-7ca6785175a9",
+  "id": "68c1a789-34db-4a71-8fef-d02da4d0abe0",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "pokequery.collections": {
-      "name": "collections",
+    "pokequery.favorites": {
+      "name": "favorites",
       "schema": "pokequery",
       "columns": {
         "trainer_id": {
@@ -14,25 +14,25 @@
           "primaryKey": false,
           "notNull": true
         },
-        "pokemon_id": {
-          "name": "pokemon_id",
-          "type": "integer",
+        "query_id": {
+          "name": "query_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
-        "captured_at": {
-          "name": "captured_at",
-          "type": "text",
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
           "primaryKey": false,
-          "notNull": false,
-          "default": "'now()'"
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {},
       "foreignKeys": {
-        "collections_trainer_id_trainers_id_fk": {
-          "name": "collections_trainer_id_trainers_id_fk",
-          "tableFrom": "collections",
+        "favorites_trainer_id_trainers_id_fk": {
+          "name": "favorites_trainer_id_trainers_id_fk",
+          "tableFrom": "favorites",
           "tableTo": "trainers",
           "schemaTo": "pokequery",
           "columnsFrom": [
@@ -41,30 +41,30 @@
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "collections_pokemon_id_pokemon_id_fk": {
-          "name": "collections_pokemon_id_pokemon_id_fk",
-          "tableFrom": "collections",
-          "tableTo": "pokemon",
+        "favorites_query_id_search_queries_id_fk": {
+          "name": "favorites_query_id_search_queries_id_fk",
+          "tableFrom": "favorites",
+          "tableTo": "search_queries",
           "schemaTo": "pokequery",
           "columnsFrom": [
-            "pokemon_id"
+            "query_id"
           ],
           "columnsTo": [
             "id"
           ],
-          "onDelete": "no action",
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
-        "collections_trainer_id_pokemon_id_pk": {
-          "name": "collections_trainer_id_pokemon_id_pk",
+        "favorites_trainer_id_query_id_pk": {
+          "name": "favorites_trainer_id_query_id_pk",
           "columns": [
             "trainer_id",
-            "pokemon_id"
+            "query_id"
           ]
         }
       },
@@ -73,15 +73,205 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "pokequery.pokemon": {
-      "name": "pokemon",
+    "pokequery.queries_to_tags": {
+      "name": "queries_to_tags",
+      "schema": "pokequery",
+      "columns": {
+        "query_id": {
+          "name": "query_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tag_id": {
+          "name": "tag_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "queries_to_tags_query_id_search_queries_id_fk": {
+          "name": "queries_to_tags_query_id_search_queries_id_fk",
+          "tableFrom": "queries_to_tags",
+          "tableTo": "search_queries",
+          "schemaTo": "pokequery",
+          "columnsFrom": [
+            "query_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "queries_to_tags_tag_id_tags_id_fk": {
+          "name": "queries_to_tags_tag_id_tags_id_fk",
+          "tableFrom": "queries_to_tags",
+          "tableTo": "tags",
+          "schemaTo": "pokequery",
+          "columnsFrom": [
+            "tag_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "queries_to_tags_query_id_tag_id_pk": {
+          "name": "queries_to_tags_query_id_tag_id_pk",
+          "columns": [
+            "query_id",
+            "tag_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "pokequery.search_queries": {
+      "name": "search_queries",
       "schema": "pokequery",
       "columns": {
         "id": {
           "name": "id",
-          "type": "integer",
+          "type": "uuid",
           "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "creator_id": {
+          "name": "creator_id",
+          "type": "uuid",
+          "primaryKey": false,
           "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "query": {
+          "name": "query",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_public": {
+          "name": "is_public",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "copy_count": {
+          "name": "copy_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "original_query_snapshot": {
+          "name": "original_query_snapshot",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "parent_query_id": {
+          "name": "parent_query_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'{}'::jsonb"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "search_queries_creator_id_trainers_id_fk": {
+          "name": "search_queries_creator_id_trainers_id_fk",
+          "tableFrom": "search_queries",
+          "tableTo": "trainers",
+          "schemaTo": "pokequery",
+          "columnsFrom": [
+            "creator_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "search_queries_parent_query_id_search_queries_id_fk": {
+          "name": "search_queries_parent_query_id_search_queries_id_fk",
+          "tableFrom": "search_queries",
+          "tableTo": "search_queries",
+          "schemaTo": "pokequery",
+          "columnsFrom": [
+            "parent_query_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "pokequery.tags": {
+      "name": "tags",
+      "schema": "pokequery",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "name": {
           "name": "name",
@@ -89,17 +279,33 @@
           "primaryKey": false,
           "notNull": true
         },
-        "image_url": {
-          "name": "image_url",
-          "type": "text",
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "tags_name_unique": {
+          "name": "tags_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "name"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -120,31 +326,42 @@
           "primaryKey": false,
           "notNull": true
         },
-        "created_at": {
-          "name": "created_at",
+        "team": {
+          "name": "team",
           "type": "text",
           "primaryKey": false,
+          "notNull": false
+        },
+        "level": {
+          "name": "level",
+          "type": "integer",
+          "primaryKey": false,
           "notNull": false,
-          "default": "'now()'"
+          "default": 1
+        },
+        "avatar_url": {
+          "name": "avatar_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
         }
       },
       "indexes": {},
-      "foreignKeys": {
-        "trainers_id_users_id_fk": {
-          "name": "trainers_id_users_id_fk",
-          "tableFrom": "trainers",
-          "tableTo": "users",
-          "schemaTo": "auth",
-          "columnsFrom": [
-            "id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "trainers_username_unique": {

@@ -24,6 +24,7 @@ export const trainers = pokeSchema.table("trainers", {
   id: uuid("id").primaryKey(),
   username: text("username").notNull().unique(),
   team: text("team"),
+  level: integer("level").default(1),
   avatarUrl: text("avatar_url"),
   // Timestamps
   createdAt: timestamp("created_at").defaultNow().notNull(),
