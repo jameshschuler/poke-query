@@ -1,13 +1,15 @@
-import { Type, type TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
+import { type TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import type { FastifyTypebox } from "../../types/fastify.js";
 import { searchQueries } from "../../db/schema.js";
 import { generateMetadata } from "../../utils/pogo-parser.js";
 import {
   CopyQuerySchema,
   CreateQuerySchema,
+  DeleteQuerySchema,
   ForkQuerySchema,
+  UpdateQuerySchema,
 } from "./queries.schemas.js";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 export async function queriesRoutes(fastify: FastifyTypebox) {
   const server = fastify.withTypeProvider<TypeBoxTypeProvider>();
@@ -40,7 +42,7 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
         } else {
           return reply.code(400).send({ error: "Failed to create query" });
         }
-      } catch (error) {
+      } catch (_error) {
         return reply.code(400).send({ error: "Failed to create query" });
       }
     },
@@ -51,7 +53,7 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
     { preHandler: [fastify.authenticate], schema: ForkQuerySchema },
     async (request, reply) => {
       try {
-        const { id } = request.params as { id: string };
+        const { id } = request.params;
         const userId = request.user.id;
 
         // 1. Find the original
@@ -60,9 +62,7 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
         });
 
         if (!original || !original.isPublic) {
-          return reply
-            .code(404)
-            .send({ error: "Original query not found or private" });
+          return reply.code(404).send({ error: "Original query not found or private" });
         }
 
         // 2. Create the Fork
@@ -85,29 +85,83 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
         } else {
           return reply.code(400).send({ error: "Failed to fork query" });
         }
-      } catch (error) {
+      } catch (_error) {
         return reply.code(400).send({ error: "Failed to fork query" });
       }
     },
   );
 
   server.patch(
-    "/:id/copy",
-    { schema: CopyQuerySchema },
+    "/:id",
+    { preHandler: [fastify.authenticate], schema: UpdateQuerySchema },
     async (request, reply) => {
       try {
-        const { id } = request.params as { id: string };
+        const { id } = request.params;
+        const { title, query, description, isPublic } = request.body;
+        const userId = request.user.id;
 
-        await fastify.db
+        const metadata = generateMetadata(query);
+
+        const [updatedQuery] = await fastify.db
           .update(searchQueries)
           .set({
-            copyCount: sql`${searchQueries.copyCount} + 1`,
+            title,
+            query,
+            description,
+            isPublic,
+            metadata,
           })
-          .where(eq(searchQueries.id, id));
+          .where(and(eq(searchQueries.id, id), eq(searchQueries.creatorId, userId)))
+          .returning({ id: searchQueries.id });
 
-        return reply.code(204);
-      } catch (error) {
-        return reply.code(400).send({ error: "Failed to copy query" });
+        if (!updatedQuery) {
+          return reply.code(404).send({ error: "Query not found or not owned by user" });
+        }
+
+        return reply.code(200).send({ id: updatedQuery.id });
+      } catch (_error) {
+        return reply.code(400).send({ error: "Failed to update query" });
+      }
+    },
+  );
+
+  server.patch("/:id/copy", { schema: CopyQuerySchema }, async (request, reply) => {
+    try {
+      const { id } = request.params;
+
+      await fastify.db
+        .update(searchQueries)
+        .set({
+          copyCount: sql`${searchQueries.copyCount} + 1`,
+        })
+        .where(eq(searchQueries.id, id));
+
+      return reply.code(204);
+    } catch (_error) {
+      return reply.code(400).send({ error: "Failed to copy query" });
+    }
+  });
+
+  server.delete(
+    "/:id",
+    { preHandler: [fastify.authenticate], schema: DeleteQuerySchema },
+    async (request, reply) => {
+      try {
+        const { id } = request.params;
+        const userId = request.user.id;
+
+        const [deletedQuery] = await fastify.db
+          .delete(searchQueries)
+          .where(and(eq(searchQueries.id, id), eq(searchQueries.creatorId, userId)))
+          .returning({ id: searchQueries.id });
+
+        if (!deletedQuery) {
+          return reply.code(404).send({ error: "Query not found or not owned by user" });
+        }
+
+        return reply.code(204).send(null);
+      } catch (_error) {
+        return reply.code(400).send({ error: "Failed to delete query" });
       }
     },
   );

@@ -1,5 +1,6 @@
 import { expect, test, describe, beforeAll, afterAll } from "vitest";
 import { buildApp } from "../src/app.js";
+import { supabase } from "../src/lib/supabase.js";
 
 describe("Authentication Flow", () => {
   let app: any;
@@ -60,5 +61,48 @@ describe("Authentication Flow", () => {
     expect(meRes.statusCode).toBe(200);
     const user = JSON.parse(meRes.payload);
     expect(user.email).toBe(testEmail);
+  });
+});
+
+describe("Authenticated Routes", () => {
+  let app: any;
+
+  beforeAll(async () => {
+    app = await buildApp();
+  });
+
+  test("should return 201 when a valid session is mocked", async () => {
+    // 2. Setup the "Happy Path" mock
+    (supabase.auth.getUser as any).mockResolvedValue({
+      data: { user: { id: "trainer-123", email: "ash@ketchum.com" } },
+      error: null,
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/queries",
+      cookies: { "sb-access-token": "any-fake-token" },
+      payload: { title: "Pikachu Finder", query: "pikachu" },
+    });
+
+    expect(response.statusCode).toBe(201);
+  });
+
+  test("should return 401 when Supabase returns an error", async () => {
+    // 3. Setup the "Failure" mock
+    (supabase.auth.getUser as any).mockResolvedValue({
+      data: { user: null },
+      error: { message: "Invalid ticket" },
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/queries",
+      cookies: { "sb-access-token": "expired-token" },
+      payload: { title: "Hundo Hunt", query: "4*" },
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(JSON.parse(response.body).error).toBe("Invalid Session");
   });
 });

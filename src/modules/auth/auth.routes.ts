@@ -23,6 +23,8 @@ export async function authRoutes(fastify: FastifyTypebox) {
       schema: { body: VerifySchema },
     },
     async (request, reply) => {
+      // TODO: support saving level and avatarUrl on registration
+      // TODO: add endpoint to update profile info (username, team, avatarUrl, level)
       const { email, token, token_hash, username } = request.body;
 
       let result;
@@ -39,17 +41,13 @@ export async function authRoutes(fastify: FastifyTypebox) {
           type: "email",
         });
       } else {
-        return reply
-          .code(400)
-          .send({ error: "Either token or token_hash is required" });
+        return reply.code(400).send({ error: "Either token or token_hash is required" });
       }
 
       const { data, error } = result;
 
       if (error || !data.session) {
-        return reply
-          .code(401)
-          .send({ error: error?.message || "Verification failed" });
+        return reply.code(401).send({ error: error?.message || "Verification failed" });
       }
 
       if (data.user) {

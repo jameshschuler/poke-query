@@ -1,6 +1,4 @@
-import { relations } from "drizzle-orm";
 import {
-  pgTable,
   uuid,
   text,
   integer,
@@ -13,7 +11,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 const authSchema = pgSchema("auth");
-const authUsers = authSchema.table("users", {
+export const _authUsers = authSchema.table("users", {
   id: uuid("id").primaryKey(),
 });
 

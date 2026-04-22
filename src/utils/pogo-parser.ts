@@ -39,10 +39,7 @@ export function generateMetadata(query: string): QueryMetadata {
 
   return {
     autoTags: Array.from(tags),
-    complexity:
-      q.length > 50 || q.includes("&") || q.includes("|")
-        ? "advanced"
-        : "simple",
+    complexity: q.length > 50 || q.includes("&") || q.includes("|") ? "advanced" : "simple",
     recommendsEvolution: q.includes("evolve"),
     leagues,
   };

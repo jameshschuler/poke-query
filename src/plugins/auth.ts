@@ -12,8 +12,7 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
       data: { user },
       error,
     } = await supabase.auth.getUser(token);
-    if (error || !user)
-      return reply.code(401).send({ error: "Invalid Session" });
+    if (error || !user) return reply.code(401).send({ error: "Invalid Session" });
 
     request.user = user;
   });

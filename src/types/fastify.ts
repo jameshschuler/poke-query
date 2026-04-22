@@ -8,7 +8,6 @@ import {
   type RawReplyDefaultExpression,
   type RawRequestDefaultExpression,
   type RawServerDefault,
-  type FastifyRequest,
   type FastifyReply,
 } from "fastify";
 import { type TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
@@ -18,10 +17,7 @@ import { type TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 declare module "fastify" {
   interface FastifyInstance {
     db: PostgresJsDatabase<typeof schema>;
-    authenticate: (
-      request: FastifyRequest,
-      reply: FastifyReply,
-    ) => Promise<void>;
+    authenticate: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
   }
 
   interface FastifyRequest {
