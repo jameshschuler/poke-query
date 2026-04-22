@@ -6,7 +6,7 @@ import {
   DeleteTrainerSchema,
 } from "./users.schema.js";
 import { trainers } from "../../db/schema.js";
-import { eq, isNull } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 export async function userRoutes(fastify: FastifyTypebox) {
   const server = fastify.withTypeProvider<TypeBoxTypeProvider>();
