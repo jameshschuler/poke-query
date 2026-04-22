@@ -39,6 +39,13 @@ export const VerifySchema = Type.Object(
         pattern: "^[a-zA-Z0-9_]+$", // Alphanumeric and underscores only
       }),
     ),
+
+    // Optional trainer profile fields
+    level: Type.Optional(Type.Integer({ minimum: 1, maximum: 50 })),
+    team: Type.Optional(
+      Type.Union([Type.Literal("mystic"), Type.Literal("valor"), Type.Literal("instinct")]),
+    ),
+    avatarUrl: Type.Optional(Type.String({ format: "uri" })),
   },
   {
     // Logic check: Must have either a token OR a token_hash

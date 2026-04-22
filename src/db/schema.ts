@@ -24,6 +24,7 @@ export const trainers = pokeSchema.table("trainers", {
   team: text("team"),
   level: integer("level").default(1),
   avatarUrl: text("avatar_url"),
+  deactivatedAt: timestamp("deactivated_at"),
   // Timestamps
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
@@ -49,9 +50,7 @@ export const searchQueries = pokeSchema.table(
   "search_queries",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    creatorId: uuid("creator_id")
-      .references(() => trainers.id, { onDelete: "cascade" })
-      .notNull(),
+    creatorId: uuid("creator_id").references(() => trainers.id, { onDelete: "set null" }),
     title: text("title").notNull(),
     query: text("query").notNull(),
     description: text("description"),

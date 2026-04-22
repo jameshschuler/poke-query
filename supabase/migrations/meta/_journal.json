@@ -8,6 +8,13 @@
       "when": 1774934553609,
       "tag": "0000_flippant_ultimatum",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1776831672539,
+      "tag": "0001_closed_human_robot",
+      "breakpoints": true
     }
   ]
 }

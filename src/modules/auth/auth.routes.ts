@@ -23,9 +23,7 @@ export async function authRoutes(fastify: FastifyTypebox) {
       schema: { body: VerifySchema },
     },
     async (request, reply) => {
-      // TODO: support saving level and avatarUrl on registration
-      // TODO: add endpoint to update profile info (username, team, avatarUrl, level)
-      const { email, token, token_hash, username } = request.body;
+      const { email, token, token_hash, username, level, team, avatarUrl } = request.body;
 
       let result;
 
@@ -56,8 +54,18 @@ export async function authRoutes(fastify: FastifyTypebox) {
           .values({
             id: data.user.id,
             username: username || `trainer_${data.user.id.slice(0, 4)}`,
+            level,
+            team,
+            avatarUrl,
           })
-          .onConflictDoNothing();
+          .onConflictDoUpdate({
+            target: trainers.id,
+            set: {
+              ...(level !== undefined && { level }),
+              ...(team !== undefined && { team }),
+              ...(avatarUrl !== undefined && { avatarUrl }),
+            },
+          });
       }
 
       // Set the JWT in a secure, HttpOnly cookie
