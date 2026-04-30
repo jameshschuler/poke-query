@@ -29,7 +29,7 @@
     "@sinclair/typebox": "^0.34.48",
     "@supabase/supabase-js": "^2.98.0",
     "dotenv": "^17.3.1",
-    "drizzle-orm": "^0.45.1",
+    "drizzle-orm": "^0.45.2",
     "fastify": "^5.8.1",
     "postgres": "^3.4.8"
   },
