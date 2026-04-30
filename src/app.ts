@@ -7,12 +7,25 @@ import { userRoutes } from "./modules/users/users.routes.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
 import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import fastifyCookie from "@fastify/cookie";
+import rateLimit from "@fastify/rate-limit";
 import { queriesRoutes } from "./modules/queries/queries.routes.js";
 import { communityRoutes } from "./modules/community/community.routes.js";
 
+const isDev = process.env.NODE_ENV === "development";
+
+const loggerConfig = isDev
+  ? {
+      level: process.env.LOG_LEVEL ?? "info",
+      transport: {
+        target: "pino-pretty",
+        options: { colorize: true, translateTime: "HH:MM:ss", ignore: "pid,hostname" },
+      },
+    }
+  : { level: process.env.LOG_LEVEL ?? "info" };
+
 export async function buildApp() {
   const fastify = Fastify({
-    logger: process.env.NODE_ENV === "test" ? false : true,
+    logger: process.env.NODE_ENV === "test" ? false : loggerConfig,
   }).withTypeProvider<TypeBoxTypeProvider>();
 
   await fastify.register(swagger, {
@@ -22,6 +35,10 @@ export async function buildApp() {
   });
 
   await fastify.register(fastifyCookie, { secret: process.env.COOKIE_SECRET! });
+  await fastify.register(rateLimit, {
+    max: 100,
+    timeWindow: "1 minute",
+  });
   await fastify.register(dbPlugin);
   await fastify.register(authPlugin);
 

@@ -1,6 +1,3 @@
-CREATE TABLE "auth"."users" (
-	"id" uuid PRIMARY KEY NOT NULL
-);
 --> statement-breakpoint
 ALTER TABLE "pokequery"."search_queries" DROP CONSTRAINT "search_queries_creator_id_trainers_id_fk";
 --> statement-breakpoint
