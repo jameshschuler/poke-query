@@ -136,7 +136,7 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
         })
         .where(eq(searchQueries.id, id));
 
-      return reply.code(204);
+      return reply.code(204).send(null);
     } catch (_error) {
       return reply.code(400).send({ error: "Failed to copy query" });
     }

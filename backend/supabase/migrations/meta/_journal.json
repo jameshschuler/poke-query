@@ -15,6 +15,20 @@
       "when": 1776831672539,
       "tag": "0001_closed_human_robot",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777467600000,
+      "tag": "0002_trainers_user_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1777468200000,
+      "tag": "0003_trainers_user_id_fk",
+      "breakpoints": true
     }
   ]
 }

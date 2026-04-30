@@ -4,15 +4,79 @@ import {
   UpdateTrainerSchema,
   DeactivateTrainerSchema,
   DeleteTrainerSchema,
+  GetMeSchema,
+  GetTrainerSchema,
 } from "./users.schema.js";
-import { trainers } from "../../db/schema.js";
-import { eq } from "drizzle-orm";
+import { trainers, searchQueries, favorites } from "../../db/schema.js";
+import { count, eq, sql } from "drizzle-orm";
 
 export async function userRoutes(fastify: FastifyTypebox) {
   const server = fastify.withTypeProvider<TypeBoxTypeProvider>();
 
-  server.get("/me", { preHandler: [fastify.authenticate] }, async (request) => {
-    return request.user;
+  server.get(
+    "/me",
+    { preHandler: [fastify.authenticate], schema: GetMeSchema },
+    async (request, reply) => {
+      const userId = request.user.id;
+
+      const [row] = await fastify.db
+        .select({
+          id: trainers.id,
+          username: trainers.username,
+          team: trainers.team,
+          level: trainers.level,
+          avatarUrl: trainers.avatarUrl,
+          queryCount: count(searchQueries.id).as("queryCount"),
+          favoriteCount: count(favorites.queryId).as("favoriteCount"),
+          forkCount:
+            sql<number>`count(case when ${searchQueries.parentQueryId} is not null then 1 end)`.as(
+              "forkCount",
+            ),
+        })
+        .from(trainers)
+        .leftJoin(searchQueries, eq(searchQueries.creatorId, trainers.id))
+        .leftJoin(favorites, eq(favorites.trainerId, trainers.id))
+        .where(eq(trainers.userId, userId))
+        .groupBy(trainers.id, trainers.username, trainers.team, trainers.level, trainers.avatarUrl);
+
+      if (!row) return reply.code(404).send({ error: "Trainer not found" });
+
+      return {
+        ...row,
+        team: row.team as "mystic" | "valor" | "instinct" | null,
+      };
+    },
+  );
+
+  server.get("/:id", { schema: GetTrainerSchema }, async (request, reply) => {
+    const { id } = request.params;
+
+    const [row] = await fastify.db
+      .select({
+        id: trainers.id,
+        username: trainers.username,
+        team: trainers.team,
+        level: trainers.level,
+        avatarUrl: trainers.avatarUrl,
+        queryCount: sql<number>`count(case when ${searchQueries.isPublic} = true then 1 end)`.as(
+          "queryCount",
+        ),
+        forkCount:
+          sql<number>`count(case when ${searchQueries.parentQueryId} is not null then 1 end)`.as(
+            "forkCount",
+          ),
+      })
+      .from(trainers)
+      .leftJoin(searchQueries, eq(searchQueries.creatorId, trainers.id))
+      .where(eq(trainers.id, id))
+      .groupBy(trainers.id, trainers.username, trainers.team, trainers.level, trainers.avatarUrl);
+
+    if (!row) return reply.code(404).send({ error: "Trainer not found" });
+
+    return {
+      ...row,
+      team: row.team as "mystic" | "valor" | "instinct" | null,
+    };
   });
 
   server.patch(
@@ -30,7 +94,7 @@ export async function userRoutes(fastify: FastifyTypebox) {
           ...(team !== undefined && { team }),
           ...(avatarUrl !== undefined && { avatarUrl }),
         })
-        .where(eq(trainers.id, userId))
+        .where(eq(trainers.userId, userId))
         .returning({ id: trainers.id });
 
       if (!updated) {
@@ -50,7 +114,7 @@ export async function userRoutes(fastify: FastifyTypebox) {
       const [updated] = await fastify.db
         .update(trainers)
         .set({ deactivatedAt: new Date() })
-        .where(eq(trainers.id, userId))
+        .where(eq(trainers.userId, userId))
         .returning({ id: trainers.id });
 
       if (!updated) {
@@ -70,7 +134,7 @@ export async function userRoutes(fastify: FastifyTypebox) {
       const [updated] = await fastify.db
         .update(trainers)
         .set({ deactivatedAt: null })
-        .where(eq(trainers.id, userId))
+        .where(eq(trainers.userId, userId))
         .returning({ id: trainers.id });
 
       if (!updated) {
@@ -90,7 +154,7 @@ export async function userRoutes(fastify: FastifyTypebox) {
       // creatorId on search_queries is set null on delete, so queries are preserved
       const [deleted] = await fastify.db
         .delete(trainers)
-        .where(eq(trainers.id, userId))
+        .where(eq(trainers.userId, userId))
         .returning({ id: trainers.id });
 
       if (!deleted) {

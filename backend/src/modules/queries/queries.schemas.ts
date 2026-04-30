@@ -68,9 +68,7 @@ export const CopyQuerySchema = {
     // No additional fields needed for now, but can be extended in the future
   }),
   response: {
-    204: Type.Object({
-      // No content, but can include metadata if needed in the future}),
-    }),
+    204: Type.Null(),
     400: Type.Object({
       error: Type.String(),
     }),

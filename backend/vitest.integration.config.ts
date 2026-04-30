@@ -3,9 +3,11 @@ import { loadEnv } from "vite";
 
 export default defineConfig({
   test: {
-    env: loadEnv("", process.cwd(), ""),
+    env: loadEnv("test", process.cwd(), ""),
     globals: true,
     environment: "node",
-    setupFiles: ["./test/setup.ts"],
+    fileParallelism: false,
+    include: ["test/integration/**/*.test.ts"],
+    setupFiles: ["./test/integration/setup.ts"],
   },
 });

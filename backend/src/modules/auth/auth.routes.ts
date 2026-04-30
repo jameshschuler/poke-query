@@ -53,13 +53,14 @@ export async function authRoutes(fastify: FastifyTypebox) {
           .insert(trainers)
           .values({
             id: data.user.id,
+            userId: data.user.id,
             username: username || `trainer_${data.user.id.slice(0, 4)}`,
             level,
             team,
             avatarUrl,
           })
           .onConflictDoUpdate({
-            target: trainers.id,
+            target: trainers.userId,
             set: {
               ...(level !== undefined && { level }),
               ...(team !== undefined && { team }),

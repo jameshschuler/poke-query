@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { buildApp } from "../src/app.js";
 
 describe("Queries Endpoint", () => {
@@ -6,6 +6,10 @@ describe("Queries Endpoint", () => {
 
   beforeAll(async () => {
     app = await buildApp();
+  });
+
+  afterAll(async () => {
+    await app.close();
   });
 
   it("should reject a query if no auth cookie is present", async () => {
@@ -19,7 +23,14 @@ describe("Queries Endpoint", () => {
   });
 
   it("should successfully save a query and generate metadata autoTags", async () => {
-    // Mock the auth check or provide a valid-looking cookie if possible
+    let capturedValues: any;
+    app.db.insert = vi.fn(() => ({
+      values: vi.fn((v: any) => {
+        capturedValues = v;
+        return { returning: vi.fn().mockResolvedValue([{ id: "new-query-id" }]) };
+      }),
+    }));
+
     const response = await app.inject({
       method: "POST",
       url: "/api/v1/queries",
@@ -27,13 +38,13 @@ describe("Queries Endpoint", () => {
       payload: {
         title: "PvP Hundo",
         query: "4*&cp-1500",
+        isPublic: false,
       },
     });
 
-    const body = JSON.parse(response.body);
     expect(response.statusCode).toBe(201);
-    // Verify our Regex logic worked!
-    expect(body.metadata.autoTags).toContain("high-iv");
-    expect(body.metadata.autoTags).toContain("pvp");
+    // Verify the pogo-parser generated the correct autoTags before insert
+    expect(capturedValues.metadata.autoTags).toContain("high-iv");
+    expect(capturedValues.metadata.autoTags).toContain("pvp");
   });
 });

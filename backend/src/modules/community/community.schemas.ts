@@ -9,6 +9,21 @@ export const CommunitySchema = {
     200: Type.Array(
       Type.Object({
         id: Type.String(),
+        creator: Type.Union([
+          Type.Object({
+            id: Type.String(),
+            username: Type.String(),
+            avatarUrl: Type.Union([Type.String(), Type.Null()]),
+            team: Type.Union([
+              Type.Literal("mystic"),
+              Type.Literal("valor"),
+              Type.Literal("instinct"),
+              Type.Null(),
+            ]),
+            level: Type.Union([Type.Integer(), Type.Null()]),
+          }),
+          Type.Null(),
+        ]),
       }),
     ),
     400: Type.Object({

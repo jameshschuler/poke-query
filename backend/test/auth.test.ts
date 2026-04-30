@@ -1,4 +1,4 @@
-import { expect, test, describe, beforeAll, afterAll } from "vitest";
+import { expect, test, describe, beforeAll, afterAll, vi } from "vitest";
 import { buildApp } from "../src/app.js";
 import { supabase } from "../src/lib/supabase.js";
 
@@ -8,6 +8,13 @@ describe("Authentication Flow", () => {
 
   beforeAll(async () => {
     app = await buildApp();
+    // Mock the db insert used by /verify to upsert the trainer row
+    app.db.insert = vi.fn(() => ({
+      values: vi.fn(() => ({
+        onConflictDoUpdate: vi.fn().mockResolvedValue([]),
+        onConflictDoNothing: vi.fn().mockResolvedValue([]),
+      })),
+    }));
   });
 
   afterAll(async () => {
@@ -39,28 +46,49 @@ describe("Authentication Flow", () => {
     expect(res.headers["set-cookie"]).toBeDefined();
   });
 
-  test("Step 3: GET /me works with the cookie", async () => {
-    // 1. First, we get a valid cookie from a simulated verify
+  test("Step 3: GET /api/v1/users/me works with the cookie", async () => {
+    // 1. Get a valid cookie from a simulated verify
     const verifyRes = await app.inject({
       method: "POST",
       url: "/auth/verify",
       payload: { email: testEmail, token: "123456" },
     });
 
-    const cookie = verifyRes.cookies[0]; // Fastify inject parses cookies for you!
+    const cookie = verifyRes.cookies[0];
 
-    // 2. Now use that cookie to access the protected route
+    // 2. Mock db selects used by the /me handler (single joined query)
+    const mockRow = {
+      id: "uuid-123",
+      username: "AshKetchum",
+      team: null,
+      level: 1,
+      avatarUrl: null,
+      queryCount: 0,
+      favoriteCount: 0,
+      forkCount: 0,
+    };
+    app.db.select = vi.fn(() => ({
+      from: vi.fn(() => ({
+        leftJoin: vi.fn(() => ({
+          leftJoin: vi.fn(() => ({
+            where: vi.fn(() => ({ groupBy: vi.fn().mockResolvedValue([mockRow]) })),
+          })),
+        })),
+      })),
+    }));
+
+    // 3. Use that cookie to access the protected route
     const meRes = await app.inject({
       method: "GET",
-      url: "/auth/me",
+      url: "/api/v1/users/me",
       cookies: {
         [cookie.name]: cookie.value,
       },
     });
 
     expect(meRes.statusCode).toBe(200);
-    const user = JSON.parse(meRes.payload);
-    expect(user.email).toBe(testEmail);
+    const user = meRes.json();
+    expect(user.id).toBe("uuid-123");
   });
 });
 
@@ -71,18 +99,27 @@ describe("Authenticated Routes", () => {
     app = await buildApp();
   });
 
+  afterAll(async () => {
+    await app.close();
+  });
+
   test("should return 201 when a valid session is mocked", async () => {
-    // 2. Setup the "Happy Path" mock
     (supabase.auth.getUser as any).mockResolvedValue({
       data: { user: { id: "trainer-123", email: "ash@ketchum.com" } },
       error: null,
     });
 
+    app.db.insert = vi.fn(() => ({
+      values: vi.fn(() => ({
+        returning: vi.fn().mockResolvedValue([{ id: "new-query-id" }]),
+      })),
+    }));
+
     const response = await app.inject({
       method: "POST",
       url: "/api/v1/queries",
       cookies: { "sb-access-token": "any-fake-token" },
-      payload: { title: "Pikachu Finder", query: "pikachu" },
+      payload: { title: "Pikachu Finder", query: "pikachu", isPublic: false },
     });
 
     expect(response.statusCode).toBe(201);

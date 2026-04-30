@@ -20,6 +20,10 @@ export const pokeSchema = pgSchema("pokequery");
 // --- TRAINERS ---
 export const trainers = pokeSchema.table("trainers", {
   id: uuid("id").primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .unique()
+    .references(() => _authUsers.id, { onDelete: "cascade" }),
   username: text("username").notNull().unique(),
   team: text("team"),
   level: integer("level").default(1),
