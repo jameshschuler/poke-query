@@ -1,5 +1,7 @@
 import { Type } from "@sinclair/typebox";
 
+const cookieAuthSecurity = [{ cookieAuth: [] }];
+
 export const GetTrainerSchema = {
   params: Type.Object({
     id: Type.String({ format: "uuid" }),
@@ -24,6 +26,7 @@ export const GetTrainerSchema = {
 };
 
 export const GetMeSchema = {
+  security: cookieAuthSecurity,
   response: {
     200: Type.Object({
       id: Type.String(),
@@ -41,6 +44,7 @@ export const GetMeSchema = {
       forkCount: Type.Integer(),
     }),
     404: Type.Object({ error: Type.String() }),
+    401: Type.Object({ error: Type.String() }),
   },
 };
 
@@ -64,6 +68,7 @@ export const createUserSchema = {
 };
 
 export const UpdateTrainerSchema = {
+  security: cookieAuthSecurity,
   body: Type.Object(
     {
       username: Type.Optional(
@@ -85,19 +90,24 @@ export const UpdateTrainerSchema = {
     200: Type.Object({ id: Type.String() }),
     400: Type.Object({ error: Type.String() }),
     404: Type.Object({ error: Type.String() }),
+    401: Type.Object({ error: Type.String() }),
   },
 };
 
 export const DeactivateTrainerSchema = {
+  security: cookieAuthSecurity,
   response: {
     200: Type.Object({ message: Type.String() }),
     404: Type.Object({ error: Type.String() }),
+    401: Type.Object({ error: Type.String() }),
   },
 };
 
 export const DeleteTrainerSchema = {
+  security: cookieAuthSecurity,
   response: {
     204: Type.Null(),
     404: Type.Object({ error: Type.String() }),
+    401: Type.Object({ error: Type.String() }),
   },
 };

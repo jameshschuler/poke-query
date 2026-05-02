@@ -31,6 +31,16 @@ export async function buildApp() {
   await fastify.register(swagger, {
     openapi: {
       info: { title: "Fastify API", version: "1.0.0" },
+      components: {
+        securitySchemes: {
+          cookieAuth: {
+            type: "apiKey",
+            in: "cookie",
+            name: "sb-access-token",
+            description: "Supabase access token cookie",
+          },
+        },
+      },
     },
   });
 

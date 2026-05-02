@@ -1,6 +1,9 @@
 import { Type } from "@fastify/type-provider-typebox";
 
+const cookieAuthSecurity = [{ cookieAuth: [] }];
+
 export const CreateQuerySchema = {
+  security: cookieAuthSecurity,
   body: Type.Object({
     title: Type.String({ minLength: 3, maxLength: 100 }),
     query: Type.String({ minLength: 1 }),
@@ -14,10 +17,14 @@ export const CreateQuerySchema = {
     400: Type.Object({
       error: Type.String(),
     }),
+    401: Type.Object({
+      error: Type.String(),
+    }),
   },
 };
 
 export const ForkQuerySchema = {
+  security: cookieAuthSecurity,
   params: Type.Object({
     id: Type.String(),
   }),
@@ -31,6 +38,9 @@ export const ForkQuerySchema = {
     400: Type.Object({
       error: Type.String(),
     }),
+    401: Type.Object({
+      error: Type.String(),
+    }),
     404: Type.Object({
       error: Type.String(),
     }),
@@ -38,6 +48,7 @@ export const ForkQuerySchema = {
 };
 
 export const UpdateQuerySchema = {
+  security: cookieAuthSecurity,
   params: Type.Object({
     id: Type.String(),
   }),
@@ -52,6 +63,9 @@ export const UpdateQuerySchema = {
       id: Type.String(),
     }),
     400: Type.Object({
+      error: Type.String(),
+    }),
+    401: Type.Object({
       error: Type.String(),
     }),
     404: Type.Object({
@@ -76,12 +90,16 @@ export const CopyQuerySchema = {
 };
 
 export const DeleteQuerySchema = {
+  security: cookieAuthSecurity,
   params: Type.Object({
     id: Type.String(),
   }),
   response: {
     204: Type.Null(),
     400: Type.Object({
+      error: Type.String(),
+    }),
+    401: Type.Object({
       error: Type.String(),
     }),
     404: Type.Object({
@@ -91,6 +109,7 @@ export const DeleteQuerySchema = {
 };
 
 export const FavoriteQuerySchema = {
+  security: cookieAuthSecurity,
   params: Type.Object({
     id: Type.String(),
   }),
@@ -100,6 +119,9 @@ export const FavoriteQuerySchema = {
     400: Type.Object({
       error: Type.String(),
     }),
+    401: Type.Object({
+      error: Type.String(),
+    }),
     404: Type.Object({
       error: Type.String(),
     }),
@@ -107,12 +129,16 @@ export const FavoriteQuerySchema = {
 };
 
 export const UnfavoriteQuerySchema = {
+  security: cookieAuthSecurity,
   params: Type.Object({
     id: Type.String(),
   }),
   response: {
     204: Type.Null(),
     400: Type.Object({
+      error: Type.String(),
+    }),
+    401: Type.Object({
       error: Type.String(),
     }),
   },
