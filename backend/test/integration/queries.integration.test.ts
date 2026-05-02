@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { buildApp } from "../../src/app.js";
-import { searchQueries, trainers } from "../../src/db/schema.js";
-import { eq } from "drizzle-orm";
+import { favorites, searchQueries, trainers } from "../../src/db/schema.js";
+import { and, eq } from "drizzle-orm";
 import { OTHER_TEST_USER_ID, TEST_USER_ID } from "./setup.js";
 import { supabase } from "../../src/lib/supabase.js";
 
@@ -228,5 +228,64 @@ integrationDescribe("Queries CRUD Integration", () => {
 
     expect(copied).toBeTruthy();
     expect(copied?.copyCount).toBe(1);
+  });
+
+  it("favorites and unfavorites a public query", async () => {
+    const createRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/queries",
+      cookies: { "sb-access-token": "owner-token" },
+      payload: {
+        title: "Favoriteable Query",
+        query: "4*&cp-1500",
+        description: "for favorite integration test",
+        isPublic: true,
+      },
+    });
+
+    expect(createRes.statusCode).toBe(201);
+    const { id: queryId } = createRes.json();
+
+    (supabase.auth.getUser as any).mockResolvedValueOnce({
+      data: { user: { id: OTHER_USER_ID, email: "other@example.com" } },
+      error: null,
+    });
+
+    const favoriteRes = await app.inject({
+      method: "POST",
+      url: `/api/v1/queries/${queryId}/favorite`,
+      cookies: { "sb-access-token": "other-user-token" },
+      payload: {},
+    });
+
+    expect(favoriteRes.statusCode).toBe(204);
+
+    const [favoriteRow] = await app.db
+      .select()
+      .from(favorites)
+      .where(and(eq(favorites.trainerId, OTHER_USER_ID), eq(favorites.queryId, queryId)));
+
+    expect(favoriteRow).toBeTruthy();
+
+    (supabase.auth.getUser as any).mockResolvedValueOnce({
+      data: { user: { id: OTHER_USER_ID, email: "other@example.com" } },
+      error: null,
+    });
+
+    const unfavoriteRes = await app.inject({
+      method: "POST",
+      url: `/api/v1/queries/${queryId}/unfavorite`,
+      cookies: { "sb-access-token": "other-user-token" },
+      payload: {},
+    });
+
+    expect(unfavoriteRes.statusCode).toBe(204);
+
+    const favoriteRowsAfter = await app.db
+      .select()
+      .from(favorites)
+      .where(and(eq(favorites.trainerId, OTHER_USER_ID), eq(favorites.queryId, queryId)));
+
+    expect(favoriteRowsAfter).toHaveLength(0);
   });
 });

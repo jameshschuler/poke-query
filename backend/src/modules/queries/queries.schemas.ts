@@ -89,3 +89,31 @@ export const DeleteQuerySchema = {
     }),
   },
 };
+
+export const FavoriteQuerySchema = {
+  params: Type.Object({
+    id: Type.String(),
+  }),
+  body: Type.Object({}),
+  response: {
+    204: Type.Null(),
+    400: Type.Object({
+      error: Type.String(),
+    }),
+    404: Type.Object({
+      error: Type.String(),
+    }),
+  },
+};
+
+export const UnfavoriteQuerySchema = {
+  params: Type.Object({
+    id: Type.String(),
+  }),
+  response: {
+    204: Type.Null(),
+    400: Type.Object({
+      error: Type.String(),
+    }),
+  },
+};

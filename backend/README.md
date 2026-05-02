@@ -83,20 +83,22 @@ The server starts on `http://localhost:3000`. Interactive API docs are available
 
 ## API Routes
 
-| Method   | Path                          | Auth | Description                                                |
-| -------- | ----------------------------- | ---- | ---------------------------------------------------------- |
-| `POST`   | `/auth/login`                 |      | Send OTP to email                                          |
-| `POST`   | `/auth/verify`                |      | Verify OTP and set session cookie                          |
-| `POST`   | `/auth/logout`                | ✓    | End session                                                |
-| `GET`    | `/api/v1/users/me`            | ✓    | Get your own profile with query, favorite, and fork counts |
-| `PATCH`  | `/api/v1/users/me`            | ✓    | Update your profile                                        |
-| `POST`   | `/api/v1/users/me/deactivate` | ✓    | Deactivate your account                                    |
-| `POST`   | `/api/v1/users/me/reactivate` | ✓    | Reactivate your account                                    |
-| `DELETE` | `/api/v1/users/me`            | ✓    | Delete your account                                        |
-| `GET`    | `/api/v1/users/:id`           |      | Get a trainer's public profile                             |
-| `GET`    | `/api/v1/queries`             | ✓    | List your queries                                          |
-| `POST`   | `/api/v1/queries`             | ✓    | Create a query                                             |
-| `PATCH`  | `/api/v1/queries/:id`         | ✓    | Update a query                                             |
-| `DELETE` | `/api/v1/queries/:id`         | ✓    | Delete a query                                             |
-| `POST`   | `/api/v1/queries/:id/fork`    | ✓    | Fork a public query                                        |
-| `GET`    | `/api/v1/community`           |      | Browse public queries                                      |
+| Method   | Path                             | Auth | Description                                                |
+| -------- | -------------------------------- | ---- | ---------------------------------------------------------- |
+| `POST`   | `/auth/login`                    |      | Send OTP to email                                          |
+| `POST`   | `/auth/verify`                   |      | Verify OTP and set session cookie                          |
+| `POST`   | `/auth/logout`                   | ✓    | End session                                                |
+| `GET`    | `/api/v1/users/me`               | ✓    | Get your own profile with query, favorite, and fork counts |
+| `PATCH`  | `/api/v1/users/me`               | ✓    | Update your profile                                        |
+| `POST`   | `/api/v1/users/me/deactivate`    | ✓    | Deactivate your account                                    |
+| `POST`   | `/api/v1/users/me/reactivate`    | ✓    | Reactivate your account                                    |
+| `DELETE` | `/api/v1/users/me`               | ✓    | Delete your account                                        |
+| `GET`    | `/api/v1/users/:id`              |      | Get a trainer's public profile                             |
+| `GET`    | `/api/v1/queries`                | ✓    | List your queries                                          |
+| `POST`   | `/api/v1/queries`                | ✓    | Create a query                                             |
+| `PATCH`  | `/api/v1/queries/:id`            | ✓    | Update a query                                             |
+| `DELETE` | `/api/v1/queries/:id`            | ✓    | Delete a query                                             |
+| `POST`   | `/api/v1/queries/:id/fork`       | ✓    | Fork a public query                                        |
+| `POST`   | `/api/v1/queries/:id/favorite`   | ✓    | Favorite a visible query (public or owned)                 |
+| `POST`   | `/api/v1/queries/:id/unfavorite` | ✓    | Remove a query from your favorites                         |
+| `GET`    | `/api/v1/community`              |      | Browse public queries                                      |

@@ -47,4 +47,68 @@ describe("Queries Endpoint", () => {
     expect(capturedValues.metadata.autoTags).toContain("high-iv");
     expect(capturedValues.metadata.autoTags).toContain("pvp");
   });
+
+  it("should reject favorite if no auth cookie is present", async () => {
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/queries/query-id/favorite",
+      payload: {},
+    });
+
+    expect(response.statusCode).toBe(401);
+  });
+
+  it("should favorite a visible query and be duplicate-safe", async () => {
+    app.db.query = {
+      searchQueries: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: "query-id",
+          isPublic: true,
+          creatorId: "someone-else",
+        }),
+      },
+    };
+
+    const onConflictDoNothing = vi.fn().mockResolvedValue([]);
+    app.db.insert = vi.fn(() => ({
+      values: vi.fn(() => ({
+        onConflictDoNothing,
+      })),
+    }));
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/queries/query-id/favorite",
+      cookies: { "sb-access-token": "MOCK_TOKEN_HERE" },
+      payload: {},
+    });
+
+    expect(response.statusCode).toBe(204);
+    expect(onConflictDoNothing).toHaveBeenCalled();
+  });
+
+  it("should reject unfavorite if no auth cookie is present", async () => {
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/queries/query-id/unfavorite",
+      payload: {},
+    });
+
+    expect(response.statusCode).toBe(401);
+  });
+
+  it("should unfavorite a query idempotently", async () => {
+    const where = vi.fn().mockResolvedValue([]);
+    app.db.delete = vi.fn(() => ({ where }));
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/queries/query-id/unfavorite",
+      cookies: { "sb-access-token": "MOCK_TOKEN_HERE" },
+      payload: {},
+    });
+
+    expect(response.statusCode).toBe(204);
+    expect(where).toHaveBeenCalled();
+  });
 });

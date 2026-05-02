@@ -6,10 +6,13 @@ import {
   CopyQuerySchema,
   CreateQuerySchema,
   DeleteQuerySchema,
+  FavoriteQuerySchema,
   ForkQuerySchema,
+  UnfavoriteQuerySchema,
   UpdateQuerySchema,
 } from "./queries.schemas.js";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, or, sql } from "drizzle-orm";
+import { favorites } from "../../db/schema.js";
 
 export async function queriesRoutes(fastify: FastifyTypebox) {
   const server = fastify.withTypeProvider<TypeBoxTypeProvider>();
@@ -141,6 +144,56 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
       return reply.code(400).send({ error: "Failed to copy query" });
     }
   });
+
+  server.post(
+    "/:id/favorite",
+    { preHandler: [fastify.authenticate], schema: FavoriteQuerySchema },
+    async (request, reply) => {
+      try {
+        const { id } = request.params;
+        const userId = request.user.id;
+
+        const query = await fastify.db.query.searchQueries.findFirst({
+          where: and(
+            eq(searchQueries.id, id),
+            or(eq(searchQueries.isPublic, true), eq(searchQueries.creatorId, userId)),
+          ),
+        });
+
+        if (!query) {
+          return reply.code(404).send({ error: "Query not found" });
+        }
+
+        await fastify.db
+          .insert(favorites)
+          .values({ trainerId: userId, queryId: id })
+          .onConflictDoNothing();
+
+        return reply.code(204).send(null);
+      } catch (_error) {
+        return reply.code(400).send({ error: "Failed to favorite query" });
+      }
+    },
+  );
+
+  server.post(
+    "/:id/unfavorite",
+    { preHandler: [fastify.authenticate], schema: UnfavoriteQuerySchema },
+    async (request, reply) => {
+      try {
+        const { id } = request.params;
+        const userId = request.user.id;
+
+        await fastify.db
+          .delete(favorites)
+          .where(and(eq(favorites.queryId, id), eq(favorites.trainerId, userId)));
+
+        return reply.code(204).send(null);
+      } catch (_error) {
+        return reply.code(400).send({ error: "Failed to unfavorite query" });
+      }
+    },
+  );
 
   server.delete(
     "/:id",
