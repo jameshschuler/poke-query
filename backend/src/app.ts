@@ -10,6 +10,11 @@ import fastifyCookie from "@fastify/cookie";
 import rateLimit from "@fastify/rate-limit";
 import { queriesRoutes } from "./modules/queries/queries.routes.js";
 import { communityRoutes } from "./modules/community/community.routes.js";
+import { readFile } from "fs/promises";
+import { fileURLToPath } from "url";
+import { dirname, resolve } from "path";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -24,13 +29,19 @@ const loggerConfig = isDev
   : { level: process.env.LOG_LEVEL ?? "info" };
 
 export async function buildApp() {
+  const description = await readFile(resolve(__dirname, "openapi-description.md"), "utf-8");
+
   const fastify = Fastify({
     logger: process.env.NODE_ENV === "test" ? false : loggerConfig,
   }).withTypeProvider<TypeBoxTypeProvider>();
 
   await fastify.register(swagger, {
     openapi: {
-      info: { title: "Fastify API", version: "1.0.0" },
+      info: {
+        title: "Poke Query API",
+        version: "1.0.0",
+        description,
+      },
       components: {
         securitySchemes: {
           cookieAuth: {

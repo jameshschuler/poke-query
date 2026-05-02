@@ -7,12 +7,12 @@ At a high level, the project lets trainers create, manage, and discover reusable
 ## Workspace Layout
 
 - `backend/`: Fastify + TypeScript API, database schema/migrations, and tests
-- `frontend/`: frontend app workspace (reserved for UI work)
+- `docs-site/`: API docs site (Scalar)
 
 ## Current Status
 
 - Backend is fully set up and tested
-- Frontend workspace exists and is ready for scaffolding
+- API docs site powered by Scalar
 
 ## Backend Highlights
 
@@ -47,5 +47,6 @@ From `backend/`:
 ## Documentation
 
 - Backend details: [backend/README.md](backend/README.md)
+- One-page API docs site: [docs-site/README.md](docs-site/README.md)
 - Contributing guide: [CONTRIBUTING.md](CONTRIBUTING.md)
 - License: [LICENSE](LICENSE)

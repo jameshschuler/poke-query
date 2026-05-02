@@ -70,16 +70,29 @@ The server starts on `http://localhost:3000`. Interactive API docs are available
 
 ## Scripts
 
-| Command               | Description                   |
-| --------------------- | ----------------------------- |
-| `npm run dev`         | Start with hot reload         |
-| `npm run build`       | Compile TypeScript to `dist/` |
-| `npm start`           | Run compiled build            |
-| `npm test`            | Run tests                     |
-| `npm run lint`        | Lint source files             |
-| `npm run format`      | Format with Prettier          |
-| `npm run db:generate` | Generate a new migration      |
-| `npm run db:migrate`  | Apply pending migrations      |
+| Command                | Description                           |
+| ---------------------- | ------------------------------------- |
+| `npm run dev`          | Start with hot reload                 |
+| `npm run build`        | Compile TypeScript to `dist/`         |
+| `npm start`            | Run compiled build                    |
+| `npm test`             | Run tests                             |
+| `npm run lint`         | Lint source files                     |
+| `npm run format`       | Format with Prettier                  |
+| `npm run db:generate`  | Generate a new migration              |
+| `npm run db:migrate`   | Apply pending migrations              |
+| `npm run docs:openapi` | Export OpenAPI JSON for frontend docs |
+
+## One-Page Docs Site
+
+The repo includes a generated one-page API site in `../docs-site`.
+
+1. From `docs-site/`, install dependencies:
+   - `npm install`
+2. Generate docs page from backend OpenAPI:
+   - `npm run docs:generate`
+3. Open `docs-site/index.html` in a browser.
+
+The endpoint reference is generated from OpenAPI JSON and merged with a manual quick-start/auth guide.
 
 ## API Routes
 

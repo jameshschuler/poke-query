@@ -54,3 +54,18 @@ export const VerifySchema = Type.Object(
 );
 
 export type VerifyRequest = Static<typeof VerifySchema>;
+
+export const VerifyRouteSchema = {
+  body: VerifySchema,
+  response: {
+    200: Type.Object({
+      message: Type.String(),
+    }),
+    400: Type.Object({
+      error: Type.String(),
+    }),
+    401: Type.Object({
+      error: Type.String(),
+    }),
+  },
+};

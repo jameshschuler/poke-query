@@ -7,7 +7,7 @@ import { CommunitySchema } from "./community.schemas.js";
 export async function communityRoutes(fastify: FastifyTypebox) {
   const server = fastify.withTypeProvider<TypeBoxTypeProvider>();
 
-  server.get("/community", { schema: CommunitySchema }, async (request, reply) => {
+  server.get("/", { schema: CommunitySchema }, async (request, reply) => {
     const { tag, sort } = request.query;
 
     // 1. Base query: Only show public strings

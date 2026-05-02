@@ -1,0 +1,10 @@
+{
+    "name": "poke-query-docs",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "docs:generate": "npm run docs:openapi --prefix ../backend",
+        "start": "npx serve ."
+    }
+}

@@ -1,4 +1,4 @@
-import { LoginSchema, VerifySchema } from "./auth.schema.js";
+import { LoginSchema, VerifyRouteSchema } from "./auth.schema.js";
 import { supabase } from "../../lib/supabase.js";
 import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import { trainers } from "../../db/schema.js";
@@ -20,7 +20,7 @@ export async function authRoutes(fastify: FastifyTypebox) {
   server.post(
     "/verify",
     {
-      schema: { body: VerifySchema },
+      schema: VerifyRouteSchema,
     },
     async (request, reply) => {
       const { email, token, token_hash, username, level, team, avatarUrl } = request.body;
