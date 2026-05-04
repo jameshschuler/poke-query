@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import swagger from "@fastify/swagger";
 import swaggerUi from "@fastify/swagger-ui";
+import cors from "@fastify/cors";
 import authPlugin from "./plugins/auth.js";
 import dbPlugin from "./plugins/db.js";
 import { userRoutes } from "./modules/users/users.routes.js";
@@ -28,12 +29,47 @@ const loggerConfig = isDev
     }
   : { level: process.env.LOG_LEVEL ?? "info" };
 
+function getAllowedOrigins() {
+  const configured = (process.env.CORS_ORIGIN ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  if (configured.length > 0) {
+    return configured;
+  }
+
+  // Default development origins for local frontends
+  return ["http://localhost:3000", "http://localhost:3001", "http://localhost:5173"];
+}
+
 export async function buildApp() {
   const description = await readFile(resolve(__dirname, "openapi-description.md"), "utf-8");
+  const allowedOrigins = getAllowedOrigins();
 
   const fastify = Fastify({
     logger: process.env.NODE_ENV === "test" ? false : loggerConfig,
   }).withTypeProvider<TypeBoxTypeProvider>();
+
+  await fastify.register(cors, {
+    credentials: true,
+    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["content-type", "authorization"],
+    origin: (origin, cb) => {
+      // Allow non-browser clients (curl, Postman, server-to-server)
+      if (!origin) {
+        cb(null, true);
+        return;
+      }
+
+      if (allowedOrigins.includes(origin)) {
+        cb(null, true);
+        return;
+      }
+
+      cb(new Error("Origin not allowed"), false);
+    },
+  });
 
   await fastify.register(swagger, {
     openapi: {

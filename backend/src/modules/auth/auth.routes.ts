@@ -49,24 +49,31 @@ export async function authRoutes(fastify: FastifyTypebox) {
       }
 
       if (data.user) {
-        await fastify.db
-          .insert(trainers)
-          .values({
-            id: data.user.id,
-            userId: data.user.id,
-            username: username || `trainer_${data.user.id.slice(0, 4)}`,
-            level,
-            team,
-            avatarUrl,
-          })
-          .onConflictDoUpdate({
+        const profileUpdates = {
+          ...(level !== undefined && { level }),
+          ...(team !== undefined && { team }),
+          ...(avatarUrl !== undefined && { avatarUrl }),
+        };
+
+        const insertQuery = fastify.db.insert(trainers).values({
+          id: data.user.id,
+          userId: data.user.id,
+          username: username || `trainer_${data.user.id.slice(0, 4)}`,
+          level,
+          team,
+          avatarUrl,
+        });
+
+        if (Object.keys(profileUpdates).length > 0) {
+          await insertQuery.onConflictDoUpdate({
             target: trainers.userId,
-            set: {
-              ...(level !== undefined && { level }),
-              ...(team !== undefined && { team }),
-              ...(avatarUrl !== undefined && { avatarUrl }),
-            },
+            set: profileUpdates,
           });
+        } else {
+          await insertQuery.onConflictDoNothing({
+            target: trainers.userId,
+          });
+        }
       }
 
       // Set the JWT in a secure, HttpOnly cookie
