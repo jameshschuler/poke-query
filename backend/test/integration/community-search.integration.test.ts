@@ -112,6 +112,7 @@ integrationDescribe("Community Search Integration", () => {
         avatarUrl: string | null;
         team: "mystic" | "valor" | "instinct" | null;
         level: number | null;
+        trainerCode: string | null;
       } | null;
     }> = res.json();
     const ids = rows.map((r) => r.id);
@@ -172,6 +173,7 @@ integrationDescribe("Community Search Integration", () => {
         avatarUrl: string | null;
         team: "mystic" | "valor" | "instinct" | null;
         level: number | null;
+        trainerCode: string | null;
       } | null;
     }> = res.json();
     const ids = rows.map((r) => r.id);

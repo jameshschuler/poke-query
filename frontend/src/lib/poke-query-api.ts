@@ -99,6 +99,7 @@ export type GetTrainerResponse = TrainerSummary & {
 export type GetMeResponse = TrainerSummary & {
   queryCount: number
   favoriteCount: number
+  followerCount: number
   forkCount: number
 }
 

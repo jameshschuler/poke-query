@@ -1,7 +1,6 @@
 import { LoginSchema, VerifyRouteSchema } from "./auth.schema.js";
 import { supabase } from "../../lib/supabase.js";
 import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
-import { trainers } from "../../db/schema.js";
 import type { FastifyTypebox } from "../../types/fastify.js";
 
 const isProduction = process.env.NODE_ENV === "production";
@@ -23,7 +22,7 @@ export async function authRoutes(fastify: FastifyTypebox) {
       schema: VerifyRouteSchema,
     },
     async (request, reply) => {
-      const { email, token, token_hash, username, level, team, avatarUrl } = request.body;
+      const { email, token, token_hash } = request.body;
 
       let result;
 
@@ -46,34 +45,6 @@ export async function authRoutes(fastify: FastifyTypebox) {
 
       if (error || !data.session) {
         return reply.code(401).send({ error: error?.message || "Verification failed" });
-      }
-
-      if (data.user) {
-        const profileUpdates = {
-          ...(level !== undefined && { level }),
-          ...(team !== undefined && { team }),
-          ...(avatarUrl !== undefined && { avatarUrl }),
-        };
-
-        const insertQuery = fastify.db.insert(trainers).values({
-          id: data.user.id,
-          userId: data.user.id,
-          username: username || `trainer_${data.user.id.slice(0, 4)}`,
-          level,
-          team,
-          avatarUrl,
-        });
-
-        if (Object.keys(profileUpdates).length > 0) {
-          await insertQuery.onConflictDoUpdate({
-            target: trainers.userId,
-            set: profileUpdates,
-          });
-        } else {
-          await insertQuery.onConflictDoNothing({
-            target: trainers.userId,
-          });
-        }
       }
 
       // Set the JWT in a secure, HttpOnly cookie

@@ -27,6 +27,8 @@ export const trainers = pokeSchema.table("trainers", {
   username: text("username").notNull().unique(),
   team: text("team"),
   level: integer("level").default(1),
+  trainerCode: text("trainer_code"),
+  isProfilePublic: boolean("is_profile_public").default(true).notNull(),
   avatarUrl: text("avatar_url"),
   deactivatedAt: timestamp("deactivated_at"),
   // Timestamps
@@ -114,5 +116,23 @@ export const favorites = pokeSchema.table(
   },
   (t) => ({
     pk: primaryKey({ columns: [t.trainerId, t.queryId] }),
+  }),
+);
+
+// --- FOLLOWERS (Junction) ---
+export const followers = pokeSchema.table(
+  "followers",
+  {
+    followerId: uuid("follower_id")
+      .references(() => trainers.id, { onDelete: "cascade" })
+      .notNull(),
+    followedId: uuid("followed_id")
+      .references(() => trainers.id, { onDelete: "cascade" })
+      .notNull(),
+    // Timestamps (Useful for sorting by most recent follows)
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.followerId, t.followedId] }),
   }),
 );

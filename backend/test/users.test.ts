@@ -8,9 +8,12 @@ const mockRow = {
   username: "AshKetchum",
   team: "mystic",
   level: 40,
+  trainerCode: "1234 5678 9012",
+  isProfilePublic: true,
   avatarUrl: null,
   queryCount: 5,
   favoriteCount: 3,
+  followerCount: 7,
   forkCount: 2,
 };
 
@@ -19,7 +22,12 @@ const buildSelectChain = (result: object[]) => ({
     leftJoin: vi.fn(function (this: any) {
       return {
         leftJoin: vi.fn(function (this: any) {
-          return { where: vi.fn(() => ({ groupBy: vi.fn().mockResolvedValue(result) })) };
+          return {
+            leftJoin: vi.fn(function (this: any) {
+              return { where: vi.fn(() => ({ groupBy: vi.fn().mockResolvedValue(result) })) };
+            }),
+            where: vi.fn(() => ({ groupBy: vi.fn().mockResolvedValue(result) })),
+          };
         }),
         where: vi.fn(() => ({ groupBy: vi.fn().mockResolvedValue(result) })),
       };
@@ -81,8 +89,11 @@ describe("GET /api/v1/users/me", () => {
     expect(body.id).toBe("uuid-123");
     expect(body.username).toBe("AshKetchum");
     expect(body.team).toBe("mystic");
+    expect(body.trainerCode).toBe("1234 5678 9012");
+    expect(body.isProfilePublic).toBe(true);
     expect(body.queryCount).toBe(5);
     expect(body.favoriteCount).toBe(3);
+    expect(body.followerCount).toBe(7);
     expect(body.forkCount).toBe(2);
   });
 

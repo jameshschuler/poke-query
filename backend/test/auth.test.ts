@@ -8,13 +8,6 @@ describe("Authentication Flow", () => {
 
   beforeAll(async () => {
     app = await buildApp();
-    // Mock the db insert used by /verify to upsert the trainer row
-    app.db.insert = vi.fn(() => ({
-      values: vi.fn(() => ({
-        onConflictDoUpdate: vi.fn().mockResolvedValue([]),
-        onConflictDoNothing: vi.fn().mockResolvedValue([]),
-      })),
-    }));
   });
 
   afterAll(async () => {
@@ -62,16 +55,21 @@ describe("Authentication Flow", () => {
       username: "AshKetchum",
       team: null,
       level: 1,
+      trainerCode: null,
+      isProfilePublic: true,
       avatarUrl: null,
       queryCount: 0,
       favoriteCount: 0,
+      followerCount: 0,
       forkCount: 0,
     };
     app.db.select = vi.fn(() => ({
       from: vi.fn(() => ({
         leftJoin: vi.fn(() => ({
           leftJoin: vi.fn(() => ({
-            where: vi.fn(() => ({ groupBy: vi.fn().mockResolvedValue([mockRow]) })),
+            leftJoin: vi.fn(() => ({
+              where: vi.fn(() => ({ groupBy: vi.fn().mockResolvedValue([mockRow]) })),
+            })),
           })),
         })),
       })),

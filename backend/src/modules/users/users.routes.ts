@@ -6,12 +6,53 @@ import {
   DeleteTrainerSchema,
   GetMeSchema,
   GetTrainerSchema,
+  FollowTrainerSchema,
+  UnfollowTrainerSchema,
+  GetTrainerFollowersSchema,
+  GetMeFollowersSchema,
 } from "./users.schema.js";
-import { trainers, searchQueries, favorites } from "../../db/schema.js";
-import { count, eq, sql } from "drizzle-orm";
+import { trainers, searchQueries, favorites, followers } from "../../db/schema.js";
+import { and, count, desc, eq, sql } from "drizzle-orm";
 
 export async function userRoutes(fastify: FastifyTypebox) {
   const server = fastify.withTypeProvider<TypeBoxTypeProvider>();
+
+  const normalizeTrainerCode = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+    if (digits.length !== 12) {
+      return value;
+    }
+
+    return `${digits.slice(0, 4)} ${digits.slice(4, 8)} ${digits.slice(8, 12)}`;
+  };
+
+  const toPublicTrainerProfile = (row: {
+    team: string | null;
+    level: number | null;
+    trainerCode: string | null;
+    isProfilePublic: boolean;
+  }) => ({
+    team: row.isProfilePublic ? (row.team as "mystic" | "valor" | "instinct" | null) : null,
+    level: row.isProfilePublic ? row.level : null,
+    trainerCode: row.isProfilePublic ? row.trainerCode : null,
+  });
+
+  const selectFollowers = (trainerId: string) =>
+    fastify.db
+      .select({
+        id: trainers.id,
+        username: trainers.username,
+        team: trainers.team,
+        level: trainers.level,
+        trainerCode: trainers.trainerCode,
+        isProfilePublic: trainers.isProfilePublic,
+        avatarUrl: trainers.avatarUrl,
+        followedAt: followers.createdAt,
+      })
+      .from(followers)
+      .innerJoin(trainers, eq(trainers.id, followers.followerId))
+      .where(eq(followers.followedId, trainerId))
+      .orderBy(desc(followers.createdAt));
 
   server.get(
     "/me",
@@ -25,9 +66,12 @@ export async function userRoutes(fastify: FastifyTypebox) {
           username: trainers.username,
           team: trainers.team,
           level: trainers.level,
+          trainerCode: trainers.trainerCode,
+          isProfilePublic: trainers.isProfilePublic,
           avatarUrl: trainers.avatarUrl,
           queryCount: count(searchQueries.id).as("queryCount"),
           favoriteCount: count(favorites.queryId).as("favoriteCount"),
+          followerCount: count(followers.followerId).as("followerCount"),
           forkCount:
             sql<number>`count(case when ${searchQueries.parentQueryId} is not null then 1 end)`.as(
               "forkCount",
@@ -36,14 +80,53 @@ export async function userRoutes(fastify: FastifyTypebox) {
         .from(trainers)
         .leftJoin(searchQueries, eq(searchQueries.creatorId, trainers.id))
         .leftJoin(favorites, eq(favorites.trainerId, trainers.id))
+        .leftJoin(followers, eq(followers.followedId, trainers.id))
         .where(eq(trainers.userId, userId))
-        .groupBy(trainers.id, trainers.username, trainers.team, trainers.level, trainers.avatarUrl);
+        .groupBy(
+          trainers.id,
+          trainers.username,
+          trainers.team,
+          trainers.level,
+          trainers.trainerCode,
+          trainers.isProfilePublic,
+          trainers.avatarUrl,
+        );
 
       if (!row) return reply.code(404).send({ error: "Trainer not found" });
 
       return {
         ...row,
         team: row.team as "mystic" | "valor" | "instinct" | null,
+        trainerCode: row.trainerCode,
+        isProfilePublic: row.isProfilePublic,
+      };
+    },
+  );
+
+  server.get(
+    "/me/followers",
+    { preHandler: [fastify.authenticate], schema: GetMeFollowersSchema },
+    async (request, reply) => {
+      const userId = request.user.id;
+
+      const [trainer] = await fastify.db
+        .select({ id: trainers.id })
+        .from(trainers)
+        .where(eq(trainers.userId, userId));
+
+      if (!trainer) {
+        return reply.code(404).send({ error: "Trainer not found" });
+      }
+
+      const rows = await selectFollowers(trainer.id);
+
+      return {
+        total: rows.length,
+        followers: rows.map((row) => ({
+          ...row,
+          ...toPublicTrainerProfile(row),
+          followedAt: row.followedAt.toISOString(),
+        })),
       };
     },
   );
@@ -57,6 +140,8 @@ export async function userRoutes(fastify: FastifyTypebox) {
         username: trainers.username,
         team: trainers.team,
         level: trainers.level,
+        trainerCode: trainers.trainerCode,
+        isProfilePublic: trainers.isProfilePublic,
         avatarUrl: trainers.avatarUrl,
         queryCount: sql<number>`count(case when ${searchQueries.isPublic} = true then 1 end)`.as(
           "queryCount",
@@ -69,37 +154,133 @@ export async function userRoutes(fastify: FastifyTypebox) {
       .from(trainers)
       .leftJoin(searchQueries, eq(searchQueries.creatorId, trainers.id))
       .where(eq(trainers.id, id))
-      .groupBy(trainers.id, trainers.username, trainers.team, trainers.level, trainers.avatarUrl);
+      .groupBy(
+        trainers.id,
+        trainers.username,
+        trainers.team,
+        trainers.level,
+        trainers.trainerCode,
+        trainers.isProfilePublic,
+        trainers.avatarUrl,
+      );
 
     if (!row) return reply.code(404).send({ error: "Trainer not found" });
 
+    const publicProfile = toPublicTrainerProfile(row);
+
     return {
       ...row,
-      team: row.team as "mystic" | "valor" | "instinct" | null,
+      ...publicProfile,
     };
   });
+
+  server.get("/:id/followers", { schema: GetTrainerFollowersSchema }, async (request, reply) => {
+    const { id } = request.params;
+
+    const [trainer] = await fastify.db
+      .select({ id: trainers.id })
+      .from(trainers)
+      .where(eq(trainers.id, id));
+
+    if (!trainer) {
+      return reply.code(404).send({ error: "Trainer not found" });
+    }
+
+    const rows = await selectFollowers(id);
+
+    return {
+      total: rows.length,
+      followers: rows.map((row) => ({
+        ...row,
+        ...toPublicTrainerProfile(row),
+        followedAt: row.followedAt.toISOString(),
+      })),
+    };
+  });
+
+  server.post(
+    "/:id/follow",
+    { preHandler: [fastify.authenticate], schema: FollowTrainerSchema },
+    async (request, reply) => {
+      const targetTrainerId = request.params.id;
+      const currentTrainerId = request.user.id;
+
+      if (targetTrainerId === currentTrainerId) {
+        return reply.code(400).send({ error: "You cannot follow yourself" });
+      }
+
+      const [targetTrainer] = await fastify.db
+        .select({ id: trainers.id })
+        .from(trainers)
+        .where(eq(trainers.id, targetTrainerId));
+
+      if (!targetTrainer) {
+        return reply.code(404).send({ error: "Trainer not found" });
+      }
+
+      await fastify.db
+        .insert(followers)
+        .values({
+          followerId: currentTrainerId,
+          followedId: targetTrainerId,
+        })
+        .onConflictDoNothing();
+
+      return reply.code(204).send(null);
+    },
+  );
+
+  server.post(
+    "/:id/unfollow",
+    { preHandler: [fastify.authenticate], schema: UnfollowTrainerSchema },
+    async (request, reply) => {
+      const targetTrainerId = request.params.id;
+      const currentTrainerId = request.user.id;
+
+      await fastify.db
+        .delete(followers)
+        .where(
+          and(
+            eq(followers.followerId, currentTrainerId),
+            eq(followers.followedId, targetTrainerId),
+          ),
+        );
+
+      return reply.code(204).send(null);
+    },
+  );
 
   server.patch(
     "/me",
     { preHandler: [fastify.authenticate], schema: UpdateTrainerSchema },
     async (request, reply) => {
       const userId = request.user.id;
-      const { username, level, team, avatarUrl } = request.body;
+      const { username, level, team, trainerCode, isProfilePublic, avatarUrl } = request.body;
 
       const [updated] = await fastify.db
-        .update(trainers)
-        .set({
-          ...(username !== undefined && { username }),
+        .insert(trainers)
+        .values({
+          id: userId,
+          userId,
+          username: username || `trainer_${userId.slice(0, 4)}`,
           ...(level !== undefined && { level }),
           ...(team !== undefined && { team }),
+          ...(trainerCode !== undefined && { trainerCode: normalizeTrainerCode(trainerCode) }),
+          ...(isProfilePublic !== undefined && { isProfilePublic }),
           ...(avatarUrl !== undefined && { avatarUrl }),
         })
-        .where(eq(trainers.userId, userId))
+        .onConflictDoUpdate({
+          target: trainers.userId,
+          set: {
+            ...(username !== undefined && { username }),
+            ...(level !== undefined && { level }),
+            ...(team !== undefined && { team }),
+            ...(trainerCode !== undefined && { trainerCode: normalizeTrainerCode(trainerCode) }),
+            ...(isProfilePublic !== undefined && { isProfilePublic }),
+            ...(avatarUrl !== undefined && { avatarUrl }),
+          },
+        })
         .returning({ id: trainers.id });
-
-      if (!updated) {
-        return reply.code(404).send({ error: "Trainer not found" });
-      }
 
       return reply.code(200).send({ id: updated.id });
     },

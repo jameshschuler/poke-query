@@ -28,6 +28,8 @@ export async function communityRoutes(fastify: FastifyTypebox) {
         creatorAvatarUrl: trainers.avatarUrl,
         creatorTeam: trainers.team,
         creatorLevel: trainers.level,
+        creatorTrainerCode: trainers.trainerCode,
+        creatorIsProfilePublic: trainers.isProfilePublic,
       })
       .from(searchQueries)
       .leftJoin(trainers, eq(searchQueries.creatorId, trainers.id))
@@ -43,8 +45,11 @@ export async function communityRoutes(fastify: FastifyTypebox) {
               id: row.creatorId,
               username: row.creatorUsername,
               avatarUrl: row.creatorAvatarUrl,
-              team: row.creatorTeam as "mystic" | "valor" | "instinct" | null,
-              level: row.creatorLevel,
+              team: row.creatorIsProfilePublic
+                ? (row.creatorTeam as "mystic" | "valor" | "instinct" | null)
+                : null,
+              level: row.creatorIsProfilePublic ? row.creatorLevel : null,
+              trainerCode: row.creatorIsProfilePublic ? row.creatorTrainerCode : null,
             }
           : null,
     }));

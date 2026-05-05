@@ -21,6 +21,7 @@ export const CommunitySchema = {
               Type.Null(),
             ]),
             level: Type.Union([Type.Integer(), Type.Null()]),
+            trainerCode: Type.Union([Type.String(), Type.Null()]),
           }),
           Type.Null(),
         ]),

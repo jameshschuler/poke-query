@@ -29,6 +29,20 @@
       "when": 1777468200000,
       "tag": "0003_trainers_user_id_fk",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1777500000000,
+      "tag": "0004_followers",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1777600000000,
+      "tag": "0005_trainer_code_visibility",
+      "breakpoints": true
     }
   ]
 }
