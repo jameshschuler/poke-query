@@ -1,38 +1,30 @@
-import { AppSidebar } from '#/components/app-sidebar'
-import { ChartAreaInteractive } from '#/components/chart-area-interactive'
-import { DataTable } from '#/components/data-table'
-import { SectionCards } from '#/components/section-cards'
-import { SiteHeader } from '#/components/site-header'
-import { SidebarProvider, SidebarInset } from '#/components/ui/sidebar'
 import { createFileRoute } from '@tanstack/react-router'
+import { useAuth } from '@authabase/react'
+import * as React from 'react'
+import { useNavigate } from '@tanstack/react-router'
+import { DashboardPage } from '#/components/dashboard-page'
 
-function TestPage() {
-  return (
-    <SidebarProvider
-      style={
-        {
-          '--sidebar-width': 'calc(var(--spacing) * 72)',
-          '--header-height': 'calc(var(--spacing) * 12)',
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader />
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <SectionCards />
-              <div className="px-4 lg:px-6">
-                <ChartAreaInteractive />
-              </div>
-              <DataTable data={[]} />
-            </div>
-          </div>
+export const Route = createFileRoute('/')({ component: IndexPage })
+
+function IndexPage() {
+  const { user, isLoading } = useAuth()
+  const navigate = useNavigate()
+
+  React.useEffect(() => {
+    if (!isLoading && user) {
+      void navigate({ to: '/dashboard', replace: true })
+    }
+  }, [isLoading, user, navigate])
+
+  if (isLoading) {
+    return (
+      <main className="grid min-h-screen place-items-center px-6">
+        <div className="rounded-xl border border-border/70 bg-card/80 px-4 py-3 text-sm text-muted-foreground shadow-sm backdrop-blur">
+          {user ? `Loading your dashboard...` : `Loading PokeQuery...`}
         </div>
-      </SidebarInset>
-    </SidebarProvider>
-  )
-}
+      </main>
+    )
+  }
 
-export const Route = createFileRoute('/')({ component: TestPage })
+  return <DashboardPage />
+}
