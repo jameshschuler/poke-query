@@ -27,5 +27,5 @@ function DashboardRoute() {
     return null
   }
 
-  return <DashboardPage />
+  return <DashboardPage showSidebar />
 }

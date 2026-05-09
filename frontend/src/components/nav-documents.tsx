@@ -38,22 +38,26 @@ export function NavDocuments({
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton>
-              <a href={item.url}>
-                {item.icon}
-                <span>{item.name}</span>
-              </a>
-            </SidebarMenuButton>
+            <SidebarMenuButton
+              render={
+                <a href={item.url}>
+                  {item.icon}
+                  <span>{item.name}</span>
+                </a>
+              }
+            />
             <DropdownMenu>
-              <DropdownMenuTrigger>
-                <SidebarMenuAction
-                  showOnHover
-                  className="rounded-sm data-[state=open]:bg-accent"
-                >
-                  <MoreHorizontalIcon />
-                  <span className="sr-only">More</span>
-                </SidebarMenuAction>
-              </DropdownMenuTrigger>
+              <DropdownMenuTrigger
+                render={
+                  <SidebarMenuAction
+                    showOnHover
+                    className="rounded-sm data-[state=open]:bg-accent"
+                  >
+                    <MoreHorizontalIcon />
+                    <span className="sr-only">More</span>
+                  </SidebarMenuAction>
+                }
+              />
               <DropdownMenuContent
                 className="w-24 rounded-lg"
                 side={isMobile ? 'bottom' : 'right'}

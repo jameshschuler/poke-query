@@ -4,7 +4,7 @@ import "dotenv/config.js";
 const start = async () => {
   const app = await buildApp();
   try {
-    await app.listen({ port: 3000, host: "0.0.0.0" });
+    await app.listen({ port: process.env.PORT ? parseInt(process.env.PORT) : 3001 });
   } catch (err) {
     app.log.error(err);
     process.exit(1);

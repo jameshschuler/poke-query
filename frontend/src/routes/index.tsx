@@ -26,5 +26,5 @@ function IndexPage() {
     )
   }
 
-  return <DashboardPage />
+  return <DashboardPage showSidebar={false} />
 }

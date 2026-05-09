@@ -26,7 +26,7 @@ export class ApiRequestError extends Error {
 
 export const apiBaseUrl =
   import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ||
-  'http://localhost:3000'
+  'http://localhost:3001'
 
 type RequestOptions = Omit<RequestInit, 'body' | 'method'> & {
   method?: 'GET' | 'POST' | 'PATCH' | 'DELETE'
