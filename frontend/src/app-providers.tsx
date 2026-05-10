@@ -1,9 +1,11 @@
-import { AuthProvider, type AuthConfig } from '@authabase/react'
+import { AuthProvider } from '@authabase/react'
+import type { AuthConfig } from '@authabase/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 
-export function AppProviders({ children }: { children: React.ReactNode }) {
+export function AppProviders({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
     () =>
       new QueryClient({

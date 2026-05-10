@@ -1,10 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import {
-  AuthContainer,
-  OTPForm,
-  type OTPRequestPayload,
-  type OTPVerifyPayload,
-} from '@authabase/react'
+import { AuthContainer, OTPForm } from '@authabase/react'
+import type { OTPRequestPayload, OTPVerifyPayload } from '@authabase/react'
 import { useMemo } from 'react'
 import { login, verify } from '#/lib/poke-query-api'
 import { requireGuest } from '#/lib/route-auth'

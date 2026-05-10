@@ -1,7 +1,6 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '@authabase/react'
 import * as React from 'react'
-import { useNavigate } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/')({ component: IndexPage })
 

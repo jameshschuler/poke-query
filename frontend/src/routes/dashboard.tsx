@@ -1,6 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import * as React from 'react'
-import { useNavigate } from '@tanstack/react-router'
 import { useAuth } from '@authabase/react'
 
 export const Route = createFileRoute('/dashboard')({
