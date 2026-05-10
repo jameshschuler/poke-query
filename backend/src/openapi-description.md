@@ -21,9 +21,10 @@ The server starts at **http://localhost:3000**.
 
 ### 2. Authenticate
 
-1. `POST /auth/login` with your email — triggers an OTP email.
-2. `POST /auth/verify` with `email` + `token` (or `token_hash` from the magic link).
-3. The response sets an `sb-access-token` HttpOnly cookie. All protected endpoints require this cookie.
+1. `POST /api/v1/auth/login` with your email — triggers an OTP email.
+2. `POST /api/v1/auth/verify` with `email` + `token` (or `token_hash` from the magic link).
+3. `POST /api/v1/auth/logout` ends the session and clears auth cookies.
+4. The response sets an `sb-access-token` HttpOnly cookie. All protected endpoints require this cookie.
 
 ### 3. Call a protected endpoint
 

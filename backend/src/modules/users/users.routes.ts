@@ -11,6 +11,7 @@ import {
   GetTrainerFollowersSchema,
   GetMeFollowersSchema,
 } from "./users.schema.js";
+import { getSupabaseAdmin } from "../../lib/supabase.js";
 import { trainers, searchQueries, favorites, followers } from "../../db/schema.js";
 import { and, count, desc, eq, sql } from "drizzle-orm";
 
@@ -92,9 +93,25 @@ export async function userRoutes(fastify: FastifyTypebox) {
           trainers.avatarUrl,
         );
 
-      if (!row) return reply.code(404).send({ error: "Trainer not found" });
+      if (!row) {
+        return reply.code(200).send({
+          hasTrainer: false,
+          id: userId,
+          username: request.user.email?.split("@")[0] ?? `trainer_${userId.slice(0, 4)}`,
+          team: null,
+          level: null,
+          trainerCode: null,
+          isProfilePublic: false,
+          avatarUrl: null,
+          queryCount: 0,
+          favoriteCount: 0,
+          followerCount: 0,
+          forkCount: 0,
+        });
+      }
 
       return {
+        hasTrainer: true,
         ...row,
         team: row.team as "mystic" | "valor" | "instinct" | null,
         trainerCode: row.trainerCode,
@@ -282,6 +299,10 @@ export async function userRoutes(fastify: FastifyTypebox) {
         })
         .returning({ id: trainers.id });
 
+      if (!updated) {
+        return reply.code(500).send({ error: "Failed to update trainer" });
+      }
+
       return reply.code(200).send({ id: updated.id });
     },
   );
@@ -332,6 +353,16 @@ export async function userRoutes(fastify: FastifyTypebox) {
     async (request, reply) => {
       const userId = request.user.id;
 
+      const { error: deleteAuthError } = await getSupabaseAdmin().auth.admin.deleteUser(userId);
+
+      if (deleteAuthError) {
+        request.log.error(
+          { error: deleteAuthError, userId },
+          "Failed to delete auth user during account deletion",
+        );
+        return reply.code(500).send({ error: "Failed to delete auth user" });
+      }
+
       // creatorId on search_queries is set null on delete, so queries are preserved
       const [deleted] = await fastify.db
         .delete(trainers)
@@ -339,7 +370,12 @@ export async function userRoutes(fastify: FastifyTypebox) {
         .returning({ id: trainers.id });
 
       if (!deleted) {
-        return reply.code(404).send({ error: "Trainer not found" });
+        request.log.warn(
+          { userId },
+          "Trainer row not found during account deletion; auth user was removed",
+        );
+      } else {
+        request.log.info({ userId, trainerId: deleted.id }, "User account deleted");
       }
 
       reply.clearCookie("sb-access-token", { path: "/" });

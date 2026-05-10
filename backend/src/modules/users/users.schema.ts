@@ -30,6 +30,7 @@ export const GetMeSchema = {
   security: cookieAuthSecurity,
   response: {
     200: Type.Object({
+      hasTrainer: Type.Boolean(),
       id: Type.String(),
       username: Type.String(),
       team: Type.Union([
@@ -101,6 +102,7 @@ export const UpdateTrainerSchema = {
     400: Type.Object({ error: Type.String() }),
     404: Type.Object({ error: Type.String() }),
     401: Type.Object({ error: Type.String() }),
+    500: Type.Object({ error: Type.String() }),
   },
 };
 
@@ -119,6 +121,7 @@ export const DeleteTrainerSchema = {
     204: Type.Null(),
     404: Type.Object({ error: Type.String() }),
     401: Type.Object({ error: Type.String() }),
+    500: Type.Object({ error: Type.String() }),
   },
 };
 

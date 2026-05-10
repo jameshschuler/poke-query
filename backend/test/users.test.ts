@@ -1,7 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { buildApp } from "../src/app.js";
 
-const { mockSelect } = vi.hoisted(() => ({ mockSelect: vi.fn() }));
+const { mockSelect, mockAdminDeleteUser } = vi.hoisted(() => ({
+  mockSelect: vi.fn(),
+  mockAdminDeleteUser: vi.fn(),
+}));
 
 const mockRow = {
   id: "uuid-123",
@@ -48,6 +51,9 @@ vi.mock("../src/db/index.js", () => ({
 vi.mock("@supabase/supabase-js", () => ({
   createClient: () => ({
     auth: {
+      admin: {
+        deleteUser: mockAdminDeleteUser,
+      },
       getUser: vi.fn(() =>
         Promise.resolve({
           data: { user: { id: "uuid-123", email: "ash@example.com" } },
@@ -97,7 +103,7 @@ describe("GET /api/v1/users/me", () => {
     expect(body.forkCount).toBe(2);
   });
 
-  it("should return 404 when the trainer record does not exist", async () => {
+  it("should return 200 onboarding payload when the trainer record does not exist", async () => {
     mockSelect.mockReturnValueOnce(buildSelectChain([]));
 
     const res = await app.inject({
@@ -106,7 +112,52 @@ describe("GET /api/v1/users/me", () => {
       cookies: { "sb-access-token": "mock-token" },
     });
 
-    expect(res.statusCode).toBe(404);
-    expect(res.json()).toEqual({ error: "Trainer not found" });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({
+      hasTrainer: false,
+      id: "uuid-123",
+      team: null,
+      level: null,
+      trainerCode: null,
+      isProfilePublic: false,
+      avatarUrl: null,
+      queryCount: 0,
+      favoriteCount: 0,
+      followerCount: 0,
+      forkCount: 0,
+    });
+  });
+});
+
+describe("DELETE /api/v1/users/me", () => {
+  let app: Awaited<ReturnType<typeof buildApp>>;
+
+  beforeAll(async () => {
+    app = await buildApp();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it("should return 204 when auth user is deleted and trainer row does not exist", async () => {
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
+    mockAdminDeleteUser.mockResolvedValueOnce({ data: { user: null }, error: null });
+
+    app.db.delete = vi.fn(() => ({
+      where: vi.fn(() => ({
+        returning: vi.fn().mockResolvedValue([]),
+      })),
+    }));
+
+    const res = await app.inject({
+      method: "DELETE",
+      url: "/api/v1/users/me",
+      cookies: { "sb-access-token": "mock-token" },
+    });
+
+    expect(res.statusCode).toBe(204);
+    expect(mockAdminDeleteUser).toHaveBeenCalledWith("uuid-123");
+    expect(res.headers["set-cookie"]).toBeDefined();
   });
 });

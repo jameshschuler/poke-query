@@ -1,4 +1,4 @@
-import { LoginSchema, VerifyRouteSchema } from "./auth.schema.js";
+import { LoginSchema, LogoutSchema, VerifyRouteSchema } from "./auth.schema.js";
 import { supabase } from "../../lib/supabase.js";
 import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import type { FastifyTypebox } from "../../types/fastify.js";
@@ -65,6 +65,22 @@ export async function authRoutes(fastify: FastifyTypebox) {
       });
 
       return { message: "Authenticated successfully" };
+    },
+  );
+
+  server.post(
+    "/logout",
+    {
+      preHandler: [fastify.authenticate],
+      schema: LogoutSchema,
+    },
+    async (request, reply) => {
+      request.log.info({ userId: request.user.id }, "User logged out");
+
+      reply.clearCookie("sb-access-token", { path: "/" });
+      reply.clearCookie("sb-refresh-token", { path: "/" });
+
+      return reply.code(200).send({ message: "Logged out successfully" });
     },
   );
 }

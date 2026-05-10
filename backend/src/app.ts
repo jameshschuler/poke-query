@@ -100,7 +100,7 @@ export async function buildApp() {
   await fastify.register(authPlugin);
 
   await fastify.register(swaggerUi, { routePrefix: "/docs" });
-  await fastify.register(authRoutes, { prefix: "/auth" });
+  await fastify.register(authRoutes, { prefix: "/api/v1/auth" });
   await fastify.register(userRoutes, { prefix: "/api/v1/users" });
   await fastify.register(queriesRoutes, { prefix: "/api/v1/queries" });
   await fastify.register(communityRoutes, { prefix: "/api/v1/community" });

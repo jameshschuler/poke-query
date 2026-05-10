@@ -3,6 +3,9 @@ import { vi } from "vitest";
 vi.mock("@supabase/supabase-js", () => ({
   createClient: () => ({
     auth: {
+      admin: {
+        deleteUser: vi.fn(() => Promise.resolve({ data: { user: null }, error: null })),
+      },
       signInWithOtp: vi.fn(() => Promise.resolve({ error: null })),
       verifyOtp: vi.fn(() =>
         Promise.resolve({

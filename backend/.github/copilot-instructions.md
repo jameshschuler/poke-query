@@ -27,7 +27,7 @@
 
 ## Auth and cookies
 
-- Login starts with Supabase OTP (`POST /auth/login`), and verification (`POST /auth/verify`) creates a trainer row if needed.
+- Login starts with Supabase OTP (`POST /api/v1/auth/login`), and verification (`POST /api/v1/auth/verify`) creates a trainer row if needed.
 - Session state is carried in HttpOnly cookies named `sb-access-token` and `sb-refresh-token`. The auth plugin only checks `sb-access-token`.
 - Cookie security depends on `NODE_ENV === "production"`; avoid changing cookie names or auth flow unless you update both the plugin and auth routes.
 

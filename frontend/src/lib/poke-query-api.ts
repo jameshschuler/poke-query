@@ -97,6 +97,7 @@ export type GetTrainerResponse = TrainerSummary & {
 }
 
 export type GetMeResponse = TrainerSummary & {
+  hasTrainer: boolean
   queryCount: number
   favoriteCount: number
   followerCount: number

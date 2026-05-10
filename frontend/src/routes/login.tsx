@@ -2,12 +2,12 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
   AuthContainer,
   OTPForm,
-  useAuth,
   type OTPRequestPayload,
   type OTPVerifyPayload,
 } from '@authabase/react'
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { login, verify } from '#/lib/poke-query-api'
+import { requireGuest } from '#/lib/route-auth'
 import '@authabase/react/styles.css'
 
 type LoginSearch = {
@@ -18,23 +18,19 @@ export const Route = createFileRoute('/login')({
   validateSearch: (search): LoginSearch => ({
     redirect: typeof search.redirect === 'string' ? search.redirect : undefined,
   }),
+  beforeLoad: async () => {
+    await requireGuest()
+  },
   component: LoginPage,
 })
 
 function LoginPage() {
   const navigate = useNavigate()
   const search = Route.useSearch()
-  const { user, isLoading } = useAuth()
   const redirectTo = useMemo(
     () => search.redirect ?? '/dashboard',
     [search.redirect],
   )
-
-  useEffect(() => {
-    if (!isLoading && user) {
-      navigate({ to: redirectTo, replace: true })
-    }
-  }, [isLoading, user, navigate, redirectTo])
 
   async function handleRequestOTP({ email }: OTPRequestPayload) {
     if (!email) throw new Error('Email is required')
@@ -44,10 +40,6 @@ function LoginPage() {
   async function handleVerifyOTP({ email, token }: OTPVerifyPayload) {
     if (!email) throw new Error('Email is required')
     await verify({ email, token })
-  }
-
-  if (isLoading) {
-    return null
   }
 
   return (
@@ -61,8 +53,8 @@ function LoginPage() {
             console.error(err)
           }}
           enabledMethods={{ email: true, phone: false }}
-          //onRequestOTP={handleRequestOTP}
-          //onVerifyOTP={handleVerifyOTP}
+          onRequestOTP={handleRequestOTP}
+          onVerifyOTP={handleVerifyOTP}
           onSuccess={() => navigate({ to: redirectTo, replace: true })}
         />
       </AuthContainer>

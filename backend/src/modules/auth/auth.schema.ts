@@ -53,3 +53,15 @@ export const VerifyRouteSchema = {
     }),
   },
 };
+
+export const LogoutSchema = {
+  security: [{ cookieAuth: [] }],
+  response: {
+    200: Type.Object({
+      message: Type.String(),
+    }),
+    401: Type.Object({
+      error: Type.String(),
+    }),
+  },
+};

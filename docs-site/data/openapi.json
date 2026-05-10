@@ -3,7 +3,7 @@
   "info": {
     "title": "Poke Query API",
     "version": "1.0.0",
-    "description": "A REST API for sharing and discovering Pokémon GO search queries.\n\n**Repository:** [github.com/jameshschuler/poke-query](https://github.com/jameshschuler/poke-query)\n\n## What This API Does\n\nTrainers can create, save, share, fork, favorite, and discover reusable in-game search strings (e.g. `cp2500-&!shadow`) with the community.\n\n## Getting Started\n\n### 1. Run the backend locally\n\n```bash\ncd backend\nnpm install\nnpm run db:migrate\nnpm run dev\n```\n\nThe server starts at **http://localhost:3000**.\n\n### 2. Authenticate\n\n1. `POST /auth/login` with your email — triggers an OTP email.\n2. `POST /auth/verify` with `email` + `token` (or `token_hash` from the magic link).\n3. The response sets an `sb-access-token` HttpOnly cookie. All protected endpoints require this cookie.\n\n### 3. Call a protected endpoint\n\n```bash\ncurl -X POST \"http://localhost:3000/api/v1/queries\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Cookie: sb-access-token=YOUR_TOKEN\" \\\n  -d '{\"title\":\"Great League IV\",\"query\":\"4*&cp-1500\",\"isPublic\":false}'\n```\n\n## Authentication Model\n\nThis API uses **cookie-based auth** via Supabase.\n\n| Detail           | Value                              |\n| ---------------- | ---------------------------------- |\n| Cookie name      | `sb-access-token`                  |\n| Lifetime         | 1 hour (access), 7 days (refresh)  |\n| Protected routes | Marked with the 🔒 lock icon below |\n"
+    "description": "A REST API for sharing and discovering Pokémon GO search queries.\n\n**Repository:** [github.com/jameshschuler/poke-query](https://github.com/jameshschuler/poke-query)\n\n## What This API Does\n\nTrainers can create, save, share, fork, favorite, and discover reusable in-game search strings (e.g. `cp2500-&!shadow`) with the community.\n\n## Getting Started\n\n### 1. Run the backend locally\n\n```bash\ncd backend\nnpm install\nnpm run db:migrate\nnpm run dev\n```\n\nThe server starts at **http://localhost:3000**.\n\n### 2. Authenticate\n\n1. `POST /api/v1/auth/login` with your email — triggers an OTP email.\n2. `POST /api/v1/auth/verify` with `email` + `token` (or `token_hash` from the magic link).\n3. `POST /api/v1/auth/logout` ends the session and clears auth cookies.\n4. The response sets an `sb-access-token` HttpOnly cookie. All protected endpoints require this cookie.\n\n### 3. Call a protected endpoint\n\n```bash\ncurl -X POST \"http://localhost:3000/api/v1/queries\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Cookie: sb-access-token=YOUR_TOKEN\" \\\n  -d '{\"title\":\"Great League IV\",\"query\":\"4*&cp-1500\",\"isPublic\":false}'\n```\n\n## Authentication Model\n\nThis API uses **cookie-based auth** via Supabase.\n\n| Detail           | Value                              |\n| ---------------- | ---------------------------------- |\n| Cookie name      | `sb-access-token`                  |\n| Lifetime         | 1 hour (access), 7 days (refresh)  |\n| Protected routes | Marked with the 🔒 lock icon below |\n"
   },
   "components": {
     "securitySchemes": {
@@ -17,7 +17,7 @@
     "schemas": {}
   },
   "paths": {
-    "/auth/login": {
+    "/api/v1/auth/login": {
       "post": {
         "requestBody": {
           "required": true,
@@ -78,7 +78,7 @@
         }
       }
     },
-    "/auth/verify": {
+    "/api/v1/auth/verify": {
       "post": {
         "requestBody": {
           "required": true,
@@ -113,43 +113,6 @@
                   },
                   "token_hash": {
                     "description": "The token_hash from the Magic Link URL",
-                    "type": "string"
-                  },
-                  "username": {
-                    "minLength": 3,
-                    "maxLength": 20,
-                    "pattern": "^[a-zA-Z0-9_]+$",
-                    "type": "string"
-                  },
-                  "level": {
-                    "minimum": 1,
-                    "maximum": 50,
-                    "type": "integer"
-                  },
-                  "team": {
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "enum": [
-                          "mystic"
-                        ]
-                      },
-                      {
-                        "type": "string",
-                        "enum": [
-                          "valor"
-                        ]
-                      },
-                      {
-                        "type": "string",
-                        "enum": [
-                          "instinct"
-                        ]
-                      }
-                    ]
-                  },
-                  "avatarUrl": {
-                    "format": "uri",
                     "type": "string"
                   }
                 }
@@ -215,6 +178,53 @@
         }
       }
     },
+    "/api/v1/auth/logout": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "message"
+                  ],
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/users/me": {
       "get": {
         "security": [
@@ -230,10 +240,13 @@
                 "schema": {
                   "type": "object",
                   "required": [
+                    "hasTrainer",
                     "id",
                     "username",
                     "team",
                     "level",
+                    "trainerCode",
+                    "isProfilePublic",
                     "avatarUrl",
                     "queryCount",
                     "favoriteCount",
@@ -241,6 +254,9 @@
                     "forkCount"
                   ],
                   "properties": {
+                    "hasTrainer": {
+                      "type": "boolean"
+                    },
                     "id": {
                       "type": "string"
                     },
@@ -281,6 +297,19 @@
                           "type": "null"
                         }
                       ]
+                    },
+                    "trainerCode": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "isProfilePublic": {
+                      "type": "boolean"
                     },
                     "avatarUrl": {
                       "anyOf": [
@@ -389,6 +418,13 @@
                       }
                     ]
                   },
+                  "trainerCode": {
+                    "pattern": "^[0-9]{4}[ -]?[0-9]{4}[ -]?[0-9]{4}$",
+                    "type": "string"
+                  },
+                  "isProfilePublic": {
+                    "type": "boolean"
+                  },
                   "avatarUrl": {
                     "format": "uri",
                     "type": "string"
@@ -475,6 +511,24 @@
                 }
               }
             }
+          },
+          "500": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       },
@@ -507,6 +561,24 @@
             }
           },
           "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
             "description": "Default Response",
             "content": {
               "application/json": {
@@ -558,6 +630,7 @@
                           "username",
                           "team",
                           "level",
+                          "trainerCode",
                           "avatarUrl",
                           "followedAt"
                         ],
@@ -597,6 +670,16 @@
                             "anyOf": [
                               {
                                 "type": "integer"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "trainerCode": {
+                            "anyOf": [
+                              {
+                                "type": "string"
                               },
                               {
                                 "type": "null"
@@ -688,6 +771,7 @@
                     "username",
                     "team",
                     "level",
+                    "trainerCode",
                     "avatarUrl",
                     "queryCount",
                     "forkCount"
@@ -728,6 +812,16 @@
                       "anyOf": [
                         {
                           "type": "integer"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "trainerCode": {
+                      "anyOf": [
+                        {
+                          "type": "string"
                         },
                         {
                           "type": "null"
@@ -813,6 +907,7 @@
                           "username",
                           "team",
                           "level",
+                          "trainerCode",
                           "avatarUrl",
                           "followedAt"
                         ],
@@ -852,6 +947,16 @@
                             "anyOf": [
                               {
                                 "type": "integer"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "trainerCode": {
+                            "anyOf": [
+                              {
+                                "type": "string"
                               },
                               {
                                 "type": "null"
@@ -1826,7 +1931,8 @@
                               "username",
                               "avatarUrl",
                               "team",
-                              "level"
+                              "level",
+                              "trainerCode"
                             ],
                             "properties": {
                               "id": {
@@ -1874,6 +1980,16 @@
                                 "anyOf": [
                                   {
                                     "type": "integer"
+                                  },
+                                  {
+                                    "type": "null"
+                                  }
+                                ]
+                              },
+                              "trainerCode": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
                                   },
                                   {
                                     "type": "null"

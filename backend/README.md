@@ -98,9 +98,9 @@ The endpoint reference is generated from OpenAPI JSON and merged with a manual q
 
 | Method   | Path                             | Auth | Description                                                          |
 | -------- | -------------------------------- | ---- | -------------------------------------------------------------------- |
-| `POST`   | `/auth/login`                    |      | Send OTP to email                                                    |
-| `POST`   | `/auth/verify`                   |      | Verify OTP and set session cookie                                    |
-| `POST`   | `/auth/logout`                   | ✓    | End session                                                          |
+| `POST`   | `/api/v1/auth/login`             |      | Send OTP to email                                                    |
+| `POST`   | `/api/v1/auth/verify`            |      | Verify OTP and set session cookie                                    |
+| `POST`   | `/api/v1/auth/logout`            | ✓    | End session                                                          |
 | `GET`    | `/api/v1/users/me`               | ✓    | Get your own profile with query, favorite, follower, and fork counts |
 | `GET`    | `/api/v1/users/me/followers`     | ✓    | List trainers who follow you                                         |
 | `PATCH`  | `/api/v1/users/me`               | ✓    | Update your profile                                                  |

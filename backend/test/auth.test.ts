@@ -17,7 +17,7 @@ describe("Authentication Flow", () => {
   test("Step 1: POST /login sends OTP", async () => {
     const res = await app.inject({
       method: "POST",
-      url: "/auth/login",
+      url: "/api/v1/auth/login",
       payload: { email: testEmail },
     });
 
@@ -27,7 +27,7 @@ describe("Authentication Flow", () => {
   test("Step 2: POST /verify sets the cookie", async () => {
     const res = await app.inject({
       method: "POST",
-      url: "/auth/verify",
+      url: "/api/v1/auth/verify",
       payload: {
         email: testEmail,
         token: "123456", // In a real test, you'd mock the Supabase response
@@ -43,7 +43,7 @@ describe("Authentication Flow", () => {
     // 1. Get a valid cookie from a simulated verify
     const verifyRes = await app.inject({
       method: "POST",
-      url: "/auth/verify",
+      url: "/api/v1/auth/verify",
       payload: { email: testEmail, token: "123456" },
     });
 
@@ -87,6 +87,20 @@ describe("Authentication Flow", () => {
     expect(meRes.statusCode).toBe(200);
     const user = meRes.json();
     expect(user.id).toBe("uuid-123");
+  });
+
+  test("Step 4: POST /logout clears auth cookies", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/logout",
+      cookies: {
+        "sb-access-token": "mock-token",
+      },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ message: "Logged out successfully" });
+    expect(res.headers["set-cookie"]).toBeDefined();
   });
 });
 
