@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { AuthContainer, OTPForm } from '@authabase/react'
+import { AuthContainer, OTPForm, useAuth } from '@authabase/react'
 import type { OTPRequestPayload, OTPVerifyPayload } from '@authabase/react'
 import { useMemo } from 'react'
 import { login, verify } from '#/lib/poke-query-api'
@@ -11,6 +11,7 @@ type LoginSearch = {
 }
 
 export const Route = createFileRoute('/login')({
+  ssr: false,
   validateSearch: (search): LoginSearch => ({
     redirect: typeof search.redirect === 'string' ? search.redirect : undefined,
   }),
@@ -22,6 +23,7 @@ export const Route = createFileRoute('/login')({
 
 function LoginPage() {
   const navigate = useNavigate()
+  const { refreshSession } = useAuth()
   const search = Route.useSearch()
   const redirectTo = useMemo(
     () => search.redirect ?? '/dashboard',
@@ -36,6 +38,7 @@ function LoginPage() {
   async function handleVerifyOTP({ email, token }: OTPVerifyPayload) {
     if (!email) throw new Error('Email is required')
     await verify({ email, token })
+    await refreshSession()
   }
 
   return (
@@ -45,13 +48,20 @@ function LoginPage() {
         subtitle="Enter your email to receive a one-time login code"
       >
         <OTPForm
-          onError={(err) => {
-            console.error(err)
+          events={{
+            onVerified: () => {
+              // redirect to /dashboard
+              void navigate({ to: redirectTo, replace: true })
+            },
           }}
-          enabledMethods={{ email: true, phone: false }}
-          onRequestOTP={handleRequestOTP}
-          onVerifyOTP={handleVerifyOTP}
-          onSuccess={() => navigate({ to: redirectTo, replace: true })}
+          strategy={{
+            mode: 'custom',
+            requestOTP: handleRequestOTP,
+            verifyOTP: async (payload) => {
+              await handleVerifyOTP(payload)
+              //return { email: payload.email }
+            },
+          }}
         />
       </AuthContainer>
     </main>

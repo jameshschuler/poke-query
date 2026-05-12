@@ -1,18 +1,18 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '@authabase/react'
-import * as React from 'react'
+import { requireGuest } from '#/lib/route-auth'
 
-export const Route = createFileRoute('/')({ component: IndexPage })
+export const Route = createFileRoute('/')({
+  ssr: false,
+  beforeLoad: async () => {
+    await requireGuest()
+  },
+  component: IndexPage,
+})
 
 function IndexPage() {
   const { user, isLoading } = useAuth()
   const navigate = useNavigate()
-
-  React.useEffect(() => {
-    if (!isLoading && user) {
-      void navigate({ to: '/dashboard', replace: true })
-    }
-  }, [isLoading, user, navigate])
 
   if (isLoading) {
     return (

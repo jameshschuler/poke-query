@@ -93,6 +93,7 @@ describe("GET /api/v1/users/me", () => {
     expect(res.statusCode).toBe(200);
     const body = res.json();
     expect(body.id).toBe("uuid-123");
+    expect(body.email).toBe("ash@example.com");
     expect(body.username).toBe("AshKetchum");
     expect(body.team).toBe("mystic");
     expect(body.trainerCode).toBe("1234 5678 9012");
@@ -116,6 +117,7 @@ describe("GET /api/v1/users/me", () => {
     expect(res.json()).toMatchObject({
       hasTrainer: false,
       id: "uuid-123",
+      email: "ash@example.com",
       team: null,
       level: null,
       trainerCode: null,

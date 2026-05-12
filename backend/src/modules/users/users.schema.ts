@@ -32,6 +32,7 @@ export const GetMeSchema = {
     200: Type.Object({
       hasTrainer: Type.Boolean(),
       id: Type.String(),
+      email: Type.Union([Type.String({ format: "email" }), Type.Null()]),
       username: Type.String(),
       team: Type.Union([
         Type.Literal("mystic"),

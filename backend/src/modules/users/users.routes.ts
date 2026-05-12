@@ -60,6 +60,7 @@ export async function userRoutes(fastify: FastifyTypebox) {
     { preHandler: [fastify.authenticate], schema: GetMeSchema },
     async (request, reply) => {
       const userId = request.user.id;
+      const email = request.user.email ?? null;
 
       const [row] = await fastify.db
         .select({
@@ -97,6 +98,7 @@ export async function userRoutes(fastify: FastifyTypebox) {
         return reply.code(200).send({
           hasTrainer: false,
           id: userId,
+          email,
           username: request.user.email?.split("@")[0] ?? `trainer_${userId.slice(0, 4)}`,
           team: null,
           level: null,
@@ -112,6 +114,7 @@ export async function userRoutes(fastify: FastifyTypebox) {
 
       return {
         hasTrainer: true,
+        email,
         ...row,
         team: row.team as "mystic" | "valor" | "instinct" | null,
         trainerCode: row.trainerCode,

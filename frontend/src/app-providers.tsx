@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
+import { ApiRequestError, getMe } from '#/lib/poke-query-api'
 
 export function AppProviders({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -26,6 +27,29 @@ export function AppProviders({ children }: { children: ReactNode }) {
       redirectUrl:
         import.meta.env.VITE_AUTH_REDIRECT_URL ??
         (typeof window !== 'undefined' ? window.location.origin : undefined),
+      getCurrentUser: async () => {
+        try {
+          const user = await getMe()
+
+          return {
+            id: user.id,
+            email: user.email ?? undefined,
+            user_metadata: {
+              username: user.username,
+              team: user.team,
+              level: user.level,
+              avatarUrl: user.avatarUrl,
+              hasTrainer: user.hasTrainer,
+            },
+          }
+        } catch (error) {
+          if (error instanceof ApiRequestError && error.status === 401) {
+            return null
+          }
+
+          throw error
+        }
+      },
     }),
     [],
   )

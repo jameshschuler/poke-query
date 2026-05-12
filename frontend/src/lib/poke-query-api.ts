@@ -26,7 +26,7 @@ export class ApiRequestError extends Error {
 
 export const apiBaseUrl =
   import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ||
-  'http://localhost:3001'
+  'http://localhost:4000'
 
 type RequestOptions = Omit<RequestInit, 'body' | 'method'> & {
   method?: 'GET' | 'POST' | 'PATCH' | 'DELETE'
@@ -98,6 +98,7 @@ export type GetTrainerResponse = TrainerSummary & {
 
 export type GetMeResponse = TrainerSummary & {
   hasTrainer: boolean
+  email: string | null
   queryCount: number
   favoriteCount: number
   followerCount: number
@@ -156,16 +157,22 @@ export type CommunityQueryParams = {
 }
 
 export function login(body: LoginRequest): Promise<MessageResponse> {
-  return apiRequest<MessageResponse>('/auth/login', {
+  return apiRequest<MessageResponse>('/api/v1/auth/login', {
     method: 'POST',
     body,
   })
 }
 
 export function verify(body: VerifyRequest): Promise<MessageResponse> {
-  return apiRequest<MessageResponse>('/auth/verify', {
+  return apiRequest<MessageResponse>('/api/v1/auth/verify', {
     method: 'POST',
     body,
+  })
+}
+
+export function logout(): Promise<MessageResponse> {
+  return apiRequest<MessageResponse>('/api/v1/auth/logout', {
+    method: 'POST',
   })
 }
 
