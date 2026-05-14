@@ -5,6 +5,8 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { ApiRequestError, getMe } from '#/lib/poke-query-api'
+import { setCachedUser } from '#/lib/route-auth'
+import { TooltipProvider } from '#/components/ui/tooltip'
 
 export function AppProviders({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -30,6 +32,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       getCurrentUser: async () => {
         try {
           const user = await getMe()
+          setCachedUser(user)
 
           return {
             id: user.id,
@@ -44,6 +47,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
           }
         } catch (error) {
           if (error instanceof ApiRequestError && error.status === 401) {
+            setCachedUser(null)
             return null
           }
 
@@ -55,11 +59,13 @@ export function AppProviders({ children }: { children: ReactNode }) {
   )
 
   return (
-    <AuthProvider config={authConfig}>
-      <QueryClientProvider client={queryClient}>
-        {children}
-        <ReactQueryDevtools initialIsOpen={false} />
-      </QueryClientProvider>
-    </AuthProvider>
+    <TooltipProvider>
+      <AuthProvider config={authConfig}>
+        <QueryClientProvider client={queryClient}>
+          {children}
+          <ReactQueryDevtools initialIsOpen={false} />
+        </QueryClientProvider>
+      </AuthProvider>
+    </TooltipProvider>
   )
 }

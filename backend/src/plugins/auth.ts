@@ -4,7 +4,11 @@ import { supabase } from "../lib/supabase.js";
 
 const authPlugin: FastifyPluginAsync = async (fastify) => {
   fastify.decorate("authenticate", async (request, reply) => {
-    const token = request.cookies["sb-access-token"];
+    const cookieToken = request.cookies["sb-access-token"];
+    const authHeader = request.headers.authorization;
+    const bearerToken =
+      typeof authHeader === "string" ? authHeader.match(/^Bearer\s+(.+)$/i)?.[1] : undefined;
+    const token = cookieToken ?? bearerToken;
 
     if (!token) return reply.code(401).send({ error: "Unauthorized" });
 

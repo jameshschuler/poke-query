@@ -10,12 +10,36 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as LibraryRouteImport } from './routes/library'
+import { Route as ForkedRouteImport } from './routes/forked'
+import { Route as FavoritesRouteImport } from './routes/favorites'
+import { Route as DiscoverRouteImport } from './routes/discover'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LibraryRoute = LibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForkedRoute = ForkedRouteImport.update({
+  id: '/forked',
+  path: '/forked',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FavoritesRoute = FavoritesRouteImport.update({
+  id: '/favorites',
+  path: '/favorites',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DiscoverRoute = DiscoverRouteImport.update({
+  id: '/discover',
+  path: '/discover',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -32,30 +56,68 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/discover': typeof DiscoverRoute
+  '/favorites': typeof FavoritesRoute
+  '/forked': typeof ForkedRoute
+  '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/discover': typeof DiscoverRoute
+  '/favorites': typeof FavoritesRoute
+  '/forked': typeof ForkedRoute
+  '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/discover': typeof DiscoverRoute
+  '/favorites': typeof FavoritesRoute
+  '/forked': typeof ForkedRoute
+  '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/login'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/discover'
+    | '/favorites'
+    | '/forked'
+    | '/library'
+    | '/login'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/login'
-  id: '__root__' | '/' | '/dashboard' | '/login'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/discover'
+    | '/favorites'
+    | '/forked'
+    | '/library'
+    | '/login'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/discover'
+    | '/favorites'
+    | '/forked'
+    | '/library'
+    | '/login'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
+  DiscoverRoute: typeof DiscoverRoute
+  FavoritesRoute: typeof FavoritesRoute
+  ForkedRoute: typeof ForkedRoute
+  LibraryRoute: typeof LibraryRoute
   LoginRoute: typeof LoginRoute
 }
 
@@ -66,6 +128,34 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/library': {
+      id: '/library'
+      path: '/library'
+      fullPath: '/library'
+      preLoaderRoute: typeof LibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forked': {
+      id: '/forked'
+      path: '/forked'
+      fullPath: '/forked'
+      preLoaderRoute: typeof ForkedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/favorites': {
+      id: '/favorites'
+      path: '/favorites'
+      fullPath: '/favorites'
+      preLoaderRoute: typeof FavoritesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/discover': {
+      id: '/discover'
+      path: '/discover'
+      fullPath: '/discover'
+      preLoaderRoute: typeof DiscoverRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -88,6 +178,10 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
+  DiscoverRoute: DiscoverRoute,
+  FavoritesRoute: FavoritesRoute,
+  ForkedRoute: ForkedRoute,
+  LibraryRoute: LibraryRoute,
   LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport

@@ -34,6 +34,72 @@ type RequestOptions = Omit<RequestInit, 'body' | 'method'> & {
   parseAs?: 'json' | 'void'
 }
 
+function findAccessToken(value: unknown): string | null {
+  if (!value) {
+    return null
+  }
+
+  if (typeof value === 'object') {
+    if (
+      'access_token' in value &&
+      typeof (value as { access_token?: unknown }).access_token === 'string'
+    ) {
+      return (value as { access_token: string }).access_token
+    }
+
+    if (Array.isArray(value)) {
+      for (const entry of value) {
+        const token = findAccessToken(entry)
+        if (token) {
+          return token
+        }
+      }
+      return null
+    }
+
+    for (const entry of Object.values(value as Record<string, unknown>)) {
+      const token = findAccessToken(entry)
+      if (token) {
+        return token
+      }
+    }
+  }
+
+  return null
+}
+
+function getSupabaseAccessTokenFromStorage(): string | null {
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  try {
+    for (let i = 0; i < window.localStorage.length; i += 1) {
+      const key = window.localStorage.key(i)
+
+      if (!key || !key.startsWith('sb-') || !key.endsWith('-auth-token')) {
+        continue
+      }
+
+      const raw = window.localStorage.getItem(key)
+      if (!raw) {
+        continue
+      }
+
+      const parsed = JSON.parse(raw) as unknown
+      const token = findAccessToken(parsed)
+
+      if (token) {
+        return token
+      }
+    }
+  } catch {
+    return null
+  }
+
+  return null
+}
+
 async function apiRequest<T>(
   path: string,
   {
@@ -44,13 +110,21 @@ async function apiRequest<T>(
     ...init
   }: RequestOptions = {},
 ): Promise<T> {
+  const requestHeaders = new Headers(headers)
+
+  if (body !== undefined && !requestHeaders.has('content-type')) {
+    requestHeaders.set('content-type', 'application/json')
+  }
+
+  const accessToken = getSupabaseAccessTokenFromStorage()
+  if (accessToken && !requestHeaders.has('authorization')) {
+    requestHeaders.set('authorization', `Bearer ${accessToken}`)
+  }
+
   const response = await fetch(`${apiBaseUrl}${path}`, {
     method,
     credentials: 'include',
-    headers: {
-      ...(body !== undefined ? { 'content-type': 'application/json' } : {}),
-      ...headers,
-    },
+    headers: requestHeaders,
     body: body !== undefined ? JSON.stringify(body) : undefined,
     ...init,
   })
