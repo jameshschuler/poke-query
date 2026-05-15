@@ -6,6 +6,7 @@ import { useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { ApiRequestError, getMe } from '#/lib/poke-query-api'
 import { setCachedUser } from '#/lib/route-auth'
+import { ThemeToggle } from '#/components/theme-toggle'
 import { TooltipProvider } from '#/components/ui/tooltip'
 
 export function AppProviders({ children }: { children: ReactNode }) {
@@ -63,6 +64,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       <AuthProvider config={authConfig}>
         <QueryClientProvider client={queryClient}>
           {children}
+          <ThemeToggle />
           <ReactQueryDevtools initialIsOpen={false} />
         </QueryClientProvider>
       </AuthProvider>
