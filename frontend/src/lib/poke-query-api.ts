@@ -216,6 +216,15 @@ export type UpdateQueryRequest = {
 
 export type CommunityQuery = {
   id: string
+  title: string
+  query: string
+  description: string | null
+  copyCount: number
+  favoriteCount: number
+  forkCount: number
+  autoTags: string[]
+  createdAt: string
+  updatedAt: string
   creator: {
     id: string
     username: string
@@ -225,9 +234,95 @@ export type CommunityQuery = {
   } | null
 }
 
+export type QueryDetail = CommunityQuery & {
+  isPublic: boolean
+  forks: Array<{
+    id: string
+    title: string
+    createdAt: string
+    creator: {
+      id: string
+      username: string
+      avatarUrl: string | null
+      team: string | null
+      level: number | null
+    } | null
+  }>
+}
+
+export function getQueryById(id: string): Promise<QueryDetail> {
+  return apiRequest<QueryDetail>(`/api/v1/queries/${id}`)
+}
+
+export type TrainerPublicQuery = {
+  id: string
+  title: string
+  query: string
+  description: string | null
+  copyCount: number
+  favoriteCount: number
+  forkCount: number
+  autoTags: string[]
+  createdAt: string
+}
+
+export type TrainerProfile = {
+  id: string
+  username: string
+  team: Team | null
+  level: number | null
+  avatarUrl: string | null
+  isProfilePublic: boolean
+  deactivatedAt: string | null
+  createdAt: string
+  stringCount: number
+  favoriteCount: number
+  forkCount: number
+  followerCount: number
+}
+
+export function getTrainerByUsername(
+  username: string,
+): Promise<TrainerProfile> {
+  return apiRequest<TrainerProfile>(
+    `/api/v1/users/by-username/${encodeURIComponent(username)}`,
+  )
+}
+
+export function getTrainerStrings(
+  id: string,
+): Promise<{ strings: TrainerPublicQuery[] }> {
+  return apiRequest(`/api/v1/users/${encodeURIComponent(id)}/strings`)
+}
+
+export function getTrainerForks(
+  id: string,
+): Promise<{ forks: TrainerPublicQuery[] }> {
+  return apiRequest(`/api/v1/users/${encodeURIComponent(id)}/forks`)
+}
+
+export function getTrainerFavorites(
+  id: string,
+): Promise<{ favorites: TrainerPublicQuery[] }> {
+  return apiRequest(`/api/v1/users/${encodeURIComponent(id)}/favorites`)
+}
+
 export type CommunityQueryParams = {
   tag?: string
-  sort?: 'new' | 'popular'
+  filter?: 'all' | 'new' | 'popular'
+  sort?: 'created_asc' | 'created_desc' | 'title_asc' | 'title_desc' | 'popular'
+  limit?: number
+  offset?: number
+}
+
+export type CommunityQueriesPage = {
+  items: CommunityQuery[]
+  pagination: {
+    limit: number
+    offset: number
+    nextOffset: number | null
+    hasMore: boolean
+  }
 }
 
 export function login(body: LoginRequest): Promise<MessageResponse> {
@@ -338,9 +433,9 @@ export function deleteQuery(id: string): Promise<void> {
   })
 }
 
-export function getCommunityQueries(
+export function getCommunityQueriesPage(
   params: CommunityQueryParams = {},
-): Promise<CommunityQuery[]> {
+): Promise<CommunityQueriesPage> {
   const search = new URLSearchParams()
 
   if (params.tag) {
@@ -351,14 +446,39 @@ export function getCommunityQueries(
     search.set('sort', params.sort)
   }
 
+  if (params.filter) {
+    search.set('filter', params.filter)
+  }
+
+  if (typeof params.limit === 'number') {
+    search.set('limit', String(params.limit))
+  }
+
+  if (typeof params.offset === 'number') {
+    search.set('offset', String(params.offset))
+  }
+
   const queryString = search.toString()
   const path = queryString
     ? `/api/v1/community?${queryString}`
     : '/api/v1/community'
 
-  return apiRequest<CommunityQuery[]>(path)
+  return apiRequest<CommunityQueriesPage>(path).catch((error) => {
+    if (error instanceof ApiRequestError && error.status === 404) {
+      return apiRequest<CommunityQueriesPage>(path)
+    }
+
+    throw error
+  })
+}
+
+export async function getCommunityQueries(
+  params: CommunityQueryParams = {},
+): Promise<CommunityQuery[]> {
+  const page = await getCommunityQueriesPage(params)
+  return page.items
 }
 
 export async function fetchCommunityQueries(): Promise<CommunityQuery[]> {
-  return getCommunityQueries({ sort: 'popular' })
+  return getCommunityQueries({ filter: 'popular' })
 }

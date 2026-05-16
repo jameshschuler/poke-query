@@ -96,26 +96,30 @@ The endpoint reference is generated from OpenAPI JSON and merged with a manual q
 
 ## API Routes
 
-| Method   | Path                             | Auth | Description                                                          |
-| -------- | -------------------------------- | ---- | -------------------------------------------------------------------- |
-| `POST`   | `/api/v1/auth/login`             |      | Send OTP to email                                                    |
-| `POST`   | `/api/v1/auth/verify`            |      | Verify OTP and set session cookie                                    |
-| `POST`   | `/api/v1/auth/logout`            | ✓    | End session                                                          |
-| `GET`    | `/api/v1/users/me`               | ✓    | Get your own profile with query, favorite, follower, and fork counts |
-| `GET`    | `/api/v1/users/me/followers`     | ✓    | List trainers who follow you                                         |
-| `PATCH`  | `/api/v1/users/me`               | ✓    | Update your profile                                                  |
-| `POST`   | `/api/v1/users/me/deactivate`    | ✓    | Deactivate your account                                              |
-| `POST`   | `/api/v1/users/me/reactivate`    | ✓    | Reactivate your account                                              |
-| `DELETE` | `/api/v1/users/me`               | ✓    | Delete your account                                                  |
-| `GET`    | `/api/v1/users/:id`              |      | Get a trainer's public profile                                       |
-| `GET`    | `/api/v1/users/:id/followers`    |      | List followers for a specific trainer                                |
-| `POST`   | `/api/v1/users/:id/follow`       | ✓    | Follow another trainer                                               |
-| `POST`   | `/api/v1/users/:id/unfollow`     | ✓    | Unfollow another trainer                                             |
-| `GET`    | `/api/v1/queries`                | ✓    | List your queries                                                    |
-| `POST`   | `/api/v1/queries`                | ✓    | Create a query                                                       |
-| `PATCH`  | `/api/v1/queries/:id`            | ✓    | Update a query                                                       |
-| `DELETE` | `/api/v1/queries/:id`            | ✓    | Delete a query                                                       |
-| `POST`   | `/api/v1/queries/:id/fork`       | ✓    | Fork a public query                                                  |
-| `POST`   | `/api/v1/queries/:id/favorite`   | ✓    | Favorite a visible query (public or owned)                           |
-| `POST`   | `/api/v1/queries/:id/unfavorite` | ✓    | Remove a query from your favorites                                   |
-| `GET`    | `/api/v1/community`              |      | Browse public queries                                                |
+| Method   | Path                                  | Auth | Description                                                          |
+| -------- | ------------------------------------- | ---- | -------------------------------------------------------------------- |
+| `POST`   | `/api/v1/auth/login`                  |      | Send OTP to email                                                    |
+| `POST`   | `/api/v1/auth/verify`                 |      | Verify OTP and set session cookie                                    |
+| `POST`   | `/api/v1/auth/logout`                 | ✓    | End session                                                          |
+| `GET`    | `/api/v1/users/me`                    | ✓    | Get your own profile with query, favorite, follower, and fork counts |
+| `GET`    | `/api/v1/users/me/followers`          | ✓    | List trainers who follow you                                         |
+| `PATCH`  | `/api/v1/users/me`                    | ✓    | Update your profile                                                  |
+| `POST`   | `/api/v1/users/me/deactivate`         | ✓    | Deactivate your account                                              |
+| `POST`   | `/api/v1/users/me/reactivate`         | ✓    | Reactivate your account                                              |
+| `DELETE` | `/api/v1/users/me`                    | ✓    | Delete your account                                                  |
+| `GET`    | `/api/v1/users/by-username/:username` |      | Get public trainer profile + aggregate counts by username            |
+| `GET`    | `/api/v1/users/:id/strings`           |      | List public non-fork strings created by a trainer                    |
+| `GET`    | `/api/v1/users/:id/forks`             |      | List public forks created by a trainer                               |
+| `GET`    | `/api/v1/users/:id/favorites`         |      | List public queries favorited by a trainer                           |
+| `GET`    | `/api/v1/users/:id`                   |      | Get a trainer's public profile                                       |
+| `GET`    | `/api/v1/users/:id/followers`         |      | List followers for a specific trainer                                |
+| `POST`   | `/api/v1/users/:id/follow`            | ✓    | Follow another trainer                                               |
+| `POST`   | `/api/v1/users/:id/unfollow`          | ✓    | Unfollow another trainer                                             |
+| `GET`    | `/api/v1/queries`                     | ✓    | List your queries                                                    |
+| `POST`   | `/api/v1/queries`                     | ✓    | Create a query                                                       |
+| `PATCH`  | `/api/v1/queries/:id`                 | ✓    | Update a query                                                       |
+| `DELETE` | `/api/v1/queries/:id`                 | ✓    | Delete a query                                                       |
+| `POST`   | `/api/v1/queries/:id/fork`            | ✓    | Fork a public query                                                  |
+| `POST`   | `/api/v1/queries/:id/favorite`        | ✓    | Favorite a visible query (public or owned)                           |
+| `POST`   | `/api/v1/queries/:id/unfavorite`      | ✓    | Remove a query from your favorites                                   |
+| `GET`    | `/api/v1/community`                   |      | Browse public queries                                                |

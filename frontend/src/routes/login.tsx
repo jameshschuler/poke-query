@@ -59,7 +59,7 @@ function LoginPage() {
             requestOTP: handleRequestOTP,
             verifyOTP: async (payload) => {
               await handleVerifyOTP(payload)
-              //return { email: payload.email }
+              // return { email: payload.email }
             },
           }}
         />

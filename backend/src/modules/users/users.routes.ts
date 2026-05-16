@@ -6,6 +6,10 @@ import {
   DeleteTrainerSchema,
   GetMeSchema,
   GetTrainerSchema,
+  GetTrainerByUsernameSchema,
+  GetTrainerStringsSchema,
+  GetTrainerForksSchema,
+  GetTrainerFavoritesSchema,
   FollowTrainerSchema,
   UnfollowTrainerSchema,
   GetTrainerFollowersSchema,
@@ -13,7 +17,7 @@ import {
 } from "./users.schema.js";
 import { getSupabaseAdmin } from "../../lib/supabase.js";
 import { trainers, searchQueries, favorites, followers } from "../../db/schema.js";
-import { and, count, desc, eq, sql } from "drizzle-orm";
+import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
 
 export async function userRoutes(fastify: FastifyTypebox) {
   const server = fastify.withTypeProvider<TypeBoxTypeProvider>();
@@ -23,7 +27,6 @@ export async function userRoutes(fastify: FastifyTypebox) {
     if (digits.length !== 12) {
       return value;
     }
-
     return `${digits.slice(0, 4)} ${digits.slice(4, 8)} ${digits.slice(8, 12)}`;
   };
 
@@ -54,6 +57,32 @@ export async function userRoutes(fastify: FastifyTypebox) {
       .innerJoin(trainers, eq(trainers.id, followers.followerId))
       .where(eq(followers.followedId, trainerId))
       .orderBy(desc(followers.createdAt));
+
+  const publicQuerySelect = {
+    id: searchQueries.id,
+    title: searchQueries.title,
+    query: searchQueries.query,
+    description: searchQueries.description,
+    copyCount: searchQueries.copyCount,
+    favoriteCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM pokequery.favorites f WHERE f.query_id = ${searchQueries.id}), 0)`,
+    forkCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM pokequery.search_queries forked WHERE forked.parent_query_id = ${searchQueries.id}), 0)`,
+    autoTags: sql<string[]>`COALESCE(${searchQueries.metadata}->'autoTags', '[]'::jsonb)`,
+    createdAt: searchQueries.createdAt,
+  } as const;
+
+  const serializeQuery = (q: {
+    id: string;
+    title: string;
+    query: string;
+    description: string | null;
+    copyCount: number;
+    favoriteCount: number;
+    forkCount: number;
+    autoTags: string[];
+    createdAt: Date;
+  }) => ({ ...q, createdAt: q.createdAt.toISOString() });
+
+  // ── /me ──────────────────────────────────────────────────────────────────
 
   server.get(
     "/me",
@@ -150,6 +179,157 @@ export async function userRoutes(fastify: FastifyTypebox) {
       };
     },
   );
+
+  // ── /by-username/:username ────────────────────────────────────────────────
+
+  server.get(
+    "/by-username/:username",
+    { schema: GetTrainerByUsernameSchema },
+    async (request, reply) => {
+      const { username } = request.params;
+
+      const [trainer] = await fastify.db
+        .select({
+          id: trainers.id,
+          username: trainers.username,
+          team: trainers.team,
+          level: trainers.level,
+          avatarUrl: trainers.avatarUrl,
+          isProfilePublic: trainers.isProfilePublic,
+          deactivatedAt: trainers.deactivatedAt,
+          createdAt: trainers.createdAt,
+        })
+        .from(trainers)
+        .where(eq(trainers.username, username))
+        .limit(1);
+
+      if (!trainer) return reply.code(404).send({ error: "Trainer not found" });
+
+      const [[counts], followerRow] = await Promise.all([
+        fastify.db
+          .select({
+            stringCount: sql<number>`(
+              SELECT COUNT(*)::int
+              FROM pokequery.search_queries sq
+              WHERE sq.creator_id = ${trainer.id}
+                AND sq.is_public = true
+                AND sq.parent_query_id IS NULL
+            )`,
+            forkCount: sql<number>`(
+              SELECT COUNT(*)::int
+              FROM pokequery.search_queries sq
+              WHERE sq.creator_id = ${trainer.id}
+                AND sq.is_public = true
+                AND sq.parent_query_id IS NOT NULL
+            )`,
+            favoriteCount: sql<number>`(
+              SELECT COUNT(*)::int
+              FROM pokequery.favorites f
+              WHERE f.trainer_id = ${trainer.id}
+            )`,
+          })
+          .from(trainers)
+          .where(eq(trainers.id, trainer.id))
+          .limit(1),
+        fastify.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(followers)
+          .where(eq(followers.followedId, trainer.id)),
+      ]);
+
+      return reply.send({
+        id: trainer.id,
+        username: trainer.username,
+        team: trainer.team as "mystic" | "valor" | "instinct" | null,
+        level: trainer.isProfilePublic ? trainer.level : null,
+        avatarUrl: trainer.avatarUrl,
+        isProfilePublic: trainer.isProfilePublic,
+        deactivatedAt: trainer.deactivatedAt?.toISOString() ?? null,
+        createdAt: trainer.createdAt.toISOString(),
+        stringCount: counts?.stringCount ?? 0,
+        favoriteCount: counts?.favoriteCount ?? 0,
+        forkCount: counts?.forkCount ?? 0,
+        followerCount: followerRow[0]?.count ?? 0,
+      });
+    },
+  );
+
+  // ── /:id/strings · /:id/forks · /:id/favorites ───────────────────────────
+
+  server.get("/:id/strings", { schema: GetTrainerStringsSchema }, async (request, reply) => {
+    const { id } = request.params;
+    const [trainer] = await fastify.db
+      .select({ id: trainers.id })
+      .from(trainers)
+      .where(eq(trainers.id, id))
+      .limit(1);
+    if (!trainer) return reply.code(404).send({ error: "Trainer not found" });
+
+    const rows = await fastify.db
+      .select(publicQuerySelect)
+      .from(searchQueries)
+      .where(
+        and(
+          eq(searchQueries.creatorId, id),
+          eq(searchQueries.isPublic, true),
+          isNull(searchQueries.parentQueryId),
+        ),
+      )
+      .orderBy(desc(searchQueries.createdAt))
+      .limit(20);
+
+    return reply.send({ strings: rows.map(serializeQuery) });
+  });
+
+  server.get("/:id/forks", { schema: GetTrainerForksSchema }, async (request, reply) => {
+    const { id } = request.params;
+    const [trainer] = await fastify.db
+      .select({ id: trainers.id })
+      .from(trainers)
+      .where(eq(trainers.id, id))
+      .limit(1);
+    if (!trainer) return reply.code(404).send({ error: "Trainer not found" });
+
+    const rows = await fastify.db
+      .select(publicQuerySelect)
+      .from(searchQueries)
+      .where(
+        and(
+          eq(searchQueries.creatorId, id),
+          eq(searchQueries.isPublic, true),
+          sql`${searchQueries.parentQueryId} IS NOT NULL`,
+        ),
+      )
+      .orderBy(desc(searchQueries.createdAt))
+      .limit(20);
+
+    return reply.send({ forks: rows.map(serializeQuery) });
+  });
+
+  server.get("/:id/favorites", { schema: GetTrainerFavoritesSchema }, async (request, reply) => {
+    const { id } = request.params;
+    const [trainer] = await fastify.db
+      .select({ id: trainers.id })
+      .from(trainers)
+      .where(eq(trainers.id, id))
+      .limit(1);
+    if (!trainer) return reply.code(404).send({ error: "Trainer not found" });
+
+    const rows = await fastify.db
+      .select(publicQuerySelect)
+      .from(favorites)
+      .innerJoin(
+        searchQueries,
+        and(eq(searchQueries.id, favorites.queryId), eq(searchQueries.isPublic, true)),
+      )
+      .where(eq(favorites.trainerId, id))
+      .orderBy(desc(favorites.createdAt))
+      .limit(20);
+
+    return reply.send({ favorites: rows.map(serializeQuery) });
+  });
+
+  // ── /:id ─────────────────────────────────────────────────────────────────
 
   server.get("/:id", { schema: GetTrainerSchema }, async (request, reply) => {
     const { id } = request.params;

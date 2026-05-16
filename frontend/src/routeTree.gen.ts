@@ -16,6 +16,8 @@ import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as DiscoverRouteImport } from './routes/discover'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TrainersUsernameRouteImport } from './routes/trainers.$username'
+import { Route as QueriesQueryIdRouteImport } from './routes/queries.$queryId'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -52,6 +54,16 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TrainersUsernameRoute = TrainersUsernameRouteImport.update({
+  id: '/trainers/$username',
+  path: '/trainers/$username',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QueriesQueryIdRoute = QueriesQueryIdRouteImport.update({
+  id: '/queries/$queryId',
+  path: '/queries/$queryId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -61,6 +73,8 @@ export interface FileRoutesByFullPath {
   '/forked': typeof ForkedRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
+  '/queries/$queryId': typeof QueriesQueryIdRoute
+  '/trainers/$username': typeof TrainersUsernameRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -70,6 +84,8 @@ export interface FileRoutesByTo {
   '/forked': typeof ForkedRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
+  '/queries/$queryId': typeof QueriesQueryIdRoute
+  '/trainers/$username': typeof TrainersUsernameRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,6 +96,8 @@ export interface FileRoutesById {
   '/forked': typeof ForkedRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
+  '/queries/$queryId': typeof QueriesQueryIdRoute
+  '/trainers/$username': typeof TrainersUsernameRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +109,8 @@ export interface FileRouteTypes {
     | '/forked'
     | '/library'
     | '/login'
+    | '/queries/$queryId'
+    | '/trainers/$username'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +120,8 @@ export interface FileRouteTypes {
     | '/forked'
     | '/library'
     | '/login'
+    | '/queries/$queryId'
+    | '/trainers/$username'
   id:
     | '__root__'
     | '/'
@@ -109,6 +131,8 @@ export interface FileRouteTypes {
     | '/forked'
     | '/library'
     | '/login'
+    | '/queries/$queryId'
+    | '/trainers/$username'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -119,6 +143,8 @@ export interface RootRouteChildren {
   ForkedRoute: typeof ForkedRoute
   LibraryRoute: typeof LibraryRoute
   LoginRoute: typeof LoginRoute
+  QueriesQueryIdRoute: typeof QueriesQueryIdRoute
+  TrainersUsernameRoute: typeof TrainersUsernameRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -172,6 +198,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/trainers/$username': {
+      id: '/trainers/$username'
+      path: '/trainers/$username'
+      fullPath: '/trainers/$username'
+      preLoaderRoute: typeof TrainersUsernameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/queries/$queryId': {
+      id: '/queries/$queryId'
+      path: '/queries/$queryId'
+      fullPath: '/queries/$queryId'
+      preLoaderRoute: typeof QueriesQueryIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -183,6 +223,8 @@ const rootRouteChildren: RootRouteChildren = {
   ForkedRoute: ForkedRoute,
   LibraryRoute: LibraryRoute,
   LoginRoute: LoginRoute,
+  QueriesQueryIdRoute: QueriesQueryIdRoute,
+  TrainersUsernameRoute: TrainersUsernameRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

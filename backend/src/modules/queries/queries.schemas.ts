@@ -2,6 +2,48 @@ import { Type } from "@fastify/type-provider-typebox";
 
 const cookieAuthSecurity = [{ cookieAuth: [] }];
 
+const TrainerSchema = Type.Union([
+  Type.Object({
+    id: Type.String(),
+    username: Type.String(),
+    avatarUrl: Type.Union([Type.String(), Type.Null()]),
+    team: Type.Union([Type.String(), Type.Null()]),
+    level: Type.Union([Type.Integer(), Type.Null()]),
+  }),
+  Type.Null(),
+]);
+
+export const GetQuerySchema = {
+  params: Type.Object({
+    id: Type.String(),
+  }),
+  response: {
+    200: Type.Object({
+      id: Type.String(),
+      title: Type.String(),
+      query: Type.String(),
+      description: Type.Union([Type.String(), Type.Null()]),
+      isPublic: Type.Boolean(),
+      copyCount: Type.Integer(),
+      favoriteCount: Type.Integer(),
+      forkCount: Type.Integer(),
+      autoTags: Type.Array(Type.String()),
+      createdAt: Type.String(),
+      updatedAt: Type.String(),
+      creator: TrainerSchema,
+      forks: Type.Array(
+        Type.Object({
+          id: Type.String(),
+          title: Type.String(),
+          createdAt: Type.String(),
+          creator: TrainerSchema,
+        }),
+      ),
+    }),
+    404: Type.Object({ error: Type.String() }),
+  },
+};
+
 export const CreateQuerySchema = {
   security: cookieAuthSecurity,
   body: Type.Object({

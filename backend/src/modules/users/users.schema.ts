@@ -188,3 +188,67 @@ export const GetMeFollowersSchema = {
     404: Type.Object({ error: Type.String() }),
   },
 };
+
+const publicQueryItem = Type.Object({
+  id: Type.String(),
+  title: Type.String(),
+  query: Type.String(),
+  description: Type.Union([Type.String(), Type.Null()]),
+  copyCount: Type.Integer(),
+  favoriteCount: Type.Integer(),
+  forkCount: Type.Integer(),
+  autoTags: Type.Array(Type.String()),
+  createdAt: Type.String(),
+});
+
+export const GetTrainerByUsernameSchema = {
+  params: Type.Object({ username: Type.String() }),
+  response: {
+    200: Type.Object({
+      id: Type.String(),
+      username: Type.String(),
+      team: Type.Union([
+        Type.Literal("mystic"),
+        Type.Literal("valor"),
+        Type.Literal("instinct"),
+        Type.Null(),
+      ]),
+      level: Type.Union([Type.Integer(), Type.Null()]),
+      avatarUrl: Type.Union([Type.String(), Type.Null()]),
+      isProfilePublic: Type.Boolean(),
+      deactivatedAt: Type.Union([Type.String(), Type.Null()]),
+      createdAt: Type.String(),
+      stringCount: Type.Integer(),
+      favoriteCount: Type.Integer(),
+      forkCount: Type.Integer(),
+      followerCount: Type.Integer(),
+    }),
+    404: Type.Object({ error: Type.String() }),
+  },
+};
+
+const trainerIdParams = Type.Object({ id: Type.String({ format: "uuid" }) });
+
+export const GetTrainerStringsSchema = {
+  params: trainerIdParams,
+  response: {
+    200: Type.Object({ strings: Type.Array(publicQueryItem) }),
+    404: Type.Object({ error: Type.String() }),
+  },
+};
+
+export const GetTrainerForksSchema = {
+  params: trainerIdParams,
+  response: {
+    200: Type.Object({ forks: Type.Array(publicQueryItem) }),
+    404: Type.Object({ error: Type.String() }),
+  },
+};
+
+export const GetTrainerFavoritesSchema = {
+  params: trainerIdParams,
+  response: {
+    200: Type.Object({ favorites: Type.Array(publicQueryItem) }),
+    404: Type.Object({ error: Type.String() }),
+  },
+};

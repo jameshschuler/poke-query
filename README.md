@@ -19,7 +19,7 @@ At a high level, the project lets trainers create, manage, and discover reusable
 - Auth via Supabase (OTP/session cookies)
 - Query lifecycle: create, update, delete, fork, copy, favorite, unfavorite
 - Community route with filtering/sorting and creator profile info
-- Trainer profiles with per-user stats
+- Trainer profiles by username with split public lists for strings, forks, and favorites
 - Drizzle ORM + Postgres schema/migrations
 - Unit/integration test suites with Vitest
 

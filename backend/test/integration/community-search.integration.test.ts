@@ -100,7 +100,7 @@ integrationDescribe("Community Search Integration", () => {
 
     const res = await app.inject({
       method: "GET",
-      url: "/api/v1/community/community?tag=high-iv",
+      url: "/api/v1/community?tag=high-iv",
     });
 
     expect(res.statusCode).toBe(200);
@@ -114,7 +114,7 @@ integrationDescribe("Community Search Integration", () => {
         level: number | null;
         trainerCode: string | null;
       } | null;
-    }> = res.json();
+    }> = res.json().items;
     const ids = rows.map((r) => r.id);
 
     expect(ids).toContain(highIvId);
@@ -161,7 +161,7 @@ integrationDescribe("Community Search Integration", () => {
 
     const res = await app.inject({
       method: "GET",
-      url: "/api/v1/community/community?sort=popular",
+      url: "/api/v1/community?filter=popular",
     });
 
     expect(res.statusCode).toBe(200);
@@ -175,7 +175,7 @@ integrationDescribe("Community Search Integration", () => {
         level: number | null;
         trainerCode: string | null;
       } | null;
-    }> = res.json();
+    }> = res.json().items;
     const ids = rows.map((r) => r.id);
 
     expect(ids).toContain(firstId);
@@ -185,5 +185,78 @@ integrationDescribe("Community Search Integration", () => {
     const topRow = rows[0];
     expect(topRow.creator).toBeTruthy();
     expect(topRow.creator?.username).toBe("integration_trainer");
+  });
+
+  it("ranks popularity using copies + favorites + forks", async () => {
+    const first = await app.inject({
+      method: "POST",
+      url: "/api/v1/queries",
+      cookies: { "sb-access-token": "integration-token" },
+      payload: {
+        title: "Favorite + Fork Candidate",
+        query: "cp1000-1500",
+        isPublic: true,
+      },
+    });
+
+    const second = await app.inject({
+      method: "POST",
+      url: "/api/v1/queries",
+      cookies: { "sb-access-token": "integration-token" },
+      payload: {
+        title: "Copy Candidate",
+        query: "cp2500+",
+        isPublic: true,
+      },
+    });
+
+    expect(first.statusCode).toBe(201);
+    expect(second.statusCode).toBe(201);
+
+    const firstId = first.json().id;
+    const secondId = second.json().id;
+
+    // one copy for second => score 1
+    await app.inject({ method: "PATCH", url: `/api/v1/queries/${secondId}/copy`, payload: {} });
+
+    // one favorite + one fork for first => score 2
+    (supabase.auth.getUser as any).mockResolvedValue({
+      data: { user: { id: OTHER_USER_ID, email: "integration-other@example.com" } },
+      error: null,
+    });
+
+    const favoriteRes = await app.inject({
+      method: "POST",
+      url: `/api/v1/queries/${firstId}/favorite`,
+      cookies: { "sb-access-token": "integration-token" },
+      payload: {},
+    });
+    expect(favoriteRes.statusCode).toBe(204);
+
+    const forkRes = await app.inject({
+      method: "POST",
+      url: `/api/v1/queries/${firstId}/fork`,
+      cookies: { "sb-access-token": "integration-token" },
+    });
+    expect(forkRes.statusCode).toBe(201);
+
+    // Switch back to default test user for the community read.
+    (supabase.auth.getUser as any).mockResolvedValue({
+      data: { user: { id: TEST_USER_ID, email: "integration@example.com" } },
+      error: null,
+    });
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/community?filter=popular",
+    });
+
+    expect(res.statusCode).toBe(200);
+    const rows: Array<{ id: string }> = res.json().items;
+    const ids = rows.map((r) => r.id);
+
+    expect(ids).toContain(firstId);
+    expect(ids).toContain(secondId);
+    expect(ids.indexOf(firstId)).toBeLessThan(ids.indexOf(secondId));
   });
 });

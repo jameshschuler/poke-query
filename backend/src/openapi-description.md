@@ -44,3 +44,16 @@ This API uses **cookie-based auth** via Supabase.
 | Cookie name      | `sb-access-token`                  |
 | Lifetime         | 1 hour (access), 7 days (refresh)  |
 | Protected routes | Marked with the 🔒 lock icon below |
+
+## Trainer Profile Endpoints
+
+Public trainer profiles are now split for better caching and tab loading on the frontend:
+
+- `GET /api/v1/users/by-username/:username`
+  - Returns public profile metadata and aggregate counts (`stringCount`, `forkCount`, `favoriteCount`, `followerCount`).
+- `GET /api/v1/users/:id/strings`
+  - Returns up to 20 public non-fork strings by trainer id.
+- `GET /api/v1/users/:id/forks`
+  - Returns up to 20 public forks by trainer id.
+- `GET /api/v1/users/:id/favorites`
+  - Returns up to 20 public favorites by trainer id.

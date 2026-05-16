@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
+import { Toaster } from 'sonner'
 import { ApiRequestError, getMe } from '#/lib/poke-query-api'
 import { setCachedUser } from '#/lib/route-auth'
 import { ThemeToggle } from '#/components/theme-toggle'
@@ -64,6 +65,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       <AuthProvider config={authConfig}>
         <QueryClientProvider client={queryClient}>
           {children}
+          <Toaster richColors position="bottom-right" />
           <ThemeToggle />
           <ReactQueryDevtools initialIsOpen={false} />
         </QueryClientProvider>
