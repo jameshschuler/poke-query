@@ -245,11 +245,10 @@ function TrainerProfilePage() {
                         {trainer.username[0].toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-
                     <div className="space-y-2">
                       <h1 className="text-2xl font-bold">{trainer.username}</h1>
                       <div className="flex flex-wrap items-center gap-2">
-                        {trainer.team ? (
+                        {trainer.isProfilePublic && trainer.team ? (
                           <Badge
                             className={`rounded-full border-0 gap-1.5 ${teamBadgeClass[trainer.team]}`}
                           >
@@ -259,7 +258,7 @@ function TrainerProfilePage() {
                             {teamLabels[trainer.team]}
                           </Badge>
                         ) : null}
-                        {trainer.level ? (
+                        {trainer.isProfilePublic && trainer.level ? (
                           <Badge variant="outline" className="rounded-full">
                             Lv. {trainer.level}
                           </Badge>
@@ -269,6 +268,28 @@ function TrainerProfilePage() {
                           {monthFormatter.format(new Date(trainer.createdAt))}
                         </Badge>
                       </div>
+                      {trainer.isProfilePublic && trainer.trainerCode ? (
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="font-mono text-base bg-muted rounded px-2 py-1 select-all">
+                            {trainer.trainerCode}
+                          </span>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="outline"
+                            className="rounded-full"
+                            onClick={() => {
+                              void navigator.clipboard.writeText(
+                                trainer.trainerCode!,
+                              )
+                              toast.success('Trainer code copied!')
+                            }}
+                            aria-label="Copy trainer code"
+                          >
+                            <CopyIcon className="size-4" />
+                          </Button>
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -296,86 +317,88 @@ function TrainerProfilePage() {
                 </div>
               </div>
 
-              {/* Tabs */}
-              <div className="flex border-t border-border/60 px-6 pt-4">
-                {(
-                  [
-                    {
-                      key: 'strings',
-                      label: 'Strings',
-                      count: trainer.stringCount,
-                    },
-                    {
-                      key: 'forks',
-                      label: 'Forks',
-                      count: trainer.forkCount,
-                    },
-                    {
-                      key: 'favorites',
-                      label: 'Favorites',
-                      count: trainer.favoriteCount,
-                    },
-                  ] as const
-                ).map((tab) => (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    onClick={() => setActiveTab(tab.key)}
-                    className={`mr-6 pb-3 text-sm font-medium transition-colors ${
-                      activeTab === tab.key
-                        ? 'border-b-2 border-foreground text-foreground'
-                        : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >
-                    {tab.label} ({tab.count})
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <section className="space-y-4">
-              <h2 className="px-1 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                Top Strings
-              </h2>
-
-              <div>
-                {activeTab === 'strings' ? (
-                  strings.length > 0 ? (
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 items-stretch">
-                      {strings.map((card) => (
-                        <QueryCard key={card.id} card={card} />
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      No public strings yet.
-                    </p>
-                  )
-                ) : activeTab === 'forks' ? (
-                  forks.length > 0 ? (
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 items-stretch">
-                      {forks.map((card) => (
-                        <QueryCard key={card.id} card={card} />
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      No public forks yet.
-                    </p>
-                  )
-                ) : favs.length > 0 ? (
-                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 items-stretch">
-                    {favs.map((card) => (
-                      <QueryCard key={card.id} card={card} />
+              {/* Tabs and content */}
+              {trainer.isProfilePublic ? (
+                <>
+                  <div className="flex border-t border-border/60 px-6 pt-6 gap-2 sm:gap-4">
+                    {(
+                      [
+                        {
+                          key: 'strings',
+                          label: 'Strings',
+                          count: trainer.stringCount,
+                        },
+                        {
+                          key: 'forks',
+                          label: 'Forks',
+                          count: trainer.forkCount,
+                        },
+                        {
+                          key: 'favorites',
+                          label: 'Favorites',
+                          count: trainer.favoriteCount,
+                        },
+                      ] as const
+                    ).map((tab) => (
+                      <button
+                        key={tab.key}
+                        type="button"
+                        onClick={() => setActiveTab(tab.key)}
+                        className={`pb-3 text-sm font-medium transition-colors ${
+                          activeTab === tab.key
+                            ? 'border-b-2 border-foreground text-foreground'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                        style={{ minWidth: 90 }}
+                      >
+                        {tab.label}{' '}
+                        <span className="ml-0.5">({tab.count})</span>
+                      </button>
                     ))}
                   </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    No favorited strings yet.
-                  </p>
-                )}
-              </div>
-            </section>
+                  <section className="space-y-2 sm:space-y-4 mt-2 p-6">
+                    <h2 className="px-1 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-2">
+                      Top Strings
+                    </h2>
+                    <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 xl:grid-cols-3 items-stretch">
+                      {activeTab === 'strings' ? (
+                        strings.length > 0 ? (
+                          strings.map((card) => (
+                            <QueryCard key={card.id} card={card} />
+                          ))
+                        ) : (
+                          <p className="text-sm text-muted-foreground col-span-full">
+                            No public strings yet.
+                          </p>
+                        )
+                      ) : activeTab === 'forks' ? (
+                        forks.length > 0 ? (
+                          forks.map((card) => (
+                            <QueryCard key={card.id} card={card} />
+                          ))
+                        ) : (
+                          <p className="text-sm text-muted-foreground col-span-full">
+                            No public forks yet.
+                          </p>
+                        )
+                      ) : favs.length > 0 ? (
+                        favs.map((card) => (
+                          <QueryCard key={card.id} card={card} />
+                        ))
+                      ) : (
+                        <p className="text-sm text-muted-foreground col-span-full">
+                          No favorited strings yet.
+                        </p>
+                      )}
+                    </div>
+                  </section>
+                </>
+              ) : (
+                <div className="border-t border-border/60 px-6 py-12 text-center text-muted-foreground text-base font-medium">
+                  Trainer Profile is private
+                </div>
+              )}
+            </div>
           </div>
         )}
       </main>

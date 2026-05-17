@@ -279,6 +279,7 @@ export type TrainerProfile = {
   favoriteCount: number
   forkCount: number
   followerCount: number
+  trainerCode: string | null
 }
 
 export function getTrainerByUsername(

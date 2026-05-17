@@ -71,6 +71,7 @@ async function run() {
     for (const [index, user] of existingAuthUsers.entries()) {
       const team: Team = teams[index % teams.length];
       const username = buildSeedUsername(user.id, index);
+      const isProfilePublic = index === 0 ? false : true;
 
       await db
         .insert(trainers)
@@ -82,7 +83,7 @@ async function run() {
           level: 20 + ((index * 7) % 31),
           trainerCode: formatTrainerCode(index + 1),
           avatarUrl: null,
-          isProfilePublic: true,
+          isProfilePublic,
           createdAt: now,
           updatedAt: now,
         })
@@ -94,7 +95,7 @@ async function run() {
             team,
             level: 20 + ((index * 7) % 31),
             trainerCode: formatTrainerCode(index + 1),
-            isProfilePublic: true,
+            isProfilePublic,
             updatedAt: now,
           },
         });

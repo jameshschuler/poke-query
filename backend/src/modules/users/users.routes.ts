@@ -194,6 +194,7 @@ export async function userRoutes(fastify: FastifyTypebox) {
           username: trainers.username,
           team: trainers.team,
           level: trainers.level,
+          trainerCode: trainers.trainerCode,
           avatarUrl: trainers.avatarUrl,
           isProfilePublic: trainers.isProfilePublic,
           deactivatedAt: trainers.deactivatedAt,
@@ -240,8 +241,11 @@ export async function userRoutes(fastify: FastifyTypebox) {
       return reply.send({
         id: trainer.id,
         username: trainer.username,
-        team: trainer.team as "mystic" | "valor" | "instinct" | null,
+        team: trainer.isProfilePublic
+          ? (trainer.team as "mystic" | "valor" | "instinct" | null)
+          : null,
         level: trainer.isProfilePublic ? trainer.level : null,
+        trainerCode: trainer.isProfilePublic ? trainer.trainerCode : null,
         avatarUrl: trainer.avatarUrl,
         isProfilePublic: trainer.isProfilePublic,
         deactivatedAt: trainer.deactivatedAt?.toISOString() ?? null,

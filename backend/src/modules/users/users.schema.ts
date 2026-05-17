@@ -214,6 +214,7 @@ export const GetTrainerByUsernameSchema = {
         Type.Null(),
       ]),
       level: Type.Union([Type.Integer(), Type.Null()]),
+      trainerCode: Type.Union([Type.String(), Type.Null()]),
       avatarUrl: Type.Union([Type.String(), Type.Null()]),
       isProfilePublic: Type.Boolean(),
       deactivatedAt: Type.Union([Type.String(), Type.Null()]),
