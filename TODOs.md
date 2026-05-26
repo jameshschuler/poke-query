@@ -7,6 +7,4 @@ add endpoint to return tags or categories (all, popular, new,pvp, raid, utility,
 TODO:
 how do tags like 'pvp' or 'raid' get generated?
 
-- Seed followers
-- Update FE to use followers APIs
-- Hide follow button for non-authed users
+- Hide RLS to tables

@@ -1,0 +1,5 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+cd backend && npm run build && npm run lint && npm run format:check && npm test || exit 1
+cd ../frontend && npm run build && npm run lint && npm run check && npm test || exit 1
