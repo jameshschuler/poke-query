@@ -1,3 +1,26 @@
+export type TrainerFollower = {
+  id: string
+  username: string
+  team: Team | null
+  level: number | null
+  trainerCode: string | null
+  isProfilePublic: boolean
+  avatarUrl: string | null
+  followedAt: string
+}
+
+export function getTrainerFollowers(
+  id: string,
+): Promise<{ total: number; followers: TrainerFollower[] }> {
+  return apiRequest(`/api/v1/users/${encodeURIComponent(id)}/followers`)
+}
+
+export function getMeFollowers(): Promise<{
+  total: number
+  followers: TrainerFollower[]
+}> {
+  return apiRequest('/api/v1/users/me/followers')
+}
 export type Team = 'mystic' | 'valor' | 'instinct'
 
 export type ApiErrorResponse = {

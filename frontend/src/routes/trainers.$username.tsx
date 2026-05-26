@@ -19,6 +19,7 @@ import {
   getTrainerStrings,
   getTrainerForks,
   getTrainerFavorites,
+  getTrainerFollowers,
 } from '#/lib/poke-query-api'
 import { useState } from 'react'
 
@@ -142,6 +143,7 @@ function QueryCard({ card }: { card: TrainerPublicQuery }) {
 
 function TrainerProfilePage() {
   const { username } = Route.useParams()
+  const { user } = useAuth()
 
   const [activeTab, setActiveTab] = useState<'strings' | 'forks' | 'favorites'>(
     'strings',
@@ -174,9 +176,16 @@ function TrainerProfilePage() {
     enabled: !!trainer?.id,
   })
 
+  const { data: followersData } = useQuery({
+    queryKey: ['trainer-followers', trainer?.id],
+    queryFn: () => getTrainerFollowers(trainer!.id),
+    enabled: !!trainer?.id,
+  })
+
   const strings = stringsData?.strings ?? []
   const forks = forksData?.forks ?? []
   const favs = favoritesData?.favorites ?? []
+  const followers = followersData?.followers ?? []
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -198,7 +207,7 @@ function TrainerProfilePage() {
           ) : null}
         </nav>
 
-        {trainer && !trainer.deactivatedAt ? (
+        {trainer && !trainer.deactivatedAt && user ? (
           <Button variant="outline" size="sm" className="rounded-lg">
             <UsersIcon className="size-4" />
             Follow
@@ -302,7 +311,7 @@ function TrainerProfilePage() {
                     { label: 'Strings', value: trainer.stringCount },
                     { label: 'Saves', value: trainer.favoriteCount },
                     { label: 'Forks', value: trainer.forkCount },
-                    { label: 'Followers', value: trainer.followerCount },
+                    { label: 'Followers', value: followers.length },
                   ].map((stat) => (
                     <div
                       key={stat.label}
