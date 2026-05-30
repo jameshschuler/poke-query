@@ -8,7 +8,7 @@ export async function communityRoutes(fastify: FastifyTypebox) {
   const server = fastify.withTypeProvider<TypeBoxTypeProvider>();
 
   server.get("/", { schema: CommunitySchema }, async (request, reply) => {
-    const { tag, sort, filter, limit, offset } = request.query;
+    const { tag, sort, filter, limit, offset, search } = request.query;
     const mode = filter ?? "all";
     const pageLimit = limit ?? 20;
     const pageOffset = offset ?? 0;
@@ -35,11 +35,30 @@ export async function communityRoutes(fastify: FastifyTypebox) {
 
     // 1. Base query: Only show public strings
     const conditions = [eq(searchQueries.isPublic, true)];
+    // 3. Filter by search term (title, query, description, creator username)
+    if (search && search.trim().length > 0) {
+      const like = `%${search.trim().toLowerCase()}%`;
+      conditions.push(sql`(
+        lower(${searchQueries.title}) like ${like} or
+        lower(${searchQueries.query}) like ${like} or
+        lower(coalesce(${searchQueries.description}, '')) like ${like} or
+        exists (
+          select 1 from pokequery.trainers t
+          where t.id = ${searchQueries.creatorId} and lower(t.username) like ${like}
+        )
+      )`);
+    }
 
-    // 2. Filter by Metadata Auto-Tag
-    // Using the @> operator is the most efficient way to search JSONB arrays in Postgres
+    // 2. Filter by Metadata Auto-Tag or user-supplied tag (from tags table)
     if (tag) {
-      conditions.push(sql`${searchQueries.metadata}->'autoTags' ? ${tag}`);
+      conditions.push(sql`(
+        ${searchQueries.metadata}->'autoTags' ? ${tag}
+        OR EXISTS (
+          SELECT 1 FROM pokequery.queries_to_tags qt
+          JOIN pokequery.tags t ON qt.tag_id = t.id
+          WHERE qt.query_id = ${searchQueries.id} AND lower(t.name) = lower(${tag})
+        )
+      )`);
     }
 
     // 2b. Filter by mode (WHERE conditions only — sort is controlled separately)

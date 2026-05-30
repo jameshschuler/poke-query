@@ -18,19 +18,28 @@ export function generateMetadata(query: string): QueryMetadata {
   if (/cp-1[45]00/.test(q)) {
     tags.add("pvp");
     leagues.push("Great");
+    tags.add("great-league");
   }
   if (/cp-2[45]00/.test(q)) {
     tags.add("pvp");
     leagues.push("Ultra");
+    tags.add("ultra-league");
   }
   if (q.includes("cp2500-")) {
     tags.add("pvp");
     leagues.push("Master");
+    tags.add("master-league");
   }
 
   // 3. Move/Type Sniffing
   if (q.includes("@special") || q.includes("@move")) tags.add("legacy-moves");
   if (q.includes("!")) tags.add("exclusion-filter");
+
+  // 5. Raid Sniffing
+  // Add 'raid' if query contains common raid-related keywords
+  if (q.includes("raid") || q.includes("@move") || q.includes("@special") || q.includes("type:")) {
+    tags.add("raid");
+  }
 
   // 4. Activity Sniffing
   if (q.includes("evolve")) tags.add("mass-evolve");

@@ -51,6 +51,7 @@ export const CreateQuerySchema = {
     query: Type.String({ minLength: 1 }),
     description: Type.Optional(Type.String({ maxLength: 500 })),
     isPublic: Type.Boolean({ default: false }),
+    tags: Type.Optional(Type.Array(Type.String({ minLength: 1, maxLength: 32 }))),
   }),
   response: {
     201: Type.Object({
@@ -99,6 +100,7 @@ export const UpdateQuerySchema = {
     query: Type.String({ minLength: 1 }),
     description: Type.Optional(Type.String({ maxLength: 500 })),
     isPublic: Type.Boolean(),
+    tags: Type.Optional(Type.Array(Type.String({ minLength: 1, maxLength: 32 }))),
   }),
   response: {
     200: Type.Object({

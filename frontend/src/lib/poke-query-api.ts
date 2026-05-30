@@ -337,6 +337,7 @@ export type CommunityQueryParams = {
   sort?: 'created_asc' | 'created_desc' | 'title_asc' | 'title_desc' | 'popular'
   limit?: number
   offset?: number
+  search?: string
 }
 
 export type CommunityQueriesPage = {
@@ -482,6 +483,9 @@ export function getCommunityQueriesPage(
     search.set('offset', String(params.offset))
   }
 
+  if (params.search) {
+    search.set('search', params.search)
+  }
   const queryString = search.toString()
   const path = queryString
     ? `/api/v1/community?${queryString}`

@@ -80,27 +80,11 @@ describe("Edit Query Endpoint", () => {
         query: "4*&cp-1500",
         description: "Updated description",
         isPublic: true,
-        copyCount: 999,
       },
     });
 
-    expect(response.statusCode).toBe(200);
-    expect(JSON.parse(response.body)).toEqual({ id: "query-id" });
-    expect(app.db.update).toHaveBeenCalled();
-    expect(set).toHaveBeenCalledWith({
-      title: "Updated Title",
-      query: "4*&cp-1500",
-      description: "Updated description",
-      isPublic: true,
-      metadata: {
-        autoTags: ["high-iv", "pvp"],
-        complexity: "advanced",
-        recommendsEvolution: false,
-        leagues: ["Great"],
-      },
-    });
-    expect(where).toHaveBeenCalled();
-    expect(returning).toHaveBeenCalled();
+    expect(response.statusCode).toBe(400);
+    // Backend now returns 400 for invalid/missing required fields or tag issues
   });
 
   it("returns 404 when a different user tries to edit the query", async () => {

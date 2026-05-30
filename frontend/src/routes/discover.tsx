@@ -1,7 +1,7 @@
 import { useAuth } from '@authabase/react'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import {
   ChevronsUpDownIcon,
   CopyIcon,
@@ -31,6 +31,7 @@ import {
 } from '#/components/ui/dropdown-menu'
 import { Input } from '#/components/ui/input'
 import { Separator } from '#/components/ui/separator'
+import { Badge } from '#/components/ui/badge'
 
 export const Route = createFileRoute('/discover')({
   ssr: false,
@@ -72,6 +73,15 @@ function DiscoverPage() {
   const [sortMode, setSortMode] = useState<SortMode>('created_desc')
   const [activeFilterLabel, setActiveFilterLabel] = useState('All')
   const [searchTerm, setSearchTerm] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+
+  // Debounce search input
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchTerm)
+    }, 350)
+    return () => clearTimeout(handler)
+  }, [searchTerm])
 
   const dateFormatter = useMemo(
     () =>
@@ -87,12 +97,11 @@ function DiscoverPage() {
     { label: 'All', filter: 'all' },
     { label: 'Popular', filter: 'popular' },
     { label: 'New', filter: 'new' },
-    { label: 'PvP', tag: 'pvp' },
+    { label: 'Master League', tag: 'master-league' },
+    { label: 'Ultra League', tag: 'ultra-league' },
+    { label: 'Great League', tag: 'great-league' },
     { label: 'Raid', tag: 'raid' },
-    { label: 'IV Hunt', tag: 'high-iv' },
-    { label: 'Utility', tag: 'exclusion-filter' },
     { label: 'Community Day', tag: 'daily-catch' },
-    { label: 'Collection', tag: 'legacy-moves' },
   ]
 
   const activeFilter =
@@ -111,6 +120,7 @@ function DiscoverPage() {
       activeFilter.filter,
       activeFilter.tag,
       sortMode,
+      debouncedSearch,
     ],
     queryFn: ({ pageParam = 0 }) =>
       getCommunityQueriesPage({
@@ -119,6 +129,7 @@ function DiscoverPage() {
         sort: sortMode,
         limit: 12,
         offset: pageParam,
+        search: debouncedSearch.trim() || undefined,
       }),
     initialPageParam: 0,
     getNextPageParam: (lastPage) =>
@@ -130,39 +141,13 @@ function DiscoverPage() {
     [data],
   )
 
-  const filteredRows = useMemo(() => {
-    const normalized = searchTerm.trim().toLowerCase()
-    if (!normalized) {
-      return rows
-    }
-
-    return rows.filter((row) => {
-      const username = row.creator?.username.toLowerCase() ?? ''
-      return (
-        row.id.toLowerCase().includes(normalized) ||
-        row.title.toLowerCase().includes(normalized) ||
-        row.query.toLowerCase().includes(normalized) ||
-        (row.description?.toLowerCase().includes(normalized) ?? false) ||
-        username.includes(normalized)
-      )
-    })
-  }, [rows, searchTerm])
-
+  // Server-side search, so just use rows
+  const filteredRows = rows
   const resultsCount = filteredRows.length
 
   const sortLabel =
     sortOptions.find((option) => option.value === sortMode)?.label ??
     'Created date (newest first)'
-
-  function getCardLabel(card: CommunityQuery) {
-    const firstTag = card.autoTags[0]
-
-    if (firstTag) {
-      return tagLabels[firstTag] ?? firstTag
-    }
-
-    return activeFilterLabel
-  }
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -180,11 +165,28 @@ function DiscoverPage() {
             <SearchIcon className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search strings..."
-              className="h-10 rounded-full pr-4"
+              className="h-10 rounded-full pr-10"
               style={{ paddingLeft: '2.75rem' }}
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
+              aria-label="Search strings"
             />
+            {searchTerm && (
+              <button
+                type="button"
+                tabIndex={0}
+                aria-label="Clear search"
+                className="absolute right-3 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-full bg-muted text-base text-muted-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring"
+                onClick={() => setSearchTerm('')}
+              >
+                <span
+                  className="pointer-events-none select-none"
+                  aria-hidden="true"
+                >
+                  ×
+                </span>
+              </button>
+            )}
           </div>
           {user ? (
             <Button className="rounded-full px-4">
@@ -289,18 +291,24 @@ function DiscoverPage() {
               >
                 <div className="space-y-4 px-5 py-4">
                   <div className="flex items-start justify-between gap-3">
-                    <Link
-                      to="/queries/$queryId"
-                      params={{ queryId: card.id }}
-                      className="hover:underline"
-                    >
-                      <h3 className="text-lg font-semibold leading-tight">
-                        {card.title}
-                      </h3>
-                    </Link>
-                    <span className="rounded-full border border-border/70 bg-card px-3 py-1 text-xs font-medium text-muted-foreground">
-                      {getCardLabel(card)}
-                    </span>
+                    <div className="flex flex-col gap-1 flex-1 min-w-0">
+                      <Link
+                        to="/queries/$queryId"
+                        params={{ queryId: card.id }}
+                        className="hover:underline"
+                      >
+                        <h3 className="text-lg font-semibold leading-tight truncate">
+                          {card.title}
+                        </h3>
+                      </Link>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {card.autoTags.map((tag) => (
+                          <Badge key={tag} variant="outline">
+                            {tagLabels[tag] ?? tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
                   </div>
 
                   <div className="rounded-xl border border-border/70 bg-card px-4 py-3 font-mono text-lg text-muted-foreground">

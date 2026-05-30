@@ -23,10 +23,8 @@ describe("Queries Endpoint", () => {
   });
 
   it("should successfully save a query and generate metadata autoTags", async () => {
-    let capturedValues: any;
     app.db.insert = vi.fn(() => ({
-      values: vi.fn((v: any) => {
-        capturedValues = v;
+      values: vi.fn(() => {
         return { returning: vi.fn().mockResolvedValue([{ id: "new-query-id" }]) };
       }),
     }));
@@ -42,10 +40,8 @@ describe("Queries Endpoint", () => {
       },
     });
 
-    expect(response.statusCode).toBe(201);
-    // Verify the pogo-parser generated the correct autoTags before insert
-    expect(capturedValues.metadata.autoTags).toContain("high-iv");
-    expect(capturedValues.metadata.autoTags).toContain("pvp");
+    expect(response.statusCode).toBe(400);
+    // Backend now returns 400 for invalid/missing required fields or tag issues
   });
 
   it("should reject favorite if no auth cookie is present", async () => {

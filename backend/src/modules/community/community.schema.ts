@@ -17,6 +17,7 @@ export const CommunitySchema = {
     ),
     limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 50 })),
     offset: Type.Optional(Type.Integer({ minimum: 0 })),
+    search: Type.Optional(Type.String({ minLength: 1, maxLength: 100 })),
   }),
   response: {
     200: Type.Object({

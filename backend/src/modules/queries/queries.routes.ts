@@ -1,6 +1,6 @@
 import { type TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import type { FastifyTypebox } from "../../types/fastify.js";
-import { searchQueries, trainers } from "../../db/schema.js";
+import { searchQueries, trainers, tags, queriesToTags } from "../../db/schema.js";
 import { generateMetadata } from "../../utils/pogo-parser.js";
 import {
   CopyQuerySchema,
@@ -114,12 +114,18 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
     { preHandler: [fastify.authenticate], schema: CreateQuerySchema },
     async (request, reply) => {
       try {
-        const { title, query, description, isPublic } = request.body;
+        const { title, query, description, isPublic, tags: userTags = [] } = request.body;
         const userId = request.user.id;
 
         // Generate the "Extensible Brain" data
         const metadata = generateMetadata(query);
 
+        // Deduplicate and normalize tags (case-insensitive), including autoTags
+        const autoTags = Array.isArray(metadata.autoTags) ? metadata.autoTags : [];
+        const allTags = [...userTags, ...autoTags];
+        const uniqueTags = Array.from(new Set(allTags.map((t) => t.trim().toLowerCase())));
+
+        // Insert the query first
         const [newQuery] = await fastify.db
           .insert(searchQueries)
           .values({
@@ -131,6 +137,41 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
             metadata,
           })
           .returning();
+
+        // Handle tags if any
+        if (newQuery && uniqueTags.length > 0) {
+          // Insert tags if they don't exist
+          const tagRows = await Promise.all(
+            uniqueTags.map(async (tag) => {
+              const [existing] = await fastify.db
+                .select()
+                .from(tags)
+                .where(eq(tags.name, tag))
+                .limit(1);
+              if (existing) return existing;
+              const [created] = await fastify.db
+                .insert(tags)
+                .values({ name: tag })
+                .onConflictDoNothing()
+                .returning({ id: tags.id, name: tags.name });
+              return created || { name: tag };
+            }),
+          );
+          // Link tags to query
+          for (const tagRow of tagRows) {
+            if (
+              tagRow &&
+              typeof tagRow === "object" &&
+              "id" in tagRow &&
+              typeof tagRow.id === "string"
+            ) {
+              await fastify.db
+                .insert(queriesToTags)
+                .values({ queryId: newQuery.id, tagId: tagRow.id })
+                .onConflictDoNothing();
+            }
+          }
+        }
 
         if (newQuery) {
           return reply.code(201).send({ id: newQuery.id });
@@ -192,7 +233,8 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
     async (request, reply) => {
       try {
         const { id } = request.params;
-        const { title, query, description, isPublic } = request.body;
+        // Only pick allowed fields
+        const { title, query, description, isPublic, tags: userTags = [] } = request.body;
         const userId = request.user.id;
 
         const metadata = generateMetadata(query);
@@ -211,6 +253,49 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
 
         if (!updatedQuery) {
           return reply.code(404).send({ error: "Query not found or not owned by user" });
+        }
+
+        // Deduplicate and normalize tags (case-insensitive), including autoTags
+        const autoTags = Array.isArray(metadata.autoTags) ? metadata.autoTags : [];
+        const allTags = [...userTags, ...autoTags];
+        const uniqueTags = Array.from(new Set(allTags.map((t) => t.trim().toLowerCase())));
+
+        // Remove all existing tags for this query
+        await fastify.db.delete(queriesToTags).where(eq(queriesToTags.queryId, id));
+
+        // Handle tags if any
+        if (uniqueTags.length > 0) {
+          // Insert tags if they don't exist
+          const tagRows = await Promise.all(
+            uniqueTags.map(async (tag) => {
+              const [existing] = await fastify.db
+                .select()
+                .from(tags)
+                .where(eq(tags.name, tag))
+                .limit(1);
+              if (existing) return existing;
+              const [created] = await fastify.db
+                .insert(tags)
+                .values({ name: tag })
+                .onConflictDoNothing()
+                .returning({ id: tags.id, name: tags.name });
+              return created || { name: tag };
+            }),
+          );
+          // Link tags to query
+          for (const tagRow of tagRows) {
+            if (
+              tagRow &&
+              typeof tagRow === "object" &&
+              "id" in tagRow &&
+              typeof tagRow.id === "string"
+            ) {
+              await fastify.db
+                .insert(queriesToTags)
+                .values({ queryId: id, tagId: tagRow.id })
+                .onConflictDoNothing();
+            }
+          }
         }
 
         return reply.code(200).send({ id: updatedQuery.id });

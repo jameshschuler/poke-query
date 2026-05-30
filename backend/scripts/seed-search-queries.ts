@@ -1,6 +1,6 @@
 import { config } from "dotenv";
 import { resolve } from "node:path";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
 
 import { generateMetadata } from "../src/utils/pogo-parser.js";
 
@@ -13,30 +13,94 @@ type SeedInput = {
   category: string;
   copyCount: number;
   isPublic?: boolean;
+  tags?: string[];
 };
 
 const seedInputs: SeedInput[] = [
-  { title: "Great League Core", query: "cp-1500&3*,4*&!shadow", category: "PvP", copyCount: 28 },
+  // --- Filter coverage seeds ---
+  {
+    title: "Master League Meta",
+    query: "cp-4000+&legendary&!mythical",
+    category: "PvP",
+    copyCount: 15,
+    tags: ["master-league", "pvp", "meta"],
+  },
+  {
+    title: "Ultra League Staples",
+    query: "cp-2500&!legendary&!mythical",
+    category: "PvP",
+    copyCount: 13,
+    tags: ["ultra-league", "pvp", "staples"],
+  },
+  {
+    title: "Great League Favorites",
+    query: "cp-1500&!legendary&!mythical",
+    category: "PvP",
+    copyCount: 18,
+    tags: ["great-league", "pvp", "favorites"],
+  },
+  {
+    title: "Raid Boss Counters",
+    query: "@move&type:dragon&4*",
+    category: "Raid",
+    copyCount: 20,
+    tags: ["raid", "boss", "dragon"],
+  },
+  {
+    title: "Community Day All-Stars",
+    query: "age0-2&@special&!shadow",
+    category: "Community Day",
+    copyCount: 17,
+    tags: ["community day", "daily-catch", "all-stars"],
+  },
+  {
+    title: "Great League Core",
+    query: "cp-1500&3*,4*&!shadow",
+    category: "PvP",
+    copyCount: 28,
+    tags: ["great league", "core", "pvp"],
+  },
   {
     title: "Ultra League Starters",
     query: "cp-2500&3*,4*&!mythical",
     category: "PvP",
     copyCount: 22,
+    tags: ["ultra league", "starters", "pvp"],
   },
-  { title: "Master League Projects", query: "cp2500-&4*&!traded", category: "PvP", copyCount: 19 },
-  { title: "Nundo Hunt - Recent", query: "0*&age0-14", category: "IV Hunt", copyCount: 17 },
-  { title: "High IV Shadows", query: "shadow&3*,4*&cp1000+", category: "IV Hunt", copyCount: 31 },
+  {
+    title: "Master League Projects",
+    query: "cp2500-&4*&!traded",
+    category: "PvP",
+    copyCount: 19,
+    tags: ["master league", "projects", "pvp"],
+  },
+  {
+    title: "Nundo Hunt - Recent",
+    query: "0*&age0-14",
+    category: "IV Hunt",
+    copyCount: 17,
+    tags: ["nundo", "hunt", "iv"],
+  },
+  {
+    title: "High IV Shadows",
+    query: "shadow&3*,4*&cp1000+",
+    category: "IV Hunt",
+    copyCount: 31,
+    tags: ["high iv", "shadow", "hunt"],
+  },
   {
     title: "Raid Fire Counters",
     query: "@special&type:fire&3*,4*",
     category: "Raid",
     copyCount: 25,
+    tags: ["raid", "fire", "counters"],
   },
   {
     title: "Raid Water Counters",
     query: "@move&type:water&3*,4*",
     category: "Raid",
     copyCount: 20,
+    tags: ["raid", "water", "counters"],
   },
   {
     title: "Daily Catch Cleanup",
@@ -153,13 +217,44 @@ async function run() {
       isPublic: seed.isPublic ?? true,
       copyCount: seed.copyCount,
       metadata: generateMetadata(seed.query),
+      tags: seed.tags,
       ...randomDates(),
     }));
 
+    // Insert queries and collect their ids
     const inserted = await db
       .insert(searchQueries)
-      .values(baseRows)
+      .values(baseRows.map(({ tags, ...row }) => row))
       .returning({ id: searchQueries.id, title: searchQueries.title, query: searchQueries.query });
+
+    // Insert tags and link to queries
+    const { tags, queriesToTags } = await import("../src/db/schema.js");
+    for (let i = 0; i < inserted.length; i++) {
+      const row = inserted[i];
+      const tagsArr = seedInputs[i].tags;
+      if (tagsArr && tagsArr.length > 0) {
+        for (const tag of tagsArr) {
+          // Insert tag if not exists
+          const [tagRow] = await db
+            .insert(tags)
+            .values({ name: tag.toLowerCase() })
+            .onConflictDoNothing()
+            .returning({ id: tags.id });
+          // Get tag id (if not returned, select it)
+          let tagId = tagRow?.id;
+          if (!tagId) {
+            const [existing] = await db
+              .select({ id: tags.id })
+              .from(tags)
+              .where(eq(tags.name, tag.toLowerCase()));
+            tagId = existing?.id;
+          }
+          if (tagId) {
+            await db.insert(queriesToTags).values({ queryId: row.id, tagId }).onConflictDoNothing();
+          }
+        }
+      }
+    }
 
     const byTitle = new Map(inserted.map((row) => [row.title, row]));
 

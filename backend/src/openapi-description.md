@@ -1,4 +1,42 @@
-A REST API for sharing and discovering Pokémon GO search queries.
+## Query Endpoints (tags support)
+
+### Create Query
+
+Create a new search query.
+
+**Body:**
+
+```
+{
+  "title": "string (3-100 chars)",
+  "query": "string",
+  "description": "string (optional, max 500 chars)",
+  "isPublic": "boolean (default: false)",
+  "tags": ["string (optional, 1-32 chars, unique, case-insensitive)"]
+}
+```
+
+### Update Query
+
+Update an existing search query.
+
+**Body:**
+
+```
+{
+  "title": "string (3-100 chars)",
+  "query": "string",
+  "description": "string (optional, max 500 chars)",
+  "isPublic": "boolean",
+  "tags": ["string (optional, 1-32 chars, unique, case-insensitive)"]
+}
+```
+
+**Note:**
+
+- The `tags` field is optional. If provided, tags are deduplicated and normalized (case-insensitive) before saving.
+- Auto-tags are still generated from the query string and stored separately as `autoTags`.
+  A REST API for sharing and discovering Pokémon GO search queries.
 
 **Repository:** [github.com/jameshschuler/poke-query](https://github.com/jameshschuler/poke-query)
 
