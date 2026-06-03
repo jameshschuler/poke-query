@@ -1,25 +1,17 @@
 import { useAuth } from '@authabase/react'
 import { useInfiniteQuery } from '@tanstack/react-query'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { useMemo, useState, useEffect } from 'react'
 import {
   ChevronsUpDownIcon,
-  CopyIcon,
-  GitForkIcon,
-  HeartIcon,
   Loader2Icon,
   PlusIcon,
   SearchIcon,
 } from 'lucide-react'
 
-import { toast } from 'sonner'
 import { Button } from '#/components/ui/button'
 import type { CommunityQuery } from '#/lib/poke-query-api'
-import {
-  getCommunityQueriesPage,
-  copyQuery,
-  ApiRequestError,
-} from '#/lib/poke-query-api'
+import { getCommunityQueriesPage, ApiRequestError } from '#/lib/poke-query-api'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,7 +23,7 @@ import {
 } from '#/components/ui/dropdown-menu'
 import { Input } from '#/components/ui/input'
 import { Separator } from '#/components/ui/separator'
-import { Badge } from '#/components/ui/badge'
+import { SearchStringCard } from '#/components/search-string-card'
 
 export const Route = createFileRoute('/discover')({
   ssr: false,
@@ -49,15 +41,6 @@ type FilterOption = {
   label: string
   filter?: 'all' | 'new' | 'popular'
   tag?: string
-}
-
-const tagLabels: Record<string, string> = {
-  pvp: 'PvP',
-  raid: 'Raid',
-  'high-iv': 'IV Hunt',
-  'exclusion-filter': 'Utility',
-  'daily-catch': 'Community Day',
-  'legacy-moves': 'Collection',
 }
 
 const sortOptions: Array<{ value: SortMode; label: string }> = [
@@ -82,16 +65,6 @@ function DiscoverPage() {
     }, 350)
     return () => clearTimeout(handler)
   }, [searchTerm])
-
-  const dateFormatter = useMemo(
-    () =>
-      new Intl.DateTimeFormat(undefined, {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      }),
-    [],
-  )
 
   const filters: FilterOption[] = [
     { label: 'All', filter: 'all' },
@@ -151,7 +124,7 @@ function DiscoverPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="flex h-16 shrink-0 items-center justify-between gap-3 border-b border-border/60 px-4 md:px-6">
+      <header className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border/60 px-5 py-4 sm:flex-nowrap md:px-8 lg:px-10">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-muted-foreground md:text-base">
             PokeQuery
@@ -160,7 +133,7 @@ function DiscoverPage() {
           <h1 className="text-base font-semibold md:text-lg">Discover</h1>
         </div>
 
-        <div className="flex w-full max-w-xl items-center gap-2">
+        <div className="flex w-full items-center gap-2 md:ml-auto md:max-w-xl">
           <div className="relative flex-1">
             <SearchIcon className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -189,15 +162,15 @@ function DiscoverPage() {
             )}
           </div>
           {user ? (
-            <Button className="rounded-full px-4">
+            <Button className="shrink-0 rounded-full px-3 sm:px-4">
               <PlusIcon />
-              New String
+              <span className="hidden sm:inline">New String</span>
             </Button>
           ) : null}
         </div>
       </header>
 
-      <section className="border-b border-border/60 px-4 py-3 md:px-6">
+      <section className="border-b border-border/60 px-5 py-3 md:px-8 lg:px-10">
         <div className="flex flex-wrap items-center gap-2">
           {filters.map((filter) => (
             <Button
@@ -213,7 +186,7 @@ function DiscoverPage() {
         </div>
       </section>
 
-      <main className="flex flex-1 flex-col p-4 md:p-6">
+      <main className="flex flex-1 flex-col p-5 md:p-8 lg:p-10">
         <section className="rounded-3xl border border-border/60 bg-card/80 p-6 shadow-sm backdrop-blur">
           <h2 className="text-xl font-semibold">Discover</h2>
           <p className="mt-2 text-sm text-muted-foreground">
@@ -236,7 +209,7 @@ function DiscoverPage() {
 
           <Separator className="my-5" />
 
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">
               {resultsCount} search strings found
             </p>
@@ -249,7 +222,7 @@ function DiscoverPage() {
                   </Button>
                 }
               />
-              <DropdownMenuContent align="end" className="min-w-72">
+              <DropdownMenuContent align="end" className="min-w-56 sm:min-w-72">
                 <DropdownMenuGroup>
                   <DropdownMenuLabel>Sort order</DropdownMenuLabel>
                 </DropdownMenuGroup>
@@ -285,119 +258,12 @@ function DiscoverPage() {
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {filteredRows.map((card: CommunityQuery) => (
-              <article
+              <SearchStringCard
                 key={card.id}
-                className="overflow-hidden rounded-2xl border border-border/60 bg-background/70"
-              >
-                <div className="space-y-4 px-5 py-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex flex-col gap-1 flex-1 min-w-0">
-                      <Link
-                        to="/queries/$queryId"
-                        params={{ queryId: card.id }}
-                        className="hover:underline"
-                      >
-                        <h3 className="text-lg font-semibold leading-tight truncate">
-                          {card.title}
-                        </h3>
-                      </Link>
-                      <div className="flex flex-wrap gap-2 mt-1">
-                        {card.autoTags.map((tag) => (
-                          <Badge key={tag} variant="outline">
-                            {tagLabels[tag] ?? tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="rounded-xl border border-border/70 bg-card px-4 py-3 font-mono text-lg text-muted-foreground">
-                    {card.query}
-                  </div>
-
-                  {card.description ? (
-                    <p className="text-sm text-muted-foreground">
-                      {card.description}
-                    </p>
-                  ) : null}
-
-                  <p className="text-sm text-muted-foreground">
-                    by{' '}
-                    {card.creator?.username ? (
-                      <Link
-                        to="/trainers/$username"
-                        params={{ username: card.creator.username }}
-                        className="hover:underline"
-                      >
-                        {card.creator.username}
-                      </Link>
-                    ) : (
-                      'Anonymous trainer'
-                    )}
-                  </p>
-
-                  <p className="text-xs text-muted-foreground">
-                    Created {dateFormatter.format(new Date(card.createdAt))} ·
-                    Updated {dateFormatter.format(new Date(card.updatedAt))}
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-between border-t border-border/60 bg-card/60 px-5 py-3">
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="rounded-xl"
-                      onClick={() => {
-                        void navigator.clipboard
-                          .writeText(card.query)
-                          .then(() => {
-                            void copyQuery(card.id)
-                            toast.success('Copied to clipboard!')
-                          })
-                      }}
-                    >
-                      <CopyIcon />
-                      Copy
-                    </Button>
-                    {user ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="rounded-xl"
-                      >
-                        <HeartIcon />
-                        Favorite
-                      </Button>
-                    ) : null}
-                    {user ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="rounded-xl"
-                      >
-                        <GitForkIcon />
-                        Fork
-                      </Button>
-                    ) : null}
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1.5">
-                      <CopyIcon className="size-4" />
-                      {card.copyCount}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <HeartIcon className="size-4" />
-                      {card.favoriteCount}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <GitForkIcon className="size-4" />
-                      {card.forkCount}
-                    </span>
-                  </div>
-                </div>
-              </article>
+                card={card}
+                variant="discover"
+                isAuthenticated={Boolean(user)}
+              />
             ))}
           </div>
 

@@ -1,48 +1,15 @@
-## Query Endpoints (tags support)
-
-### Create Query
-
-Create a new search query.
-
-**Body:**
-
-```
-{
-  "title": "string (3-100 chars)",
-  "query": "string",
-  "description": "string (optional, max 500 chars)",
-  "isPublic": "boolean (default: false)",
-  "tags": ["string (optional, 1-32 chars, unique, case-insensitive)"]
-}
-```
-
-### Update Query
-
-Update an existing search query.
-
-**Body:**
-
-```
-{
-  "title": "string (3-100 chars)",
-  "query": "string",
-  "description": "string (optional, max 500 chars)",
-  "isPublic": "boolean",
-  "tags": ["string (optional, 1-32 chars, unique, case-insensitive)"]
-}
-```
-
-**Note:**
-
-- The `tags` field is optional. If provided, tags are deduplicated and normalized (case-insensitive) before saving.
-- Auto-tags are still generated from the query string and stored separately as `autoTags`.
-  A REST API for sharing and discovering Pokémon GO search queries.
-
-**Repository:** [github.com/jameshschuler/poke-query](https://github.com/jameshschuler/poke-query)
-
 ## What This API Does
 
-Trainers can create, save, share, fork, favorite, and discover reusable in-game search strings (e.g. `cp2500-&!shadow`) with the community.
+Trainers can create, save, update, fork, favorite, and discover reusable Pokemon GO search strings.
+
+Recent backend changes added:
+
+- normalized user tags plus parser-generated `autoTags`
+- community discovery with text search, tag filters, sorting, and pagination
+- follower endpoints and privacy-aware public trainer fields
+- seed data that covers league, raid, and other common discovery tags
+
+**Repository:** [github.com/jameshschuler/poke-query](https://github.com/jameshschuler/poke-query)
 
 ## Getting Started
 
@@ -59,10 +26,10 @@ The server starts at **http://localhost:3000**.
 
 ### 2. Authenticate
 
-1. `POST /api/v1/auth/login` with your email — triggers an OTP email.
-2. `POST /api/v1/auth/verify` with `email` + `token` (or `token_hash` from the magic link).
-3. `POST /api/v1/auth/logout` ends the session and clears auth cookies.
-4. The response sets an `sb-access-token` HttpOnly cookie. All protected endpoints require this cookie.
+1. `POST /api/v1/auth/login` with your email to request an OTP.
+2. `POST /api/v1/auth/verify` with `email` and `token` or `token_hash`.
+3. `POST /api/v1/auth/logout` clears the session cookies.
+4. Protected endpoints require the `sb-access-token` HttpOnly cookie set during verification.
 
 ### 3. Call a protected endpoint
 
@@ -70,28 +37,59 @@ The server starts at **http://localhost:3000**.
 curl -X POST "http://localhost:3000/api/v1/queries" \
   -H "Content-Type: application/json" \
   -H "Cookie: sb-access-token=YOUR_TOKEN" \
-  -d '{"title":"Great League IV","query":"4*&cp-1500","isPublic":false}'
+  -d '{"title":"Great League IV","query":"4*&cp-1500","isPublic":false,"tags":["great-league","pvp"]}'
 ```
 
 ## Authentication Model
 
-This API uses **cookie-based auth** via Supabase.
+This API uses cookie-based auth via Supabase.
 
-| Detail           | Value                              |
-| ---------------- | ---------------------------------- |
-| Cookie name      | `sb-access-token`                  |
-| Lifetime         | 1 hour (access), 7 days (refresh)  |
-| Protected routes | Marked with the 🔒 lock icon below |
+| Detail           | Value                                         |
+| ---------------- | --------------------------------------------- |
+| Cookie name      | `sb-access-token`                             |
+| Lifetime         | 1 hour access, 7 day refresh                  |
+| Protected routes | Declared with the cookie auth security scheme |
+
+## Query Payload Rules
+
+- Create and update requests accept `title`, `query`, `description`, `isPublic`, and optional `tags`
+- Unknown fields are rejected by validation
+- User tags are trimmed, lowercased, and deduplicated before storage
+- Parser-generated `autoTags` are derived from the query string and used by community discovery
+
+Current generated tag coverage includes `high-iv`, `nundo-hunt`, `pvp`, `great-league`, `ultra-league`, `master-league`, `legacy-moves`, `raid`, `mass-evolve`, `distance-trade`, and `daily-catch`.
+
+## Community Discovery
+
+`GET /api/v1/community` supports these query params:
+
+- `tag`: matches either stored user tags or generated `autoTags`
+- `search`: matches title, query text, description, or creator username
+- `filter`: `all`, `new`, or `popular`
+- `sort`: `created_desc`, `created_asc`, `title_asc`, `title_desc`, or `popular`
+- `limit`: 1-50
+- `offset`: pagination offset
+
+Only public queries are returned. Creator `team`, `level`, and `trainerCode` are returned as `null` when the creator's profile is private.
 
 ## Trainer Profile Endpoints
 
-Public trainer profiles are now split for better caching and tab loading on the frontend:
+Public trainer profiles are split for better caching and tab loading on the frontend:
 
-- `GET /api/v1/users/by-username/:username`
-  - Returns public profile metadata and aggregate counts (`stringCount`, `forkCount`, `favoriteCount`, `followerCount`).
-- `GET /api/v1/users/:id/strings`
-  - Returns up to 20 public non-fork strings by trainer id.
-- `GET /api/v1/users/:id/forks`
-  - Returns up to 20 public forks by trainer id.
-- `GET /api/v1/users/:id/favorites`
-  - Returns up to 20 public favorites by trainer id.
+- `GET /api/v1/users/by-username/:username` returns public profile metadata and aggregate counts.
+- `GET /api/v1/users/:id/strings` returns up to 20 public non-fork queries.
+- `GET /api/v1/users/:id/forks` returns up to 20 public forks.
+- `GET /api/v1/users/:id/favorites` returns up to 20 public favorites.
+- `GET /api/v1/users/:id/followers` returns the trainer's follower list with privacy-aware trainer fields.
+- `GET /api/v1/users/me/followers` returns the authenticated trainer's follower list.
+
+## Seed Data
+
+The backend includes seed scripts for local QA and demo data:
+
+- `npm run db:seed:trainers`
+- `npm run db:seed:search`
+- `npm run db:seed:followers`
+- `npm run db:seed`
+
+The search seed script includes public and private queries plus tag coverage for great league, ultra league, master league, raid, community-day style searches, and other common filter cases.

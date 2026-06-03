@@ -2,7 +2,7 @@
 
 poke-query is a monorepo for a Pokemon GO query-sharing app.
 
-At a high level, the project lets trainers create, manage, and discover reusable in-game search queries. The backend currently provides authentication, query CRUD, public community discovery, profile endpoints, and integration-tested database workflows.
+At a high level, the project lets trainers create, manage, and discover reusable in-game search queries. The backend currently provides authentication, query CRUD, fork and favorite flows, follower relationships, privacy-aware profile endpoints, tag-aware community discovery, and integration-tested database workflows.
 
 ## Workspace Layout
 
@@ -13,13 +13,17 @@ At a high level, the project lets trainers create, manage, and discover reusable
 
 - Backend is fully set up and tested
 - API docs site powered by Scalar
+- Community discovery supports search, tag filters, sort modes, and pagination
 
 ## Backend Highlights
 
 - Auth via Supabase (OTP/session cookies)
 - Query lifecycle: create, update, delete, fork, copy, favorite, unfavorite
-- Community route with filtering/sorting and creator profile info
-- Trainer profiles by username with split public lists for strings, forks, and favorites
+- Query tags support both user-supplied tags and parser-generated `autoTags`
+- Community route supports text search, tag filtering, sort options, and pagination
+- Community and profile responses hide trainer team, level, and trainer code when a profile is private
+- Trainer profiles by username with split public lists for strings, forks, favorites, and followers
+- Seed scripts for trainers, search queries, and followers
 - Drizzle ORM + Postgres schema/migrations
 - Unit/integration test suites with Vitest
 
@@ -43,6 +47,15 @@ From `backend/`:
 
 - `npm test` for standard tests
 - `npm run test:integration` for database-backed integration tests
+
+## Seed Data
+
+From `backend/`:
+
+- `npm run db:seed:trainers` to create sample trainers
+- `npm run db:seed:search` to create sample queries with tag coverage for community filters
+- `npm run db:seed:followers` to create sample follow relationships
+- `npm run db:seed` to run all seed steps in sequence
 
 ## Documentation
 

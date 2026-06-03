@@ -33,7 +33,6 @@ export function generateMetadata(query: string): QueryMetadata {
 
   // 3. Move/Type Sniffing
   if (q.includes("@special") || q.includes("@move")) tags.add("legacy-moves");
-  if (q.includes("!")) tags.add("exclusion-filter");
 
   // 5. Raid Sniffing
   // Add 'raid' if query contains common raid-related keywords

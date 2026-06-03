@@ -42,7 +42,7 @@ function LoginPage() {
   }
 
   return (
-    <main className="space-y-6">
+    <main className="min-h-screen space-y-6 px-4 py-8 sm:px-6 sm:py-10">
       <AuthContainer
         title="Welcome to PokeQuery"
         subtitle="Enter your email to receive a one-time login code"

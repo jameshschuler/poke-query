@@ -22,10 +22,10 @@ function LandingPage() {
   }
 
   return (
-    <main className="relative isolate min-h-screen overflow-hidden bg-background px-6 py-14 md:px-10 md:py-20">
+    <main className="relative isolate min-h-screen overflow-hidden bg-background px-4 py-10 sm:px-6 sm:py-14 md:px-10 md:py-20">
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_15%_20%,hsl(var(--primary)/0.15),transparent_35%),radial-gradient(circle_at_85%_0%,hsl(var(--accent)/0.22),transparent_40%),linear-gradient(to_bottom,hsl(var(--background)),hsl(var(--muted)/0.3))]" />
 
-      <section className="mx-auto flex w-full max-w-6xl flex-col gap-10 rounded-3xl border border-border/60 bg-card/75 p-8 shadow-sm backdrop-blur md:p-12">
+      <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 rounded-3xl border border-border/60 bg-card/75 p-5 shadow-sm backdrop-blur sm:p-8 md:gap-10 md:p-12">
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm font-medium tracking-wide text-muted-foreground">
             PokeQuery
@@ -43,7 +43,7 @@ function LandingPage() {
             <p className="mb-3 inline-flex rounded-full border border-border/70 bg-background/70 px-3 py-1 text-xs font-medium text-muted-foreground">
               Search strings for trainers and teams
             </p>
-            <h1 className="text-4xl font-semibold leading-tight tracking-tight md:text-5xl">
+            <h1 className="text-3xl font-semibold leading-tight tracking-tight sm:text-4xl md:text-5xl">
               Build, discover, and reuse Pokemon GO search strings faster.
             </h1>
             <p className="mt-4 max-w-xl text-base text-muted-foreground md:text-lg">

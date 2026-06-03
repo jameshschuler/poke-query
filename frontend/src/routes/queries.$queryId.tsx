@@ -60,24 +60,26 @@ function QueryDetailPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Top nav */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border/60 px-4 md:px-6">
-        <nav className="flex items-center gap-2 text-sm">
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border/60 px-5 py-4 sm:flex-nowrap md:px-8 lg:px-10">
+        <nav className="flex min-w-0 flex-1 basis-0 items-center gap-2 text-sm">
           <Link
             to="/discover"
-            className="text-muted-foreground hover:text-foreground"
+            className="shrink-0 text-muted-foreground hover:text-foreground"
           >
             ← Discover
           </Link>
-          {query ? (
+          {query?.title ? (
             <>
-              <span className="text-muted-foreground">/</span>
-              <span className="text-base font-semibold">{query.title}</span>
+              <span className="shrink-0 text-muted-foreground">/</span>
+              <span className="block min-w-0 truncate text-base font-semibold">
+                {query.title}
+              </span>
             </>
           ) : null}
         </nav>
 
         {query ? (
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:ml-4 sm:w-auto sm:shrink-0 sm:justify-end">
             <Button
               variant="outline"
               size="sm"
@@ -109,7 +111,7 @@ function QueryDetailPage() {
         ) : null}
       </header>
 
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 md:px-6">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-5 py-8 md:px-8 lg:px-10">
         {isLoading ? (
           <div className="space-y-4">
             <div className="h-7 w-1/2 animate-pulse rounded-lg bg-muted" />
@@ -172,31 +174,31 @@ function QueryDetailPage() {
             </div>
 
             {/* Stats cards */}
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
               <div className="flex flex-col items-center gap-1.5 rounded-xl border border-border/60 bg-card px-4 py-5">
                 <span className="text-xs text-muted-foreground">Favorited</span>
-                <span className="flex items-center gap-2 text-3xl font-bold">
+                <span className="flex items-center gap-2 text-2xl font-bold sm:text-3xl">
                   <HeartIcon className="size-5 text-muted-foreground" />
                   {query.favoriteCount}
                 </span>
               </div>
               <div className="flex flex-col items-center gap-1.5 rounded-xl border border-border/60 bg-card px-4 py-5">
                 <span className="text-xs text-muted-foreground">Copies</span>
-                <span className="flex items-center gap-2 text-3xl font-bold">
+                <span className="flex items-center gap-2 text-2xl font-bold sm:text-3xl">
                   <CopyIcon className="size-5 text-muted-foreground" />
                   {query.copyCount}
                 </span>
               </div>
               <div className="flex flex-col items-center gap-1.5 rounded-xl border border-border/60 bg-card px-4 py-5">
                 <span className="text-xs text-muted-foreground">Forks</span>
-                <span className="flex items-center gap-2 text-3xl font-bold">
+                <span className="flex items-center gap-2 text-2xl font-bold sm:text-3xl">
                   <GitForkIcon className="size-5 text-muted-foreground" />
                   {query.forkCount}
                 </span>
               </div>
               <div className="flex flex-col items-center gap-1.5 rounded-xl border border-border/60 bg-card px-4 py-5">
                 <span className="text-xs text-muted-foreground">Version</span>
-                <span className="text-3xl font-bold">v1</span>
+                <span className="text-2xl font-bold sm:text-3xl">v1</span>
               </div>
             </div>
 
@@ -250,7 +252,7 @@ function QueryDetailPage() {
                             {(fork.creator?.username ?? '?')[0].toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <div className="flex-1 min-w-0">
+                        <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium">
                             {fork.creator?.username ?? 'Anonymous'}
                           </p>
