@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '#/components/ui/avatar'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Separator } from '#/components/ui/separator'
+import { PageHeader } from '#/components/page-header'
 import { copyQuery, getQueryById } from '#/lib/poke-query-api'
 
 export const Route = createFileRoute('/queries/$queryId')({
@@ -59,57 +60,42 @@ function QueryDetailPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* Top nav */}
-      <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border/60 px-5 py-4 sm:flex-nowrap md:px-8 lg:px-10">
-        <nav className="flex min-w-0 flex-1 basis-0 items-center gap-2 text-sm">
-          <Link
-            to="/discover"
-            className="shrink-0 text-muted-foreground hover:text-foreground"
-          >
-            ← Discover
-          </Link>
-          {query?.title ? (
+      <PageHeader
+        title={query?.title}
+        actions={
+          query ? (
             <>
-              <span className="shrink-0 text-muted-foreground">/</span>
-              <span className="block min-w-0 truncate text-base font-semibold">
-                {query.title}
-              </span>
-            </>
-          ) : null}
-        </nav>
-
-        {query ? (
-          <div className="flex w-full flex-wrap items-center gap-2 sm:ml-4 sm:w-auto sm:shrink-0 sm:justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-lg"
-              onClick={() => {
-                void navigator.clipboard.writeText(window.location.href)
-                toast.success('Link copied!')
-              }}
-            >
-              <ShareIcon className="size-4" />
-              Share
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-lg"
-              onClick={handleCopy}
-            >
-              <CopyIcon className="size-4" />
-              Copy
-            </Button>
-            {user ? (
-              <Button size="sm" className="rounded-lg">
-                <GitForkIcon className="size-4" />
-                Fork
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-lg"
+                onClick={() => {
+                  void navigator.clipboard.writeText(window.location.href)
+                  toast.success('Link copied!')
+                }}
+              >
+                <ShareIcon className="size-4" />
+                Share
               </Button>
-            ) : null}
-          </div>
-        ) : null}
-      </header>
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-lg"
+                onClick={handleCopy}
+              >
+                <CopyIcon className="size-4" />
+                Copy
+              </Button>
+              {user ? (
+                <Button size="sm" className="rounded-lg">
+                  <GitForkIcon className="size-4" />
+                  Fork
+                </Button>
+              ) : null}
+            </>
+          ) : undefined
+        }
+      />
 
       <main className="mx-auto w-full max-w-7xl flex-1 px-5 py-8 md:px-8 lg:px-10">
         {isLoading ? (

@@ -15,6 +15,7 @@ import {
 } from '#/lib/poke-query-api'
 import { useState } from 'react'
 import { SearchStringCard } from '#/components/search-string-card'
+import { PageHeader } from '#/components/page-header'
 
 export const Route = createFileRoute('/trainers/$username')({
   component: TrainerProfilePage,
@@ -91,31 +92,17 @@ function TrainerProfilePage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border/60 px-5 py-4 sm:flex-nowrap md:px-8 lg:px-10">
-        <nav className="flex min-w-0 items-center gap-2 text-sm">
-          <Link
-            to="/discover"
-            className="text-muted-foreground hover:text-foreground"
-          >
-            ← Discover
-          </Link>
-          {trainer ? (
-            <>
-              <span className="text-muted-foreground">/</span>
-              <span className="truncate text-base font-semibold">
-                {trainer.username}
-              </span>
-            </>
-          ) : null}
-        </nav>
-
-        {trainer && !trainer.deactivatedAt && user ? (
-          <Button variant="outline" size="sm" className="rounded-lg">
-            <UsersIcon className="size-4" />
-            Follow
-          </Button>
-        ) : null}
-      </header>
+      <PageHeader
+        title={trainer?.username}
+        actions={
+          trainer && !trainer.deactivatedAt && user ? (
+            <Button variant="outline" size="sm" className="rounded-lg">
+              <UsersIcon className="size-4" />
+              Follow
+            </Button>
+          ) : undefined
+        }
+      />
 
       <main className="mx-auto w-full max-w-7xl flex-1 px-5 py-6 md:px-8 md:py-8 lg:px-10">
         {isLoading ? (
