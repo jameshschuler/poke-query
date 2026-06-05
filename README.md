@@ -20,6 +20,7 @@ At a high level, the project lets trainers create, manage, and discover reusable
 - Auth via Supabase (OTP/session cookies)
 - Query lifecycle: create, update, delete, fork, copy, favorite, unfavorite
 - Query tags support both user-supplied tags and parser-generated `autoTags`
+- Query tags endpoint for frontend filter options: `GET /api/v1/queries/tags`
 - Community route supports text search, tag filtering, sort options, and pagination
 - Community and profile responses hide trainer team, level, and trainer code when a profile is private
 - Trainer profiles by username with split public lists for strings, forks, favorites, and followers

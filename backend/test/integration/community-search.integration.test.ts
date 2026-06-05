@@ -128,12 +128,14 @@ integrationDescribe("Community Search Integration", () => {
   });
 
   it("sorts by popularity when sort=popular", async () => {
+    const searchKey = `popular-sort-${Date.now()}`;
+
     const first = await app.inject({
       method: "POST",
       url: "/api/v1/queries",
       cookies: { "sb-access-token": "integration-token" },
       payload: {
-        title: "Lower Popularity",
+        title: `${searchKey} Lower Popularity`,
         query: "cp-1500",
         isPublic: true,
       },
@@ -144,7 +146,7 @@ integrationDescribe("Community Search Integration", () => {
       url: "/api/v1/queries",
       cookies: { "sb-access-token": "integration-token" },
       payload: {
-        title: "Higher Popularity",
+        title: `${searchKey} Higher Popularity`,
         query: "cp-2500",
         isPublic: true,
       },
@@ -161,7 +163,7 @@ integrationDescribe("Community Search Integration", () => {
 
     const res = await app.inject({
       method: "GET",
-      url: "/api/v1/community?filter=popular",
+      url: `/api/v1/community?filter=popular&search=${encodeURIComponent(searchKey)}`,
     });
 
     expect(res.statusCode).toBe(200);
@@ -188,12 +190,14 @@ integrationDescribe("Community Search Integration", () => {
   });
 
   it("ranks popularity using copies + favorites + forks", async () => {
+    const searchKey = `popular-rank-${Date.now()}`;
+
     const first = await app.inject({
       method: "POST",
       url: "/api/v1/queries",
       cookies: { "sb-access-token": "integration-token" },
       payload: {
-        title: "Favorite + Fork Candidate",
+        title: `${searchKey} Favorite + Fork Candidate`,
         query: "cp1000-1500",
         isPublic: true,
       },
@@ -204,7 +208,7 @@ integrationDescribe("Community Search Integration", () => {
       url: "/api/v1/queries",
       cookies: { "sb-access-token": "integration-token" },
       payload: {
-        title: "Copy Candidate",
+        title: `${searchKey} Copy Candidate`,
         query: "cp2500+",
         isPublic: true,
       },
@@ -237,6 +241,7 @@ integrationDescribe("Community Search Integration", () => {
       method: "POST",
       url: `/api/v1/queries/${firstId}/fork`,
       cookies: { "sb-access-token": "integration-token" },
+      payload: {},
     });
     expect(forkRes.statusCode).toBe(201);
 
@@ -248,7 +253,7 @@ integrationDescribe("Community Search Integration", () => {
 
     const res = await app.inject({
       method: "GET",
-      url: "/api/v1/community?filter=popular",
+      url: `/api/v1/community?filter=popular&search=${encodeURIComponent(searchKey)}`,
     });
 
     expect(res.statusCode).toBe(200);

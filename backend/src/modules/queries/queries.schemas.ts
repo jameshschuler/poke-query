@@ -44,6 +44,20 @@ export const GetQuerySchema = {
   },
 };
 
+export const GetTagsSchema = {
+  response: {
+    200: Type.Object({
+      tags: Type.Array(
+        Type.Object({
+          id: Type.String(),
+          name: Type.String(),
+          queryCount: Type.Integer(),
+        }),
+      ),
+    }),
+  },
+};
+
 export const CreateQuerySchema = {
   security: cookieAuthSecurity,
   body: Type.Object({

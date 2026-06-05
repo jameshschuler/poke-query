@@ -288,4 +288,52 @@ integrationDescribe("Queries CRUD Integration", () => {
 
     expect(favoriteRowsAfter).toHaveLength(0);
   });
+
+  it("returns public query tags for frontend filtering", async () => {
+    const publicRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/queries",
+      cookies: { "sb-access-token": "integration-token" },
+      payload: {
+        title: "Tag Source Public",
+        query: "cp-1500",
+        description: "public query with tags",
+        isPublic: true,
+        tags: ["raid", "daily-catch"],
+      },
+    });
+
+    expect(publicRes.statusCode).toBe(201);
+
+    const privateRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/queries",
+      cookies: { "sb-access-token": "integration-token" },
+      payload: {
+        title: "Tag Source Private",
+        query: "cp-500",
+        description: "private query with tags",
+        isPublic: false,
+        tags: ["private-only"],
+      },
+    });
+
+    expect(privateRes.statusCode).toBe(201);
+
+    const tagsRes = await app.inject({
+      method: "GET",
+      url: "/api/v1/queries/tags",
+    });
+
+    expect(tagsRes.statusCode).toBe(200);
+
+    const body: { tags: Array<{ name: string; queryCount: number }> } = tagsRes.json();
+
+    const names = body.tags.map((tag) => tag.name);
+
+    expect(names).toContain("raid");
+    expect(names).toContain("daily-catch");
+    expect(names).not.toContain("private-only");
+    expect(body.tags.find((tag) => tag.name === "raid")?.queryCount).toBeGreaterThan(0);
+  });
 });

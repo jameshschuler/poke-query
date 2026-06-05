@@ -1,5 +1,5 @@
 import { useAuth } from '@authabase/react'
-import { useInfiniteQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { useMemo, useState, useEffect } from 'react'
 import {
@@ -11,7 +11,11 @@ import {
 
 import { Button } from '#/components/ui/button'
 import type { CommunityQuery } from '#/lib/poke-query-api'
-import { getCommunityQueriesPage, ApiRequestError } from '#/lib/poke-query-api'
+import {
+  getCommunityQueriesPage,
+  getQueryTags,
+  ApiRequestError,
+} from '#/lib/poke-query-api'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +28,7 @@ import {
 import { Input } from '#/components/ui/input'
 import { Separator } from '#/components/ui/separator'
 import { SearchStringCard } from '#/components/search-string-card'
+import { formatTagLabel } from '#/lib/utils'
 
 export const Route = createFileRoute('/discover')({
   ssr: false,
@@ -38,10 +43,25 @@ type SortMode =
   | 'popular'
 
 type FilterOption = {
+  key: string
   label: string
   filter?: 'all' | 'new' | 'popular'
   tag?: string
 }
+
+const BASE_FILTERS: FilterOption[] = [
+  { key: 'all', label: 'All', filter: 'all' },
+  { key: 'popular', label: 'Popular', filter: 'popular' },
+  { key: 'new', label: 'New', filter: 'new' },
+]
+
+const DEFAULT_TAG_FILTERS: Array<{ tag: string; label: string }> = [
+  { tag: 'master-league', label: 'Master League' },
+  { tag: 'ultra-league', label: 'Ultra League' },
+  { tag: 'great-league', label: 'Great League' },
+  { tag: 'raid', label: 'Raid' },
+  { tag: 'daily-catch', label: 'Community Day' },
+]
 
 const sortOptions: Array<{ value: SortMode; label: string }> = [
   { value: 'created_desc', label: 'Created date (newest first)' },
@@ -54,9 +74,15 @@ const sortOptions: Array<{ value: SortMode; label: string }> = [
 function DiscoverPage() {
   const { user } = useAuth()
   const [sortMode, setSortMode] = useState<SortMode>('created_desc')
-  const [activeFilterLabel, setActiveFilterLabel] = useState('All')
+  const [activeFilterKey, setActiveFilterKey] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
+
+  const { data: availableTags = [] } = useQuery({
+    queryKey: ['query-tags'],
+    queryFn: getQueryTags,
+    staleTime: 5 * 60_000,
+  })
 
   // Debounce search input
   useEffect(() => {
@@ -66,19 +92,51 @@ function DiscoverPage() {
     return () => clearTimeout(handler)
   }, [searchTerm])
 
-  const filters: FilterOption[] = [
-    { label: 'All', filter: 'all' },
-    { label: 'Popular', filter: 'popular' },
-    { label: 'New', filter: 'new' },
-    { label: 'Master League', tag: 'master-league' },
-    { label: 'Ultra League', tag: 'ultra-league' },
-    { label: 'Great League', tag: 'great-league' },
-    { label: 'Raid', tag: 'raid' },
-    { label: 'Community Day', tag: 'daily-catch' },
-  ]
+  const { visibleFilters, dropdownFilters, allFilters } = useMemo(() => {
+    const tagCounts = new Map(
+      availableTags.map((tag) => [tag.name, tag.queryCount] as const),
+    )
+    const defaultTagSet = new Set(DEFAULT_TAG_FILTERS.map((tag) => tag.tag))
+
+    const inlineTagFilters: FilterOption[] = DEFAULT_TAG_FILTERS.map((tag) => {
+      const count = tagCounts.get(tag.tag)
+
+      return {
+        key: `tag:${tag.tag}`,
+        label: count ? `${tag.label} (${count})` : tag.label,
+        tag: tag.tag,
+      }
+    })
+
+    const extraTagFilters: FilterOption[] = availableTags
+      .filter((tag) => !defaultTagSet.has(tag.name))
+      .map((tag) => ({
+        key: `tag:${tag.name}`,
+        label: `${formatTagLabel(tag.name)} (${tag.queryCount})`,
+        tag: tag.name,
+      }))
+
+    const inlineFilters = [...BASE_FILTERS, ...inlineTagFilters]
+
+    return {
+      visibleFilters: inlineFilters,
+      dropdownFilters: extraTagFilters,
+      allFilters: [...inlineFilters, ...extraTagFilters],
+    }
+  }, [availableTags])
+
+  useEffect(() => {
+    if (!allFilters.some((option) => option.key === activeFilterKey)) {
+      setActiveFilterKey('all')
+    }
+  }, [allFilters, activeFilterKey])
 
   const activeFilter =
-    filters.find((option) => option.label === activeFilterLabel) ?? filters[0]
+    allFilters.find((option) => option.key === activeFilterKey) ?? allFilters[0]
+
+  const activeDropdownFilter = dropdownFilters.find(
+    (option) => option.key === activeFilterKey,
+  )
 
   const {
     data,
@@ -172,17 +230,51 @@ function DiscoverPage() {
 
       <section className="border-b border-border/60 px-5 py-3 md:px-8 lg:px-10">
         <div className="flex flex-wrap items-center gap-2">
-          {filters.map((filter) => (
+          {visibleFilters.map((filter) => (
             <Button
-              key={filter.label}
-              variant={activeFilterLabel === filter.label ? 'outline' : 'ghost'}
+              key={filter.key}
+              variant={activeFilterKey === filter.key ? 'outline' : 'ghost'}
               size="sm"
               className="rounded-xl px-4"
-              onClick={() => setActiveFilterLabel(filter.label)}
+              onClick={() => setActiveFilterKey(filter.key)}
             >
               {filter.label}
             </Button>
           ))}
+          {dropdownFilters.length > 0 ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant={activeDropdownFilter ? 'outline' : 'ghost'}
+                    size="sm"
+                    className="rounded-xl px-4"
+                  >
+                    {activeDropdownFilter?.label ?? 'More tags'}
+                    <ChevronsUpDownIcon className="ml-1" />
+                  </Button>
+                }
+              />
+              <DropdownMenuContent
+                align="start"
+                className="min-w-56 sm:min-w-72"
+              >
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>More tags</DropdownMenuLabel>
+                </DropdownMenuGroup>
+                <DropdownMenuRadioGroup
+                  value={activeDropdownFilter?.key ?? ''}
+                  onValueChange={setActiveFilterKey}
+                >
+                  {dropdownFilters.map((filter) => (
+                    <DropdownMenuRadioItem key={filter.key} value={filter.key}>
+                      {filter.label}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : null}
         </div>
       </section>
 
@@ -209,8 +301,8 @@ function DiscoverPage() {
 
           <Separator className="my-5" />
 
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-muted-foreground">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 sm:flex-nowrap">
+            <p className="text-sm text-muted-foreground whitespace-nowrap">
               {resultsCount} search strings found
             </p>
             <DropdownMenu>

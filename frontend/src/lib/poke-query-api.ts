@@ -273,8 +273,20 @@ export type QueryDetail = CommunityQuery & {
   }>
 }
 
+export type QueryTag = {
+  id: string
+  name: string
+  queryCount: number
+}
+
 export function getQueryById(id: string): Promise<QueryDetail> {
   return apiRequest<QueryDetail>(`/api/v1/queries/${id}`)
+}
+
+export function getQueryTags(): Promise<QueryTag[]> {
+  return apiRequest<{ tags: QueryTag[] }>('/api/v1/queries/tags').then(
+    (response) => response.tags,
+  )
 }
 
 export type TrainerPublicQuery = {

@@ -9,6 +9,7 @@ import {
   FavoriteQuerySchema,
   ForkQuerySchema,
   GetQuerySchema,
+  GetTagsSchema,
   UnfavoriteQuerySchema,
   UpdateQuerySchema,
 } from "./queries.schemas.js";
@@ -17,6 +18,23 @@ import { favorites } from "../../db/schema.js";
 
 export async function queriesRoutes(fastify: FastifyTypebox) {
   const server = fastify.withTypeProvider<TypeBoxTypeProvider>();
+
+  server.get("/tags", { schema: GetTagsSchema }, async () => {
+    const rows = await fastify.db
+      .select({
+        id: tags.id,
+        name: tags.name,
+        queryCount: sql<number>`COUNT(DISTINCT ${queriesToTags.queryId})::int`,
+      })
+      .from(tags)
+      .innerJoin(queriesToTags, eq(queriesToTags.tagId, tags.id))
+      .innerJoin(searchQueries, eq(searchQueries.id, queriesToTags.queryId))
+      .where(eq(searchQueries.isPublic, true))
+      .groupBy(tags.id, tags.name)
+      .orderBy(tags.name);
+
+    return { tags: rows };
+  });
 
   server.get("/:id", { schema: GetQuerySchema }, async (request, reply) => {
     const { id } = request.params;

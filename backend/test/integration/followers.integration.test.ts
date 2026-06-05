@@ -44,8 +44,10 @@ integrationDescribe("Followers Integration", () => {
       .delete(followers)
       .where(
         or(
-          and(eq(followers.followerId, TEST_USER_ID), eq(followers.followedId, OTHER_TEST_USER_ID)),
-          and(eq(followers.followerId, OTHER_TEST_USER_ID), eq(followers.followedId, TEST_USER_ID)),
+          eq(followers.followerId, TEST_USER_ID),
+          eq(followers.followedId, TEST_USER_ID),
+          eq(followers.followerId, OTHER_TEST_USER_ID),
+          eq(followers.followedId, OTHER_TEST_USER_ID),
         ),
       );
 
@@ -60,8 +62,10 @@ integrationDescribe("Followers Integration", () => {
       .delete(followers)
       .where(
         or(
-          and(eq(followers.followerId, TEST_USER_ID), eq(followers.followedId, OTHER_TEST_USER_ID)),
-          and(eq(followers.followerId, OTHER_TEST_USER_ID), eq(followers.followedId, TEST_USER_ID)),
+          eq(followers.followerId, TEST_USER_ID),
+          eq(followers.followedId, TEST_USER_ID),
+          eq(followers.followerId, OTHER_TEST_USER_ID),
+          eq(followers.followedId, OTHER_TEST_USER_ID),
         ),
       );
     await app.close();

@@ -72,6 +72,14 @@ Current generated tag coverage includes `high-iv`, `nundo-hunt`, `pvp`, `great-l
 
 Only public queries are returned. Creator `team`, `level`, and `trainerCode` are returned as `null` when the creator's profile is private.
 
+`GET /api/v1/queries/tags` returns tag metadata for public queries only:
+
+- `tags[].id`: tag id
+- `tags[].name`: normalized tag name
+- `tags[].queryCount`: number of public queries associated with the tag
+
+This endpoint is intended for frontend filter UIs so tag options stay synchronized with real data.
+
 ## Trainer Profile Endpoints
 
 Public trainer profiles are split for better caching and tab loading on the frontend:

@@ -112,6 +112,7 @@ The server starts on `http://localhost:3000`. Interactive API docs are available
 | `POST`   | `/api/v1/users/:id/follow`            | ✓    | Follow another trainer                                               |
 | `POST`   | `/api/v1/users/:id/unfollow`          | ✓    | Unfollow another trainer                                             |
 | `GET`    | `/api/v1/queries`                     | ✓    | List your queries                                                    |
+| `GET`    | `/api/v1/queries/tags`                |      | List public query tags with usage counts for discovery filters       |
 | `GET`    | `/api/v1/queries/:id`                 |      | Get one public query with public fork metadata                       |
 | `POST`   | `/api/v1/queries`                     | ✓    | Create a query                                                       |
 | `PATCH`  | `/api/v1/queries/:id`                 | ✓    | Update a query you own                                               |
@@ -165,6 +166,8 @@ Update an existing search query that you own. The request body is strict: only t
 ## Community Discovery
 
 `GET /api/v1/community` returns public queries only.
+
+`GET /api/v1/queries/tags` returns available tags for public queries and includes a `queryCount` for each tag. This is useful for building dynamic tag filters in the frontend.
 
 Supported query params:
 
