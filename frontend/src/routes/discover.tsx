@@ -15,9 +15,7 @@ import {
   SearchIcon,
 } from 'lucide-react'
 import { toast } from 'sonner'
-
 import { Button } from '#/components/ui/button'
-import { Badge } from '#/components/ui/badge'
 import type { CommunityQuery } from '#/lib/poke-query-api'
 import {
   getCommunityQueriesPage,
@@ -129,18 +127,18 @@ function DiscoverPage() {
         )
         return
       }
-      toast.error('Could not save guest favorite.')
+      toast.error('Could not save favorite.')
     },
   })
 
   const guestUnfavoriteMutation = useMutation({
     mutationFn: unfavoriteGuestQuery,
     onSuccess: () => {
-      toast.success('Removed from guest favorites.')
+      toast.success('Removed from favorites.')
       void queryClient.invalidateQueries({ queryKey: ['guest-favorites'] })
     },
     onError: () => {
-      toast.error('Could not remove guest favorite.')
+      toast.error('Could not remove favorite.')
     },
   })
 

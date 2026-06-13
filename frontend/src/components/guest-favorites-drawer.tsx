@@ -78,7 +78,7 @@ export function GuestFavoritesDrawer({
               <div className="text-center">
                 <HeartIcon className="mx-auto size-8 text-muted-foreground/40" />
                 <p className="mt-2 text-sm text-muted-foreground">
-                  No guest favorites yet.
+                  No favorites yet.
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground/70">
                   Favorite up to {maxFavorites} queries without an account.
