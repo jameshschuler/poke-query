@@ -13,6 +13,9 @@ type SearchStringCardProps = {
   card: CommunityQuery | TrainerPublicQuery
   variant: 'discover' | 'trainer'
   isAuthenticated: boolean
+  isFavorited?: boolean
+  isFavoritePending?: boolean
+  onToggleFavorite?: (queryId: string, isFavorited: boolean) => void
 }
 
 function isCommunityQuery(
@@ -25,6 +28,9 @@ export function SearchStringCard({
   card,
   variant,
   isAuthenticated,
+  isFavorited = false,
+  isFavoritePending = false,
+  onToggleFavorite,
 }: SearchStringCardProps) {
   const dateFormatter = useMemo(
     () =>
@@ -116,22 +122,40 @@ export function SearchStringCard({
           <Button
             variant="outline"
             size="sm"
-            className="rounded-xl"
+            className="cursor-pointer rounded-xl"
             onClick={handleCopy}
           >
             <CopyIcon className="size-4" />
             Copy
           </Button>
 
-          {variant === 'discover' && isAuthenticated ? (
-            <Button variant="outline" size="sm" className="rounded-xl">
-              <HeartIcon className="size-4" />
-              Favorite
+          {variant === 'discover' ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className={`rounded-xl ${
+                isFavorited
+                  ? 'border-rose-300 text-rose-600 hover:bg-rose-50 hover:text-rose-600'
+                  : ''
+              } cursor-pointer`}
+              disabled={isFavoritePending}
+              onClick={() => {
+                onToggleFavorite?.(card.id, isFavorited)
+              }}
+            >
+              <HeartIcon
+                className={`size-4 ${isFavorited ? 'fill-current text-rose-600' : ''}`}
+              />
+              {isFavorited ? 'Favorited' : 'Favorite'}
             </Button>
           ) : null}
 
           {variant === 'discover' && isAuthenticated ? (
-            <Button variant="outline" size="sm" className="rounded-xl">
+            <Button
+              variant="outline"
+              size="sm"
+              className="cursor-pointer rounded-xl"
+            >
               <GitForkIcon className="size-4" />
               Fork
             </Button>
@@ -143,7 +167,11 @@ export function SearchStringCard({
               params={{ queryId: card.id }}
               className="inline-flex"
             >
-              <Button variant="outline" size="sm" className="rounded-xl">
+              <Button
+                variant="outline"
+                size="sm"
+                className="cursor-pointer rounded-xl"
+              >
                 <GitForkIcon className="size-4" />
                 Fork
               </Button>

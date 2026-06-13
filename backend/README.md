@@ -25,6 +25,7 @@ backend/
 │   ├── modules/
 │   │   ├── auth/           # Login, logout, session
 │   │   ├── community/      # Public query feed
+│   │   ├── guests/         # Guest session + guest favorites
 │   │   ├── queries/        # CRUD for search queries
 │   │   └── users/          # Trainer profiles
 │   ├── plugins/
@@ -92,36 +93,40 @@ The server starts on `http://localhost:3000`. Interactive API docs are available
 
 ## API Routes
 
-| Method   | Path                                  | Auth | Description                                                          |
-| -------- | ------------------------------------- | ---- | -------------------------------------------------------------------- |
-| `POST`   | `/api/v1/auth/login`                  |      | Send OTP to email                                                    |
-| `POST`   | `/api/v1/auth/verify`                 |      | Verify OTP and set session cookie                                    |
-| `POST`   | `/api/v1/auth/logout`                 | ✓    | End session                                                          |
-| `GET`    | `/api/v1/users/me`                    | ✓    | Get your own profile with query, favorite, follower, and fork counts |
-| `GET`    | `/api/v1/users/me/followers`          | ✓    | List trainers who follow you                                         |
-| `PATCH`  | `/api/v1/users/me`                    | ✓    | Update your profile                                                  |
-| `POST`   | `/api/v1/users/me/deactivate`         | ✓    | Deactivate your account                                              |
-| `POST`   | `/api/v1/users/me/reactivate`         | ✓    | Reactivate your account                                              |
-| `DELETE` | `/api/v1/users/me`                    | ✓    | Delete your account                                                  |
-| `GET`    | `/api/v1/users/by-username/:username` |      | Get a public trainer profile and aggregate public counts             |
-| `GET`    | `/api/v1/users/:id/strings`           |      | List up to 20 public non-fork queries by trainer                     |
-| `GET`    | `/api/v1/users/:id/forks`             |      | List up to 20 public forks by trainer                                |
-| `GET`    | `/api/v1/users/:id/favorites`         |      | List up to 20 public favorites by trainer                            |
-| `GET`    | `/api/v1/users/:id`                   |      | Get a trainer's public profile                                       |
-| `GET`    | `/api/v1/users/:id/followers`         |      | List followers for a specific trainer                                |
-| `POST`   | `/api/v1/users/:id/follow`            | ✓    | Follow another trainer                                               |
-| `POST`   | `/api/v1/users/:id/unfollow`          | ✓    | Unfollow another trainer                                             |
-| `GET`    | `/api/v1/queries`                     | ✓    | List your queries                                                    |
-| `GET`    | `/api/v1/queries/tags`                |      | List public query tags with usage counts for discovery filters       |
-| `GET`    | `/api/v1/queries/:id`                 |      | Get one public query with public fork metadata                       |
-| `POST`   | `/api/v1/queries`                     | ✓    | Create a query                                                       |
-| `PATCH`  | `/api/v1/queries/:id`                 | ✓    | Update a query you own                                               |
-| `DELETE` | `/api/v1/queries/:id`                 | ✓    | Delete a query                                                       |
-| `POST`   | `/api/v1/queries/:id/fork`            | ✓    | Fork a public query                                                  |
-| `PATCH`  | `/api/v1/queries/:id/copy`            |      | Increment the copy count                                             |
-| `POST`   | `/api/v1/queries/:id/favorite`        | ✓    | Favorite a visible query                                             |
-| `POST`   | `/api/v1/queries/:id/unfavorite`      | ✓    | Remove a query from your favorites                                   |
-| `GET`    | `/api/v1/community`                   |      | Browse public queries with tag, search, sort, and pagination         |
+| Method   | Path                                             | Auth | Description                                                          |
+| -------- | ------------------------------------------------ | ---- | -------------------------------------------------------------------- |
+| `POST`   | `/api/v1/auth/login`                             |      | Send OTP to email                                                    |
+| `POST`   | `/api/v1/auth/verify`                            |      | Verify OTP and set session cookie                                    |
+| `POST`   | `/api/v1/auth/logout`                            | ✓    | End session                                                          |
+| `GET`    | `/api/v1/users/me`                               | ✓    | Get your own profile with query, favorite, follower, and fork counts |
+| `GET`    | `/api/v1/users/me/followers`                     | ✓    | List trainers who follow you                                         |
+| `PATCH`  | `/api/v1/users/me`                               | ✓    | Update your profile                                                  |
+| `POST`   | `/api/v1/users/me/deactivate`                    | ✓    | Deactivate your account                                              |
+| `POST`   | `/api/v1/users/me/reactivate`                    | ✓    | Reactivate your account                                              |
+| `DELETE` | `/api/v1/users/me`                               | ✓    | Delete your account                                                  |
+| `GET`    | `/api/v1/users/by-username/:username`            |      | Get a public trainer profile and aggregate public counts             |
+| `GET`    | `/api/v1/users/:id/strings`                      |      | List up to 20 public non-fork queries by trainer                     |
+| `GET`    | `/api/v1/users/:id/forks`                        |      | List up to 20 public forks by trainer                                |
+| `GET`    | `/api/v1/users/:id/favorites`                    |      | List up to 20 public favorites by trainer                            |
+| `GET`    | `/api/v1/users/:id`                              |      | Get a trainer's public profile                                       |
+| `GET`    | `/api/v1/users/:id/followers`                    |      | List followers for a specific trainer                                |
+| `POST`   | `/api/v1/users/:id/follow`                       | ✓    | Follow another trainer                                               |
+| `POST`   | `/api/v1/users/:id/unfollow`                     | ✓    | Unfollow another trainer                                             |
+| `GET`    | `/api/v1/queries`                                | ✓    | List your queries                                                    |
+| `POST`   | `/api/v1/queries/guest/session`                  |      | Create/reuse guest identity cookie and return guest favorites usage  |
+| `GET`    | `/api/v1/queries/guest/favorites`                |      | List guest favorite query ids and current usage                      |
+| `POST`   | `/api/v1/queries/guest/favorites/:id`            |      | Favorite a public query as a guest (max 10)                          |
+| `POST`   | `/api/v1/queries/guest/favorites/:id/unfavorite` |      | Remove a guest favorite                                              |
+| `GET`    | `/api/v1/queries/tags`                           |      | List public query tags with usage counts for discovery filters       |
+| `GET`    | `/api/v1/queries/:id`                            |      | Get one public query with public fork metadata                       |
+| `POST`   | `/api/v1/queries`                                | ✓    | Create a query                                                       |
+| `PATCH`  | `/api/v1/queries/:id`                            | ✓    | Update a query you own                                               |
+| `DELETE` | `/api/v1/queries/:id`                            | ✓    | Delete a query                                                       |
+| `POST`   | `/api/v1/queries/:id/fork`                       | ✓    | Fork a public query                                                  |
+| `PATCH`  | `/api/v1/queries/:id/copy`                       |      | Increment the copy count                                             |
+| `POST`   | `/api/v1/queries/:id/favorite`                   | ✓    | Favorite a visible query                                             |
+| `POST`   | `/api/v1/queries/:id/unfavorite`                 | ✓    | Remove a query from your favorites                                   |
+| `GET`    | `/api/v1/community`                              |      | Browse public queries with tag, search, sort, and pagination         |
 
 ## Query Endpoints
 
@@ -183,6 +188,21 @@ Notes:
 - `filter=new` restricts results to the last 30 days.
 - `filter=popular` defaults to popularity-based ordering when `sort` is omitted.
 - Response items include creator info, but `team`, `level`, and `trainerCode` are `null` when the creator's profile is private.
+
+## Guest Favorites
+
+Guests can favorite public queries without authentication using a cookie-backed guest id (`pq_guest_id`).
+
+- `POST /api/v1/queries/guest/session` creates or reuses the guest cookie.
+- `GET /api/v1/queries/guest/favorites` returns `favoriteQueryIds`, `favoritesCount`, and `maxFavorites`.
+- `POST /api/v1/queries/guest/favorites/:id` favorites a public query.
+- `POST /api/v1/queries/guest/favorites/:id/unfavorite` removes a favorite.
+
+Constraints:
+
+- Guest favorites are limited to **10** per guest id.
+- Duplicate favorites are idempotent.
+- Favoriting a non-public or missing query returns `404`.
 
 ## Trainer Profiles And Privacy
 

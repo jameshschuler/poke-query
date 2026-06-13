@@ -119,6 +119,21 @@ export const favorites = pokeSchema.table(
   }),
 );
 
+// --- GUEST FAVORITES (Junction) ---
+export const guestFavorites = pokeSchema.table(
+  "guest_favorites",
+  {
+    guestId: text("guest_id").notNull(),
+    queryId: uuid("query_id")
+      .references(() => searchQueries.id, { onDelete: "cascade" })
+      .notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.guestId, t.queryId] }),
+  }),
+);
+
 // --- FOLLOWERS (Junction) ---
 export const followers = pokeSchema.table(
   "followers",

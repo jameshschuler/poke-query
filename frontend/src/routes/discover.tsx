@@ -1,19 +1,31 @@
 import { useAuth } from '@authabase/react'
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { useMemo, useState, useEffect } from 'react'
 import {
   ChevronsUpDownIcon,
+  HeartIcon,
   Loader2Icon,
   PlusIcon,
   SearchIcon,
 } from 'lucide-react'
+import { toast } from 'sonner'
 
 import { Button } from '#/components/ui/button'
+import { Badge } from '#/components/ui/badge'
 import type { CommunityQuery } from '#/lib/poke-query-api'
 import {
   getCommunityQueriesPage,
+  favoriteGuestQuery,
+  favoriteQuery,
+  getGuestFavorites,
   getQueryTags,
+  unfavoriteGuestQuery,
   ApiRequestError,
 } from '#/lib/poke-query-api'
 import {
@@ -28,6 +40,7 @@ import {
 import { Input } from '#/components/ui/input'
 import { Separator } from '#/components/ui/separator'
 import { SearchStringCard } from '#/components/search-string-card'
+import { GuestFavoritesDrawer } from '#/components/guest-favorites-drawer'
 import { formatTagLabel } from '#/lib/utils'
 
 export const Route = createFileRoute('/discover')({
@@ -73,15 +86,62 @@ const sortOptions: Array<{ value: SortMode; label: string }> = [
 
 function DiscoverPage() {
   const { user } = useAuth()
+  const queryClient = useQueryClient()
   const [sortMode, setSortMode] = useState<SortMode>('created_desc')
   const [activeFilterKey, setActiveFilterKey] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
   const { data: availableTags = [] } = useQuery({
     queryKey: ['query-tags'],
     queryFn: getQueryTags,
     staleTime: 5 * 60_000,
+  })
+
+  const { data: guestFavorites } = useQuery({
+    queryKey: ['guest-favorites'],
+    queryFn: getGuestFavorites,
+    enabled: !user,
+    staleTime: 60_000,
+  })
+
+  const favoriteMutation = useMutation({
+    mutationFn: favoriteQuery,
+    onSuccess: () => {
+      toast.success('Saved to favorites!')
+    },
+    onError: () => {
+      toast.error('Could not save favorite.')
+    },
+  })
+
+  const guestFavoriteMutation = useMutation({
+    mutationFn: favoriteGuestQuery,
+    onSuccess: () => {
+      toast.success('Saved to favorites!')
+      void queryClient.invalidateQueries({ queryKey: ['guest-favorites'] })
+    },
+    onError: (error: unknown) => {
+      if (error instanceof ApiRequestError && error.status === 409) {
+        toast.error(
+          'Guest favorites are limited to 10. Create an account for more.',
+        )
+        return
+      }
+      toast.error('Could not save guest favorite.')
+    },
+  })
+
+  const guestUnfavoriteMutation = useMutation({
+    mutationFn: unfavoriteGuestQuery,
+    onSuccess: () => {
+      toast.success('Removed from guest favorites.')
+      void queryClient.invalidateQueries({ queryKey: ['guest-favorites'] })
+    },
+    onError: () => {
+      toast.error('Could not remove guest favorite.')
+    },
   })
 
   // Debounce search input
@@ -172,6 +232,13 @@ function DiscoverPage() {
     [data],
   )
 
+  const guestFavoriteIds = useMemo(
+    () => new Set(guestFavorites?.favoriteQueryIds ?? []),
+    [guestFavorites?.favoriteQueryIds],
+  )
+  const guestFavoritesCount = guestFavorites?.favoritesCount ?? 0
+  const guestFavoritesMax = guestFavorites?.maxFavorites ?? 10
+
   // Server-side search, so just use rows
   const filteredRows = rows
   const resultsCount = filteredRows.length
@@ -179,6 +246,20 @@ function DiscoverPage() {
   const sortLabel =
     sortOptions.find((option) => option.value === sortMode)?.label ??
     'Created date (newest first)'
+
+  function handleToggleFavorite(queryId: string, isFavorited: boolean) {
+    if (user) {
+      favoriteMutation.mutate(queryId)
+      return
+    }
+
+    if (isFavorited) {
+      guestUnfavoriteMutation.mutate(queryId)
+      return
+    }
+
+    guestFavoriteMutation.mutate(queryId)
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -224,7 +305,17 @@ function DiscoverPage() {
               <PlusIcon />
               <span className="hidden sm:inline">New String</span>
             </Button>
-          ) : null}
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              className="shrink-0 rounded-xl"
+              onClick={() => setIsDrawerOpen(true)}
+            >
+              <HeartIcon className="size-4" />
+              <span className="hidden sm:inline">Favorites</span>
+            </Button>
+          )}
         </div>
       </header>
 
@@ -355,6 +446,13 @@ function DiscoverPage() {
                 card={card}
                 variant="discover"
                 isAuthenticated={Boolean(user)}
+                isFavorited={!user && guestFavoriteIds.has(card.id)}
+                isFavoritePending={
+                  favoriteMutation.isPending ||
+                  guestFavoriteMutation.isPending ||
+                  guestUnfavoriteMutation.isPending
+                }
+                onToggleFavorite={handleToggleFavorite}
               />
             ))}
           </div>
@@ -381,6 +479,14 @@ function DiscoverPage() {
           ) : null}
         </section>
       </main>
+
+      <GuestFavoritesDrawer
+        isOpen={isDrawerOpen}
+        onOpenChange={setIsDrawerOpen}
+        favoriteQueryIds={Array.from(guestFavoriteIds)}
+        favoritesCount={guestFavoritesCount}
+        maxFavorites={guestFavoritesMax}
+      />
     </div>
   )
 }

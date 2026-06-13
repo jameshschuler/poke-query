@@ -279,6 +279,18 @@ export type QueryTag = {
   queryCount: number
 }
 
+export type GuestFavoritesResponse = {
+  favoriteQueryIds: string[]
+  favoritesCount: number
+  maxFavorites: number
+}
+
+export type GuestSessionResponse = {
+  guestId: string
+  favoritesCount: number
+  maxFavorites: number
+}
+
 export function getQueryById(id: string): Promise<QueryDetail> {
   return apiRequest<QueryDetail>(`/api/v1/queries/${id}`)
 }
@@ -287,6 +299,30 @@ export function getQueryTags(): Promise<QueryTag[]> {
   return apiRequest<{ tags: QueryTag[] }>('/api/v1/queries/tags').then(
     (response) => response.tags,
   )
+}
+
+export function ensureGuestSession(): Promise<GuestSessionResponse> {
+  return apiRequest<GuestSessionResponse>('/api/v1/queries/guest/session', {
+    method: 'POST',
+  })
+}
+
+export function getGuestFavorites(): Promise<GuestFavoritesResponse> {
+  return apiRequest<GuestFavoritesResponse>('/api/v1/queries/guest/favorites')
+}
+
+export function favoriteGuestQuery(id: string): Promise<void> {
+  return apiRequest<void>(`/api/v1/queries/guest/favorites/${id}`, {
+    method: 'POST',
+    parseAs: 'void',
+  })
+}
+
+export function unfavoriteGuestQuery(id: string): Promise<void> {
+  return apiRequest<void>(`/api/v1/queries/guest/favorites/${id}/unfavorite`, {
+    method: 'POST',
+    parseAs: 'void',
+  })
 }
 
 export type TrainerPublicQuery = {

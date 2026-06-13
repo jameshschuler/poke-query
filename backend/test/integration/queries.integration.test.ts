@@ -289,6 +289,74 @@ integrationDescribe("Queries CRUD Integration", () => {
     expect(favoriteRowsAfter).toHaveLength(0);
   });
 
+  it("enforces max 10 guest favorites while keeping duplicate favorite idempotent", async () => {
+    const guestCookie = { pq_guest_id: "guest-limit-test" };
+    const createdIds: string[] = [];
+
+    for (let i = 0; i < 11; i += 1) {
+      const createRes = await app.inject({
+        method: "POST",
+        url: "/api/v1/queries",
+        cookies: { "sb-access-token": "owner-token" },
+        payload: {
+          title: `Guest Favorite ${i}`,
+          query: `cp-${100 + i}`,
+          description: "guest favorites cap test",
+          isPublic: true,
+        },
+      });
+
+      expect(createRes.statusCode).toBe(201);
+      createdIds.push(createRes.json().id as string);
+    }
+
+    for (let i = 0; i < 10; i += 1) {
+      const favoriteRes = await app.inject({
+        method: "POST",
+        url: `/api/v1/queries/guest/favorites/${createdIds[i]}`,
+        cookies: guestCookie,
+      });
+
+      expect(favoriteRes.statusCode).toBe(204);
+    }
+
+    const duplicateRes = await app.inject({
+      method: "POST",
+      url: `/api/v1/queries/guest/favorites/${createdIds[0]}`,
+      cookies: guestCookie,
+    });
+    expect(duplicateRes.statusCode).toBe(204);
+
+    const limitRes = await app.inject({
+      method: "POST",
+      url: `/api/v1/queries/guest/favorites/${createdIds[10]}`,
+      cookies: guestCookie,
+    });
+
+    expect(limitRes.statusCode).toBe(409);
+    expect(limitRes.json()).toEqual({
+      error: "Guest favorites are limited to 10",
+      maxFavorites: 10,
+    });
+
+    const listRes = await app.inject({
+      method: "GET",
+      url: "/api/v1/queries/guest/favorites",
+      cookies: guestCookie,
+    });
+
+    expect(listRes.statusCode).toBe(200);
+    const listBody: {
+      favoriteQueryIds: string[];
+      favoritesCount: number;
+      maxFavorites: number;
+    } = listRes.json();
+    expect(listBody.favoritesCount).toBe(10);
+    expect(listBody.maxFavorites).toBe(10);
+    expect(listBody.favoriteQueryIds).toContain(createdIds[0]);
+    expect(listBody.favoriteQueryIds).not.toContain(createdIds[10]);
+  });
+
   it("returns public query tags for frontend filtering", async () => {
     const publicRes = await app.inject({
       method: "POST",

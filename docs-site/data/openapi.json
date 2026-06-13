@@ -3,7 +3,7 @@
   "info": {
     "title": "Poke Query API",
     "version": "1.0.0",
-    "description": "## What This API Does\n\nTrainers can create, save, update, fork, favorite, and discover reusable Pokemon GO search strings.\n\nRecent backend changes added:\n\n- normalized user tags plus parser-generated `autoTags`\n- community discovery with text search, tag filters, sorting, and pagination\n- follower endpoints and privacy-aware public trainer fields\n- seed data that covers league, raid, and other common discovery tags\n\n**Repository:** [github.com/jameshschuler/poke-query](https://github.com/jameshschuler/poke-query)\n\n## Getting Started\n\n### 1. Run the backend locally\n\n```bash\ncd backend\nnpm install\nnpm run db:migrate\nnpm run dev\n```\n\nThe server starts at **http://localhost:3000**.\n\n### 2. Authenticate\n\n1. `POST /api/v1/auth/login` with your email to request an OTP.\n2. `POST /api/v1/auth/verify` with `email` and `token` or `token_hash`.\n3. `POST /api/v1/auth/logout` clears the session cookies.\n4. Protected endpoints require the `sb-access-token` HttpOnly cookie set during verification.\n\n### 3. Call a protected endpoint\n\n```bash\ncurl -X POST \"http://localhost:3000/api/v1/queries\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Cookie: sb-access-token=YOUR_TOKEN\" \\\n  -d '{\"title\":\"Great League IV\",\"query\":\"4*&cp-1500\",\"isPublic\":false,\"tags\":[\"great-league\",\"pvp\"]}'\n```\n\n## Authentication Model\n\nThis API uses cookie-based auth via Supabase.\n\n| Detail           | Value                                         |\n| ---------------- | --------------------------------------------- |\n| Cookie name      | `sb-access-token`                             |\n| Lifetime         | 1 hour access, 7 day refresh                  |\n| Protected routes | Declared with the cookie auth security scheme |\n\n## Query Payload Rules\n\n- Create and update requests accept `title`, `query`, `description`, `isPublic`, and optional `tags`\n- Unknown fields are rejected by validation\n- User tags are trimmed, lowercased, and deduplicated before storage\n- Parser-generated `autoTags` are derived from the query string and used by community discovery\n\nCurrent generated tag coverage includes `high-iv`, `nundo-hunt`, `pvp`, `great-league`, `ultra-league`, `master-league`, `legacy-moves`, `raid`, `mass-evolve`, `distance-trade`, and `daily-catch`.\n\n## Community Discovery\n\n`GET /api/v1/community` supports these query params:\n\n- `tag`: matches either stored user tags or generated `autoTags`\n- `search`: matches title, query text, description, or creator username\n- `filter`: `all`, `new`, or `popular`\n- `sort`: `created_desc`, `created_asc`, `title_asc`, `title_desc`, or `popular`\n- `limit`: 1-50\n- `offset`: pagination offset\n\nOnly public queries are returned. Creator `team`, `level`, and `trainerCode` are returned as `null` when the creator's profile is private.\n\n`GET /api/v1/queries/tags` returns tag metadata for public queries only:\n\n- `tags[].id`: tag id\n- `tags[].name`: normalized tag name\n- `tags[].queryCount`: number of public queries associated with the tag\n\nThis endpoint is intended for frontend filter UIs so tag options stay synchronized with real data.\n\n## Trainer Profile Endpoints\n\nPublic trainer profiles are split for better caching and tab loading on the frontend:\n\n- `GET /api/v1/users/by-username/:username` returns public profile metadata and aggregate counts.\n- `GET /api/v1/users/:id/strings` returns up to 20 public non-fork queries.\n- `GET /api/v1/users/:id/forks` returns up to 20 public forks.\n- `GET /api/v1/users/:id/favorites` returns up to 20 public favorites.\n- `GET /api/v1/users/:id/followers` returns the trainer's follower list with privacy-aware trainer fields.\n- `GET /api/v1/users/me/followers` returns the authenticated trainer's follower list.\n\n## Seed Data\n\nThe backend includes seed scripts for local QA and demo data:\n\n- `npm run db:seed:trainers`\n- `npm run db:seed:search`\n- `npm run db:seed:followers`\n- `npm run db:seed`\n\nThe search seed script includes public and private queries plus tag coverage for great league, ultra league, master league, raid, community-day style searches, and other common filter cases.\n"
+    "description": "## What This API Does\n\nTrainers can create, save, update, fork, favorite, and discover reusable Pokemon GO search strings.\n\nRecent backend changes added:\n\n- normalized user tags plus parser-generated `autoTags`\n- community discovery with text search, tag filters, sorting, and pagination\n- follower endpoints and privacy-aware public trainer fields\n- seed data that covers league, raid, and other common discovery tags\n\n**Repository:** [github.com/jameshschuler/poke-query](https://github.com/jameshschuler/poke-query)\n\n## Getting Started\n\n### 1. Run the backend locally\n\n```bash\ncd backend\nnpm install\nnpm run db:migrate\nnpm run dev\n```\n\nThe server starts at **http://localhost:3000**.\n\n### 2. Authenticate\n\n1. `POST /api/v1/auth/login` with your email to request an OTP.\n2. `POST /api/v1/auth/verify` with `email` and `token` or `token_hash`.\n3. `POST /api/v1/auth/logout` clears the session cookies.\n4. Protected endpoints require the `sb-access-token` HttpOnly cookie set during verification.\n\n### 3. Call a protected endpoint\n\n```bash\ncurl -X POST \"http://localhost:3000/api/v1/queries\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Cookie: sb-access-token=YOUR_TOKEN\" \\\n  -d '{\"title\":\"Great League IV\",\"query\":\"4*&cp-1500\",\"isPublic\":false,\"tags\":[\"great-league\",\"pvp\"]}'\n```\n\n## Authentication Model\n\nThis API uses cookie-based auth via Supabase.\n\n| Detail           | Value                                         |\n| ---------------- | --------------------------------------------- |\n| Cookie name      | `sb-access-token`                             |\n| Lifetime         | 1 hour access, 7 day refresh                  |\n| Protected routes | Declared with the cookie auth security scheme |\n\n## Query Payload Rules\n\n- Create and update requests accept `title`, `query`, `description`, `isPublic`, and optional `tags`\n- Unknown fields are rejected by validation\n- User tags are trimmed, lowercased, and deduplicated before storage\n- Parser-generated `autoTags` are derived from the query string and used by community discovery\n\nCurrent generated tag coverage includes `high-iv`, `nundo-hunt`, `pvp`, `great-league`, `ultra-league`, `master-league`, `legacy-moves`, `raid`, `mass-evolve`, `distance-trade`, and `daily-catch`.\n\n## Community Discovery\n\n`GET /api/v1/community` supports these query params:\n\n- `tag`: matches either stored user tags or generated `autoTags`\n- `search`: matches title, query text, description, or creator username\n- `filter`: `all`, `new`, or `popular`\n- `sort`: `created_desc`, `created_asc`, `title_asc`, `title_desc`, or `popular`\n- `limit`: 1-50\n- `offset`: pagination offset\n\nOnly public queries are returned. Creator `team`, `level`, and `trainerCode` are returned as `null` when the creator's profile is private.\n\n`GET /api/v1/queries/tags` returns tag metadata for public queries only:\n\n- `tags[].id`: tag id\n- `tags[].name`: normalized tag name\n- `tags[].queryCount`: number of public queries associated with the tag\n\nThis endpoint is intended for frontend filter UIs so tag options stay synchronized with real data.\n\n## Guest Favorites\n\nGuest users can favorite public queries without creating an account.\n\n- `POST /api/v1/queries/guest/session` creates/reuses a cookie-backed guest identity.\n- `GET /api/v1/queries/guest/favorites` returns guest favorite ids and current usage.\n- `POST /api/v1/queries/guest/favorites/:id` favorites a public query.\n- `POST /api/v1/queries/guest/favorites/:id/unfavorite` removes a guest favorite.\n\nRules:\n\n- max 10 guest favorites per guest id\n- duplicate favorites are idempotent\n- missing/non-public query favorite attempts return `404`\n\n## Trainer Profile Endpoints\n\nPublic trainer profiles are split for better caching and tab loading on the frontend:\n\n- `GET /api/v1/users/by-username/:username` returns public profile metadata and aggregate counts.\n- `GET /api/v1/users/:id/strings` returns up to 20 public non-fork queries.\n- `GET /api/v1/users/:id/forks` returns up to 20 public forks.\n- `GET /api/v1/users/:id/favorites` returns up to 20 public favorites.\n- `GET /api/v1/users/:id/followers` returns the trainer's follower list with privacy-aware trainer fields.\n- `GET /api/v1/users/me/followers` returns the authenticated trainer's follower list.\n\n## Seed Data\n\nThe backend includes seed scripts for local QA and demo data:\n\n- `npm run db:seed:trainers`\n- `npm run db:seed:search`\n- `npm run db:seed:followers`\n- `npm run db:seed`\n\nThe search seed script includes public and private queries plus tag coverage for great league, ultra league, master league, raid, community-day style searches, and other common filter cases.\n"
   },
   "components": {
     "securitySchemes": {
@@ -1744,6 +1744,151 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/queries/guest/session": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "guestId",
+                    "favoritesCount",
+                    "maxFavorites"
+                  ],
+                  "properties": {
+                    "guestId": {
+                      "type": "string"
+                    },
+                    "favoritesCount": {
+                      "type": "integer"
+                    },
+                    "maxFavorites": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/queries/guest/favorites": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "favoriteQueryIds",
+                    "favoritesCount",
+                    "maxFavorites"
+                  ],
+                  "properties": {
+                    "favoriteQueryIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "favoritesCount": {
+                      "type": "integer"
+                    },
+                    "maxFavorites": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/queries/guest/favorites/{id}": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error",
+                    "maxFavorites"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "maxFavorites": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/queries/guest/favorites/{id}/unfavorite": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
           }
         }
       }

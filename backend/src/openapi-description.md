@@ -80,6 +80,21 @@ Only public queries are returned. Creator `team`, `level`, and `trainerCode` are
 
 This endpoint is intended for frontend filter UIs so tag options stay synchronized with real data.
 
+## Guest Favorites
+
+Guest users can favorite public queries without creating an account.
+
+- `POST /api/v1/queries/guest/session` creates/reuses a cookie-backed guest identity.
+- `GET /api/v1/queries/guest/favorites` returns guest favorite ids and current usage.
+- `POST /api/v1/queries/guest/favorites/:id` favorites a public query.
+- `POST /api/v1/queries/guest/favorites/:id/unfavorite` removes a guest favorite.
+
+Rules:
+
+- max 10 guest favorites per guest id
+- duplicate favorites are idempotent
+- missing/non-public query favorite attempts return `404`
+
 ## Trainer Profile Endpoints
 
 Public trainer profiles are split for better caching and tab loading on the frontend:
