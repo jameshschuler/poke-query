@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { ProtectedPageShell } from '#/components/protected-page-shell'
+import { PageShell } from '#/components/page-shell'
 import { requireAuthenticated } from '#/lib/route-auth'
 
 export const Route = createFileRoute('/favorites')({
@@ -13,7 +13,7 @@ export const Route = createFileRoute('/favorites')({
 
 function FavoritesPage() {
   return (
-    <ProtectedPageShell
+    <PageShell
       title="Favorites"
       subtitle="Quick access to the strings and prompts you saved for later."
     >
@@ -78,6 +78,6 @@ function FavoritesPage() {
           </article>
         ))}
       </div>
-    </ProtectedPageShell>
+    </PageShell>
   )
 }

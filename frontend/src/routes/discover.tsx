@@ -39,6 +39,7 @@ import { Input } from '#/components/ui/input'
 import { Separator } from '#/components/ui/separator'
 import { SearchStringCard } from '#/components/search-string-card'
 import { GuestFavoritesDrawer } from '#/components/guest-favorites-drawer'
+import { PageShell } from '#/components/page-shell'
 import { formatTagLabel } from '#/lib/utils'
 
 export const Route = createFileRoute('/discover')({
@@ -260,136 +261,133 @@ function DiscoverPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <header className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border/60 px-5 py-4 sm:flex-nowrap md:px-8 lg:px-10">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-muted-foreground md:text-base">
-            PokeQuery
-          </span>
-          <Separator orientation="vertical" className="h-4" />
-          <h1 className="text-base font-semibold md:text-lg">Discover</h1>
-        </div>
-
-        <div className="flex w-full items-center gap-2 md:ml-auto md:max-w-xl">
-          <div className="relative flex-1">
-            <SearchIcon className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search strings..."
-              className="h-10 rounded-full pr-10"
-              style={{ paddingLeft: '2.75rem' }}
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              aria-label="Search strings"
-            />
-            {searchTerm && (
-              <button
-                type="button"
-                tabIndex={0}
-                aria-label="Clear search"
-                className="absolute right-3 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-full bg-muted text-base text-muted-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring"
-                onClick={() => setSearchTerm('')}
-              >
-                <span
-                  className="pointer-events-none select-none"
-                  aria-hidden="true"
+    <>
+      <PageShell
+        headerPrefix={user ? undefined : 'PokeQuery'}
+        title="Discover"
+        subtitle="Browse popular and recently updated community search strings."
+        headerControls={
+          <div className="flex w-full items-center gap-2 md:ml-auto md:max-w-xl">
+            <div className="relative flex-1">
+              <SearchIcon className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search strings..."
+                className="h-10 rounded-full pr-10"
+                style={{ paddingLeft: '2.75rem' }}
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                aria-label="Search strings"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck={false}
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                type="text"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  tabIndex={0}
+                  aria-label="Clear search"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-full bg-muted text-base text-muted-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring"
+                  onClick={() => setSearchTerm('')}
                 >
-                  ×
-                </span>
-              </button>
+                  <span
+                    className="pointer-events-none select-none"
+                    aria-hidden="true"
+                  >
+                    ×
+                  </span>
+                </button>
+              )}
+            </div>
+            {user ? (
+              <Button className="shrink-0 rounded-full px-3 sm:px-4">
+                <PlusIcon />
+                <span>New String</span>
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="shrink-0 cursor-pointer rounded-xl shadow-sm"
+                  onClick={() => setIsDrawerOpen(true)}
+                >
+                  <HeartIcon className="size-4" />
+                  <span>Favorites</span>
+                </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="shrink-0 cursor-pointer rounded-xl px-4 shadow-sm"
+                  onClick={() => {
+                    window.location.href = '/login'
+                  }}
+                >
+                  Log in
+                </Button>
+              </>
             )}
           </div>
-          {user ? (
-            <Button className="shrink-0 rounded-full px-3 sm:px-4">
-              <PlusIcon />
-              <span className="hidden sm:inline">New String</span>
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              className="shrink-0 rounded-xl"
-              onClick={() => setIsDrawerOpen(true)}
-            >
-              <HeartIcon className="size-4" />
-              <span className="hidden sm:inline">Favorites</span>
-            </Button>
-          )}
-        </div>
-      </header>
-
-      <section className="border-b border-border/60 px-5 py-3 md:px-8 lg:px-10">
-        <div className="flex flex-wrap items-center gap-2">
-          {visibleFilters.map((filter) => (
-            <Button
-              key={filter.key}
-              variant={activeFilterKey === filter.key ? 'outline' : 'ghost'}
-              size="sm"
-              className="rounded-xl px-4"
-              onClick={() => setActiveFilterKey(filter.key)}
-            >
-              {filter.label}
-            </Button>
-          ))}
-          {dropdownFilters.length > 0 ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button
-                    variant={activeDropdownFilter ? 'outline' : 'ghost'}
-                    size="sm"
-                    className="rounded-xl px-4"
-                  >
-                    {activeDropdownFilter?.label ?? 'More tags'}
-                    <ChevronsUpDownIcon className="ml-1" />
-                  </Button>
-                }
-              />
-              <DropdownMenuContent
-                align="start"
-                className="min-w-56 sm:min-w-72"
+        }
+      >
+        <section className="-mx-6 -mt-5 border-b border-border/60 px-6 py-3 md:-mx-6 lg:-mx-6">
+          <div className="flex flex-wrap items-center gap-2">
+            {visibleFilters.map((filter) => (
+              <Button
+                key={filter.key}
+                variant={activeFilterKey === filter.key ? 'outline' : 'ghost'}
+                size="sm"
+                className="rounded-xl px-4"
+                onClick={() => setActiveFilterKey(filter.key)}
               >
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel>More tags</DropdownMenuLabel>
-                </DropdownMenuGroup>
-                <DropdownMenuRadioGroup
-                  value={activeDropdownFilter?.key ?? ''}
-                  onValueChange={setActiveFilterKey}
-                >
-                  {dropdownFilters.map((filter) => (
-                    <DropdownMenuRadioItem key={filter.key} value={filter.key}>
-                      {filter.label}
-                    </DropdownMenuRadioItem>
-                  ))}
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : null}
-        </div>
-      </section>
-
-      <main className="flex flex-1 flex-col p-5 md:p-8 lg:p-10">
-        <section className="rounded-3xl border border-border/60 bg-card/80 p-6 shadow-sm backdrop-blur">
-          <h2 className="text-xl font-semibold">Discover</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Browse popular and recently updated community search strings.
-          </p>
-
-          {/* <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {stats.map((stat) => (
-              <div
-                key={stat.label}
-                className="rounded-2xl border border-border/60 bg-background/70 px-4 py-3"
-              >
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  {stat.label}
-                </p>
-                <p className="mt-1 text-lg font-semibold">{stat.value}</p>
-              </div>
+                {filter.label}
+              </Button>
             ))}
-          </div> */}
+            {dropdownFilters.length > 0 ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      variant={activeDropdownFilter ? 'outline' : 'ghost'}
+                      size="sm"
+                      className="rounded-xl px-4"
+                    >
+                      {activeDropdownFilter?.label ?? 'More tags'}
+                      <ChevronsUpDownIcon className="ml-1" />
+                    </Button>
+                  }
+                />
+                <DropdownMenuContent
+                  align="start"
+                  className="min-w-56 sm:min-w-72"
+                >
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel>More tags</DropdownMenuLabel>
+                  </DropdownMenuGroup>
+                  <DropdownMenuRadioGroup
+                    value={activeDropdownFilter?.key ?? ''}
+                    onValueChange={setActiveFilterKey}
+                  >
+                    {dropdownFilters.map((filter) => (
+                      <DropdownMenuRadioItem
+                        key={filter.key}
+                        value={filter.key}
+                      >
+                        {filter.label}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
+          </div>
+        </section>
 
-          <Separator className="my-5" />
-
+        <div className="pt-5">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3 sm:flex-nowrap">
             <p className="text-sm text-muted-foreground whitespace-nowrap">
               {resultsCount} search strings found
@@ -475,8 +473,8 @@ function DiscoverPage() {
               </Button>
             </div>
           ) : null}
-        </section>
-      </main>
+        </div>
+      </PageShell>
 
       <GuestFavoritesDrawer
         isOpen={isDrawerOpen}
@@ -485,6 +483,6 @@ function DiscoverPage() {
         favoritesCount={guestFavoritesCount}
         maxFavorites={guestFavoritesMax}
       />
-    </div>
+    </>
   )
 }

@@ -1,6 +1,7 @@
 import { useAuth } from '@authabase/react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
+import { PageShell } from '#/components/page-shell'
 import { logout } from '#/lib/poke-query-api'
 import { requireAuthenticated } from '#/lib/route-auth'
 
@@ -33,17 +34,11 @@ function DashboardRoute() {
     return null
   }
 
+  const subtitle = `Signed in as ${user.email ?? 'trainer'}.`
+
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-5 px-4 py-8 sm:gap-6 sm:px-6 sm:py-10">
-      <header className="space-y-1">
-        <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-          Dashboard
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Signed in as {user.email ?? 'trainer'}.
-        </p>
-      </header>
-      <section className="rounded-xl border border-border/70 bg-card p-6 shadow-sm">
+    <PageShell title="Dashboard" subtitle={subtitle}>
+      <div className="rounded-xl border border-border/70 bg-background/70 p-6">
         <p className="text-sm text-muted-foreground">
           Components were removed from this frontend build as requested.
         </p>
@@ -57,7 +52,7 @@ function DashboardRoute() {
         >
           {isLoggingOut ? 'Logging out...' : 'Temp logout'}
         </button>
-      </section>
-    </main>
+      </div>
+    </PageShell>
   )
 }

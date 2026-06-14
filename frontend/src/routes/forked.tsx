@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { ProtectedPageShell } from '#/components/protected-page-shell'
+import { PageShell } from '#/components/page-shell'
 import { requireAuthenticated } from '#/lib/route-auth'
 
 export const Route = createFileRoute('/forked')({
@@ -13,7 +13,7 @@ export const Route = createFileRoute('/forked')({
 
 function ForkedPage() {
   return (
-    <ProtectedPageShell
+    <PageShell
       title="Forked"
       subtitle="Track strings you forked from the community and keep them in sync."
     >
@@ -78,6 +78,6 @@ function ForkedPage() {
           </article>
         ))}
       </div>
-    </ProtectedPageShell>
+    </PageShell>
   )
 }

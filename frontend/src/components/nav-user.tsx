@@ -18,16 +18,11 @@ import {
   ChevronsUpDownIcon,
   SparklesIcon,
   BadgeCheckIcon,
-  CreditCardIcon,
   BellIcon,
   LogOutIcon,
 } from 'lucide-react'
 
-export function NavUser({
-  user,
-  onLogout,
-  isLoggingOut = false,
-}: {
+interface NavUserProps {
   user: {
     name: string
     email: string
@@ -35,7 +30,13 @@ export function NavUser({
   }
   onLogout?: () => void | Promise<void>
   isLoggingOut?: boolean
-}) {
+}
+
+export function NavUser({
+  user,
+  onLogout,
+  isLoggingOut = false,
+}: NavUserProps) {
   const { isMobile } = useSidebar()
   return (
     <SidebarMenu>
