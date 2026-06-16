@@ -96,12 +96,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         await logout()
       } catch (error) {
         if (!(error instanceof ApiRequestError && error.status === 401)) {
-          throw error
+          // Best effort: still clear the local auth session even if the
+          // backend logout endpoint fails.
         }
       }
 
-      await signOut()
       setCachedUser(null)
+      await signOut()
       void navigate({ to: '/login', replace: true })
     } finally {
       setIsLoggingOut(false)

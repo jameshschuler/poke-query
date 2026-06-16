@@ -1,2 +1,3 @@
 - Add bad words censoring/validation
 - Add RLS to tables
+- add header section to each private page

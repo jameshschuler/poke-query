@@ -5,6 +5,7 @@ import {
   CopyIcon,
   GitForkIcon,
   XIcon,
+  Trash2Icon,
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 
@@ -16,6 +17,7 @@ import {
   DrawerTitle,
 } from '#/components/ui/drawer'
 import { Badge } from '#/components/ui/badge'
+import { Button } from '#/components/ui/button'
 import { getQueryById } from '#/lib/poke-query-api'
 import type { QueryDetail } from '#/lib/poke-query-api'
 import { formatTagLabel } from '#/lib/utils'
@@ -26,6 +28,11 @@ type GuestFavoritesDrawerProps = {
   favoriteQueryIds: string[]
   favoritesCount: number
   maxFavorites: number
+  isRemovingFavorite?: boolean
+  isClearingFavorites?: boolean
+  removingFavoriteId?: string | null
+  onRemoveFavorite: (queryId: string) => void
+  onClearFavorites: () => void
 }
 
 export function GuestFavoritesDrawer({
@@ -34,6 +41,11 @@ export function GuestFavoritesDrawer({
   favoriteQueryIds,
   favoritesCount,
   maxFavorites,
+  isRemovingFavorite = false,
+  isClearingFavorites = false,
+  removingFavoriteId = null,
+  onRemoveFavorite,
+  onClearFavorites,
 }: GuestFavoritesDrawerProps) {
   const { data: queries = [], isLoading } = useQuery({
     queryKey: ['guest-favorites-queries', favoriteQueryIds],
@@ -87,18 +99,43 @@ export function GuestFavoritesDrawer({
             </div>
           ) : (
             <div className="flex flex-1 flex-col gap-4 overflow-y-auto">
-              {queries.map((query) => (
-                <Link
-                  key={query.id}
-                  to="/queries/$queryId"
-                  params={{ queryId: query.id }}
-                  className="block hover:opacity-75"
+              <div className="flex items-center justify-between rounded-xl border border-border/60 bg-background/70 px-3 py-2">
+                <p className="text-xs text-muted-foreground">
+                  {favoritesCount} / {maxFavorites} favorites
+                </p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 text-destructive hover:text-destructive"
+                  onClick={() => onClearFavorites()}
+                  disabled={isClearingFavorites || isRemovingFavorite}
                 >
-                  <article className="space-y-3 overflow-hidden rounded-2xl border border-border/60 bg-background/70 px-5 py-4">
-                    <div>
-                      <h3 className="truncate text-base font-semibold leading-tight">
-                        {query.title}
-                      </h3>
+                  {isClearingFavorites ? (
+                    <Loader2Icon className="size-3.5 animate-spin" />
+                  ) : (
+                    <Trash2Icon className="size-3.5" />
+                  )}
+                  Clear all
+                </Button>
+              </div>
+
+              {queries.map((query) => (
+                <article
+                  key={query.id}
+                  className="space-y-3 overflow-hidden rounded-2xl border border-border/60 bg-background/70 px-5 py-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <Link
+                        to="/queries/$queryId"
+                        params={{ queryId: query.id }}
+                        className="block hover:opacity-75"
+                      >
+                        <h3 className="truncate text-base font-semibold leading-tight">
+                          {query.title}
+                        </h3>
+                      </Link>
 
                       {query.autoTags.length > 0 ? (
                         <div className="mt-2 flex flex-wrap gap-2">
@@ -115,34 +152,53 @@ export function GuestFavoritesDrawer({
                       ) : null}
                     </div>
 
-                    {query.description ? (
-                      <p className="text-sm text-muted-foreground">
-                        {query.description}
-                      </p>
-                    ) : null}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                      onClick={() => onRemoveFavorite(query.id)}
+                      disabled={
+                        isClearingFavorites ||
+                        (isRemovingFavorite && removingFavoriteId === query.id)
+                      }
+                      aria-label={`Remove ${query.title} from favorites`}
+                    >
+                      {isRemovingFavorite && removingFavoriteId === query.id ? (
+                        <Loader2Icon className="size-4 animate-spin" />
+                      ) : (
+                        <XIcon className="size-4" />
+                      )}
+                    </Button>
+                  </div>
 
-                    {query.creator ? (
-                      <p className="text-xs text-muted-foreground">
-                        by {query.creator.username}
-                      </p>
-                    ) : null}
+                  {query.description ? (
+                    <p className="text-sm text-muted-foreground">
+                      {query.description}
+                    </p>
+                  ) : null}
 
-                    <div className="flex gap-3 pt-1 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <CopyIcon className="size-3" />
-                        {query.copyCount}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <HeartIcon className="size-3" />
-                        {query.favoriteCount}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <GitForkIcon className="size-3" />
-                        {query.forkCount}
-                      </span>
-                    </div>
-                  </article>
-                </Link>
+                  {query.creator ? (
+                    <p className="text-xs text-muted-foreground">
+                      by {query.creator.username}
+                    </p>
+                  ) : null}
+
+                  <div className="flex gap-3 pt-1 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <CopyIcon className="size-3" />
+                      {query.copyCount}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <HeartIcon className="size-3" />
+                      {query.favoriteCount}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <GitForkIcon className="size-3" />
+                      {query.forkCount}
+                    </span>
+                  </div>
+                </article>
               ))}
             </div>
           )}

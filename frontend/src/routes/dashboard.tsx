@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { PageShell } from '#/components/page-shell'
 import { logout } from '#/lib/poke-query-api'
-import { requireAuthenticated } from '#/lib/route-auth'
+import { requireAuthenticated, setCachedUser } from '#/lib/route-auth'
 
 export const Route = createFileRoute('/dashboard')({
   ssr: false,
@@ -23,6 +23,7 @@ function DashboardRoute() {
 
     try {
       await logout()
+      setCachedUser(null)
       await refreshSession()
       void navigate({ to: '/', replace: true })
     } finally {

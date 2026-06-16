@@ -143,6 +143,19 @@ function DiscoverPage() {
     },
   })
 
+  const clearGuestFavoritesMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      await Promise.allSettled(ids.map((id) => unfavoriteGuestQuery(id)))
+    },
+    onSuccess: () => {
+      toast.success('Cleared favorites.')
+      void queryClient.invalidateQueries({ queryKey: ['guest-favorites'] })
+    },
+    onError: () => {
+      toast.error('Could not clear favorites.')
+    },
+  })
+
   // Debounce search input
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -258,6 +271,19 @@ function DiscoverPage() {
     }
 
     guestFavoriteMutation.mutate(queryId)
+  }
+
+  function handleRemoveGuestFavorite(queryId: string) {
+    guestUnfavoriteMutation.mutate(queryId)
+  }
+
+  function handleClearGuestFavorites() {
+    const ids = Array.from(guestFavoriteIds)
+    if (ids.length === 0) {
+      return
+    }
+
+    clearGuestFavoritesMutation.mutate(ids)
   }
 
   return (
@@ -482,6 +508,11 @@ function DiscoverPage() {
         favoriteQueryIds={Array.from(guestFavoriteIds)}
         favoritesCount={guestFavoritesCount}
         maxFavorites={guestFavoritesMax}
+        isRemovingFavorite={guestUnfavoriteMutation.isPending}
+        removingFavoriteId={guestUnfavoriteMutation.variables ?? null}
+        isClearingFavorites={clearGuestFavoritesMutation.isPending}
+        onRemoveFavorite={handleRemoveGuestFavorite}
+        onClearFavorites={handleClearGuestFavorites}
       />
     </>
   )
