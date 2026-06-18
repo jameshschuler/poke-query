@@ -107,7 +107,7 @@ export function GuestFavoritesDrawer({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-8 px-2 text-destructive hover:text-destructive"
+                  className="h-8 cursor-pointer px-2 text-destructive hover:text-destructive"
                   onClick={() => onClearFavorites()}
                   disabled={isClearingFavorites || isRemovingFavorite}
                 >
@@ -156,7 +156,7 @@ export function GuestFavoritesDrawer({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                      className="h-8 w-8 shrink-0 cursor-pointer text-muted-foreground hover:text-destructive"
                       onClick={() => onRemoveFavorite(query.id)}
                       disabled={
                         isClearingFavorites ||

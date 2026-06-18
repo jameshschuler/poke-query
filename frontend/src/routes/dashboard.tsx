@@ -38,7 +38,12 @@ function DashboardRoute() {
   const subtitle = `Signed in as ${user.email ?? 'trainer'}.`
 
   return (
-    <PageShell title="Dashboard" subtitle={subtitle}>
+    <PageShell
+      title="Dashboard"
+      subtitle="Review your workspace status and jump into your latest search strings."
+      contentHeaderVariant="floating"
+      showSidebar
+    >
       <div className="rounded-xl border border-border/70 bg-background/70 p-6">
         <p className="text-sm text-muted-foreground">
           Components were removed from this frontend build as requested.

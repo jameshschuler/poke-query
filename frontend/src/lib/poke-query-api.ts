@@ -379,6 +379,22 @@ export function getTrainerFavorites(
   return apiRequest(`/api/v1/users/${encodeURIComponent(id)}/favorites`)
 }
 
+export function followTrainer(id: string): Promise<void> {
+  return apiRequest<void>(`/api/v1/users/${encodeURIComponent(id)}/follow`, {
+    method: 'POST',
+    body: {},
+    parseAs: 'void',
+  })
+}
+
+export function unfollowTrainer(id: string): Promise<void> {
+  return apiRequest<void>(`/api/v1/users/${encodeURIComponent(id)}/unfollow`, {
+    method: 'POST',
+    body: {},
+    parseAs: 'void',
+  })
+}
+
 export type CommunityQueryParams = {
   tag?: string
   filter?: 'all' | 'new' | 'popular'

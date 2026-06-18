@@ -48,8 +48,8 @@ const data = {
       icon: <BookOpenIcon />,
     },
     {
-      title: 'Forked',
-      url: '/forked',
+      title: 'Forks',
+      url: '/forks',
       icon: <GitForkIcon />,
     },
     {

@@ -16,6 +16,8 @@ function FavoritesPage() {
     <PageShell
       title="Favorites"
       subtitle="Quick access to the strings and prompts you saved for later."
+      contentHeaderVariant="floating"
+      showSidebar
     >
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {[

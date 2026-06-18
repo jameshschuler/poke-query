@@ -5,13 +5,14 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMemo, useState, useEffect } from 'react'
 import {
   ChevronsUpDownIcon,
   HeartIcon,
   Loader2Icon,
   PlusIcon,
+  Share2Icon,
   SearchIcon,
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -36,16 +37,10 @@ import {
   DropdownMenuTrigger,
 } from '#/components/ui/dropdown-menu'
 import { Input } from '#/components/ui/input'
-import { Separator } from '#/components/ui/separator'
 import { SearchStringCard } from '#/components/search-string-card'
 import { GuestFavoritesDrawer } from '#/components/guest-favorites-drawer'
 import { PageShell } from '#/components/page-shell'
 import { formatTagLabel } from '#/lib/utils'
-
-export const Route = createFileRoute('/discover')({
-  ssr: false,
-  component: DiscoverPage,
-})
 
 type SortMode =
   | 'created_desc'
@@ -83,13 +78,54 @@ const sortOptions: Array<{ value: SortMode; label: string }> = [
   { value: 'title_desc', label: 'Title (Z-A)' },
 ]
 
+const sortValues = new Set(sortOptions.map((option) => option.value))
+
+type DiscoverSearch = {
+  q?: string
+  sort?: SortMode
+  filter?: string
+}
+
+export const Route = createFileRoute('/discover')({
+  ssr: false,
+  validateSearch: (search): DiscoverSearch => {
+    const q =
+      typeof search.q === 'string' && search.q.trim().length > 0
+        ? search.q
+        : undefined
+
+    const sort =
+      typeof search.sort === 'string' && sortValues.has(search.sort as SortMode)
+        ? (search.sort as SortMode)
+        : undefined
+
+    const filter =
+      typeof search.filter === 'string' && search.filter.trim().length > 0
+        ? search.filter
+        : undefined
+
+    return {
+      q,
+      sort,
+      filter,
+    }
+  },
+  component: DiscoverPage,
+})
+
 function DiscoverPage() {
+  const navigate = useNavigate()
+  const routeSearch = Route.useSearch()
   const { user } = useAuth()
   const queryClient = useQueryClient()
-  const [sortMode, setSortMode] = useState<SortMode>('created_desc')
-  const [activeFilterKey, setActiveFilterKey] = useState('all')
-  const [searchTerm, setSearchTerm] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [sortMode, setSortMode] = useState<SortMode>(
+    routeSearch.sort ?? 'created_desc',
+  )
+  const [activeFilterKey, setActiveFilterKey] = useState(
+    routeSearch.filter ?? 'all',
+  )
+  const [searchTerm, setSearchTerm] = useState(routeSearch.q ?? '')
+  const [debouncedSearch, setDebouncedSearch] = useState(routeSearch.q ?? '')
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
   const { data: availableTags = [] } = useQuery({
@@ -164,6 +200,31 @@ function DiscoverPage() {
     return () => clearTimeout(handler)
   }, [searchTerm])
 
+  useEffect(() => {
+    const nextQ = routeSearch.q ?? ''
+    const nextSort = routeSearch.sort ?? 'created_desc'
+    const nextFilter = routeSearch.filter ?? 'all'
+
+    setSearchTerm((current) => (current === nextQ ? current : nextQ))
+    setDebouncedSearch((current) => (current === nextQ ? current : nextQ))
+    setSortMode((current) => (current === nextSort ? current : nextSort))
+    setActiveFilterKey((current) =>
+      current === nextFilter ? current : nextFilter,
+    )
+  }, [routeSearch.filter, routeSearch.q, routeSearch.sort])
+
+  useEffect(() => {
+    void navigate({
+      to: '/discover',
+      search: {
+        q: debouncedSearch.trim().length > 0 ? debouncedSearch : undefined,
+        sort: sortMode !== 'created_desc' ? sortMode : undefined,
+        filter: activeFilterKey !== 'all' ? activeFilterKey : undefined,
+      },
+      replace: true,
+    })
+  }, [activeFilterKey, debouncedSearch, navigate, sortMode])
+
   const { visibleFilters, dropdownFilters, allFilters } = useMemo(() => {
     const tagCounts = new Map(
       availableTags.map((tag) => [tag.name, tag.queryCount] as const),
@@ -198,17 +259,32 @@ function DiscoverPage() {
   }, [availableTags])
 
   useEffect(() => {
-    if (!allFilters.some((option) => option.key === activeFilterKey)) {
+    const hasKnownFilter = allFilters.some(
+      (option) => option.key === activeFilterKey,
+    )
+    const isCustomTagFilter = activeFilterKey.startsWith('tag:')
+
+    if (!hasKnownFilter && !isCustomTagFilter) {
       setActiveFilterKey('all')
     }
   }, [allFilters, activeFilterKey])
 
   const activeFilter =
-    allFilters.find((option) => option.key === activeFilterKey) ?? allFilters[0]
+    allFilters.find((option) => option.key === activeFilterKey) ??
+    (activeFilterKey.startsWith('tag:')
+      ? {
+          key: activeFilterKey,
+          label: formatTagLabel(activeFilterKey.slice(4)),
+          tag: activeFilterKey.slice(4),
+        }
+      : allFilters[0])
 
-  const activeDropdownFilter = dropdownFilters.find(
-    (option) => option.key === activeFilterKey,
-  )
+  const activeDropdownFilter =
+    dropdownFilters.find((option) => option.key === activeFilterKey) ??
+    (activeFilter.tag &&
+    !visibleFilters.some((option) => option.key === activeFilter.key)
+      ? activeFilter
+      : undefined)
 
   const {
     data,
@@ -249,6 +325,8 @@ function DiscoverPage() {
     [guestFavorites?.favoriteQueryIds],
   )
   const guestFavoritesCount = guestFavorites?.favoritesCount ?? 0
+  const guestFavoritesBadgeLabel =
+    guestFavoritesCount > 99 ? '99+' : String(guestFavoritesCount)
   const guestFavoritesMax = guestFavorites?.maxFavorites ?? 10
 
   // Server-side search, so just use rows
@@ -286,12 +364,22 @@ function DiscoverPage() {
     clearGuestFavoritesMutation.mutate(ids)
   }
 
+  async function handleCopySearchLink() {
+    try {
+      await navigator.clipboard.writeText(window.location.href)
+      toast.success('Search link copied.')
+    } catch {
+      toast.error('Could not copy link.')
+    }
+  }
+
   return (
     <>
       <PageShell
         headerPrefix={user ? undefined : 'PokeQuery'}
         title="Discover"
         subtitle="Browse popular and recently updated community search strings."
+        contentHeaderVariant="floating"
         headerControls={
           <div className="flex w-full items-center gap-2 md:ml-auto md:max-w-xl">
             <div className="relative flex-1">
@@ -336,15 +424,20 @@ function DiscoverPage() {
               </Button>
             ) : (
               <>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="shrink-0 cursor-pointer rounded-xl shadow-sm"
-                  onClick={() => setIsDrawerOpen(true)}
-                >
-                  <HeartIcon className="size-4" />
-                  <span>Favorites</span>
-                </Button>
+                {guestFavoritesCount > 0 ? (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="relative shrink-0 cursor-pointer rounded-xl shadow-sm"
+                    onClick={() => setIsDrawerOpen(true)}
+                  >
+                    <HeartIcon className="size-4" />
+                    <span>Favorites</span>
+                    <span className="absolute -right-2 -top-2 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold leading-none text-primary-foreground">
+                      {guestFavoritesBadgeLabel}
+                    </span>
+                  </Button>
+                ) : null}
                 <Button
                   variant="default"
                   size="sm"
@@ -418,34 +511,53 @@ function DiscoverPage() {
             <p className="text-sm text-muted-foreground whitespace-nowrap">
               {resultsCount} search strings found
             </p>
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button variant="outline" size="sm" className="rounded-xl">
-                    Sort by: {sortLabel}
-                    <ChevronsUpDownIcon className="ml-1" />
-                  </Button>
-                }
-              />
-              <DropdownMenuContent align="end" className="min-w-56 sm:min-w-72">
-                <DropdownMenuGroup>
-                  <DropdownMenuLabel>Sort order</DropdownMenuLabel>
-                </DropdownMenuGroup>
-                <DropdownMenuRadioGroup
-                  value={sortMode}
-                  onValueChange={(value) => setSortMode(value as SortMode)}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-xl"
+                aria-label="Copy search link"
+                title="Copy search link"
+                onClick={() => {
+                  void handleCopySearchLink()
+                }}
+              >
+                <Share2Icon className="size-4" />
+                <span>Share</span>
+              </Button>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button variant="outline" size="sm" className="rounded-xl">
+                      Sort by: {sortLabel}
+                      <ChevronsUpDownIcon className="ml-1" />
+                    </Button>
+                  }
+                />
+                <DropdownMenuContent
+                  align="end"
+                  className="min-w-56 sm:min-w-72"
                 >
-                  {sortOptions.map((option) => (
-                    <DropdownMenuRadioItem
-                      key={option.value}
-                      value={option.value}
-                    >
-                      {option.label}
-                    </DropdownMenuRadioItem>
-                  ))}
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel>Sort order</DropdownMenuLabel>
+                  </DropdownMenuGroup>
+                  <DropdownMenuRadioGroup
+                    value={sortMode}
+                    onValueChange={(value) => setSortMode(value as SortMode)}
+                  >
+                    {sortOptions.map((option) => (
+                      <DropdownMenuRadioItem
+                        key={option.value}
+                        value={option.value}
+                      >
+                        {option.label}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
           {error instanceof ApiRequestError ? (

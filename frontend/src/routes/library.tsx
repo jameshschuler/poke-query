@@ -16,6 +16,8 @@ function LibraryPage() {
     <PageShell
       title="My Library"
       subtitle="Manage your personal search strings and draft queries."
+      contentHeaderVariant="floating"
+      showSidebar
     >
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {[

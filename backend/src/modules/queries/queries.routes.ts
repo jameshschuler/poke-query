@@ -16,24 +16,66 @@ import {
 import { and, eq, or, sql } from "drizzle-orm";
 import { favorites } from "../../db/schema.js";
 
+function hasRowsArray(value: unknown): value is { rows: unknown[] } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "rows" in value &&
+    Array.isArray((value as { rows?: unknown }).rows)
+  );
+}
+
 export async function queriesRoutes(fastify: FastifyTypebox) {
   const server = fastify.withTypeProvider<TypeBoxTypeProvider>();
 
   server.get("/tags", { schema: GetTagsSchema }, async () => {
-    const rows = await fastify.db
-      .select({
-        id: tags.id,
-        name: tags.name,
-        queryCount: sql<number>`COUNT(DISTINCT ${queriesToTags.queryId})::int`,
-      })
-      .from(tags)
-      .innerJoin(queriesToTags, eq(queriesToTags.tagId, tags.id))
-      .innerJoin(searchQueries, eq(searchQueries.id, queriesToTags.queryId))
-      .where(eq(searchQueries.isPublic, true))
-      .groupBy(tags.id, tags.name)
-      .orderBy(tags.name);
+    const result: unknown = await fastify.db.execute(sql`
+      WITH tag_sources AS (
+        SELECT
+          qt.query_id::text AS query_id,
+          lower(t.name) AS tag_name,
+          t.id::text AS tag_id
+        FROM pokequery.queries_to_tags qt
+        JOIN pokequery.tags t ON t.id = qt.tag_id
+        JOIN pokequery.search_queries sq ON sq.id = qt.query_id
+        WHERE sq.is_public = true
 
-    return { tags: rows };
+        UNION
+
+        SELECT
+          sq.id::text AS query_id,
+          lower(auto_tag.value) AS tag_name,
+          NULL::text AS tag_id
+        FROM pokequery.search_queries sq
+        CROSS JOIN LATERAL jsonb_array_elements_text(
+          COALESCE(sq.metadata->'autoTags', '[]'::jsonb)
+        ) AS auto_tag(value)
+        WHERE sq.is_public = true
+      )
+      SELECT
+        COALESCE(MIN(tag_id), 'auto:' || tag_name) AS id,
+        tag_name AS name,
+        COUNT(DISTINCT query_id)::int AS "queryCount"
+      FROM tag_sources
+      GROUP BY tag_name
+      ORDER BY tag_name
+    `);
+
+    const rawRows = Array.isArray(result) ? result : hasRowsArray(result) ? result.rows : [];
+
+    const tagsRows: Array<{ id: string; name: string; queryCount: number }> = [];
+
+    for (const row of rawRows as Array<Record<string, unknown>>) {
+      const id = row.id;
+      const name = row.name;
+      const queryCount = row.queryCount;
+
+      if (typeof id === "string" && typeof name === "string" && typeof queryCount === "number") {
+        tagsRows.push({ id, name, queryCount });
+      }
+    }
+
+    return { tags: tagsRows };
   });
 
   server.get("/:id", { schema: GetQuerySchema }, async (request, reply) => {

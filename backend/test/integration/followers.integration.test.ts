@@ -51,6 +51,11 @@ integrationDescribe("Followers Integration", () => {
         ),
       );
 
+    await app.db
+      .update(trainers)
+      .set({ isProfilePublic: true })
+      .where(or(eq(trainers.id, TEST_USER_ID), eq(trainers.id, OTHER_TEST_USER_ID)));
+
     (supabase.auth.getUser as any).mockResolvedValue({
       data: { user: { id: TEST_USER_ID, email: "integration@example.com" } },
       error: null,
@@ -150,6 +155,32 @@ integrationDescribe("Followers Integration", () => {
 
     expect(res.statusCode).toBe(404);
     expect(res.json()).toEqual({ error: "Trainer not found" });
+  });
+
+  it("blocks following a private trainer", async () => {
+    await app.db
+      .update(trainers)
+      .set({ isProfilePublic: false })
+      .where(eq(trainers.id, OTHER_TEST_USER_ID));
+
+    const res = await app.inject({
+      method: "POST",
+      url: `/api/v1/users/${OTHER_TEST_USER_ID}/follow`,
+      cookies: { "sb-access-token": "integration-token" },
+      payload: {},
+    });
+
+    expect(res.statusCode).toBe(403);
+    expect(res.json()).toEqual({ error: "You cannot follow a private account" });
+
+    const rows = await app.db
+      .select()
+      .from(followers)
+      .where(
+        and(eq(followers.followerId, TEST_USER_ID), eq(followers.followedId, OTHER_TEST_USER_ID)),
+      );
+
+    expect(rows).toHaveLength(0);
   });
 
   it("lists followers for a trainer", async () => {

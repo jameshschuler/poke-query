@@ -11,7 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LibraryRouteImport } from './routes/library'
-import { Route as ForkedRouteImport } from './routes/forked'
+import { Route as ForksRouteImport } from './routes/forks'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as DiscoverRouteImport } from './routes/discover'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -29,9 +29,9 @@ const LibraryRoute = LibraryRouteImport.update({
   path: '/library',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ForkedRoute = ForkedRouteImport.update({
-  id: '/forked',
-  path: '/forked',
+const ForksRoute = ForksRouteImport.update({
+  id: '/forks',
+  path: '/forks',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FavoritesRoute = FavoritesRouteImport.update({
@@ -70,7 +70,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/discover': typeof DiscoverRoute
   '/favorites': typeof FavoritesRoute
-  '/forked': typeof ForkedRoute
+  '/forks': typeof ForksRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
   '/queries/$queryId': typeof QueriesQueryIdRoute
@@ -81,7 +81,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/discover': typeof DiscoverRoute
   '/favorites': typeof FavoritesRoute
-  '/forked': typeof ForkedRoute
+  '/forks': typeof ForksRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
   '/queries/$queryId': typeof QueriesQueryIdRoute
@@ -93,7 +93,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/discover': typeof DiscoverRoute
   '/favorites': typeof FavoritesRoute
-  '/forked': typeof ForkedRoute
+  '/forks': typeof ForksRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
   '/queries/$queryId': typeof QueriesQueryIdRoute
@@ -106,7 +106,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/discover'
     | '/favorites'
-    | '/forked'
+    | '/forks'
     | '/library'
     | '/login'
     | '/queries/$queryId'
@@ -117,7 +117,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/discover'
     | '/favorites'
-    | '/forked'
+    | '/forks'
     | '/library'
     | '/login'
     | '/queries/$queryId'
@@ -128,7 +128,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/discover'
     | '/favorites'
-    | '/forked'
+    | '/forks'
     | '/library'
     | '/login'
     | '/queries/$queryId'
@@ -140,7 +140,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   DiscoverRoute: typeof DiscoverRoute
   FavoritesRoute: typeof FavoritesRoute
-  ForkedRoute: typeof ForkedRoute
+  ForksRoute: typeof ForksRoute
   LibraryRoute: typeof LibraryRoute
   LoginRoute: typeof LoginRoute
   QueriesQueryIdRoute: typeof QueriesQueryIdRoute
@@ -163,11 +163,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LibraryRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/forked': {
-      id: '/forked'
-      path: '/forked'
-      fullPath: '/forked'
-      preLoaderRoute: typeof ForkedRouteImport
+    '/forks': {
+      id: '/forks'
+      path: '/forks'
+      fullPath: '/forks'
+      preLoaderRoute: typeof ForksRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/favorites': {
@@ -220,7 +220,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   DiscoverRoute: DiscoverRoute,
   FavoritesRoute: FavoritesRoute,
-  ForkedRoute: ForkedRoute,
+  ForksRoute: ForksRoute,
   LibraryRoute: LibraryRoute,
   LoginRoute: LoginRoute,
   QueriesQueryIdRoute: QueriesQueryIdRoute,

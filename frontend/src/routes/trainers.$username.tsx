@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useAuth } from '@authabase/react'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CopyIcon, UserRoundXIcon, UsersIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { Avatar, AvatarFallback, AvatarImage } from '#/components/ui/avatar'
@@ -12,6 +12,9 @@ import {
   getTrainerForks,
   getTrainerFavorites,
   getTrainerFollowers,
+  followTrainer,
+  unfollowTrainer,
+  ApiRequestError,
 } from '#/lib/poke-query-api'
 import { useState } from 'react'
 import { SearchStringCard } from '#/components/search-string-card'
@@ -47,6 +50,7 @@ const monthFormatter = new Intl.DateTimeFormat(undefined, {
 function TrainerProfilePage() {
   const { username } = Route.useParams()
   const { user } = useAuth()
+  const queryClient = useQueryClient()
 
   const [activeTab, setActiveTab] = useState<'strings' | 'forks' | 'favorites'>(
     'strings',
@@ -89,16 +93,82 @@ function TrainerProfilePage() {
   const forks = forksData?.forks ?? []
   const favs = favoritesData?.favorites ?? []
   const followers = followersData?.followers ?? []
+  const isFollowing = Boolean(
+    user?.id && followers.some((f) => f.id === user.id),
+  )
+
+  const followMutation = useMutation({
+    mutationFn: followTrainer,
+    onSuccess: async () => {
+      toast.success('Now following trainer.')
+      await queryClient.invalidateQueries({
+        queryKey: ['trainer-followers', trainer?.id],
+      })
+    },
+    onError: (error: unknown) => {
+      if (error instanceof ApiRequestError && error.status === 403) {
+        toast.error('You cannot follow a private account.')
+        return
+      }
+
+      toast.error('Could not follow trainer.')
+    },
+  })
+
+  const unfollowMutation = useMutation({
+    mutationFn: unfollowTrainer,
+    onSuccess: async () => {
+      toast.success('Unfollowed trainer.')
+      await queryClient.invalidateQueries({
+        queryKey: ['trainer-followers', trainer?.id],
+      })
+    },
+    onError: () => {
+      toast.error('Could not unfollow trainer.')
+    },
+  })
+
+  const isFollowPending = followMutation.isPending || unfollowMutation.isPending
+
+  const canShowFollowAction =
+    trainer &&
+    trainer.isProfilePublic &&
+    !trainer.deactivatedAt &&
+    user &&
+    trainer.id !== user.id
+
+  function handleFollowClick() {
+    if (!trainer || isFollowPending) {
+      return
+    }
+
+    if (isFollowing) {
+      unfollowMutation.mutate(trainer.id)
+      return
+    }
+
+    followMutation.mutate(trainer.id)
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <PageHeader
         title={trainer?.username}
         actions={
-          trainer && !trainer.deactivatedAt && user ? (
-            <Button variant="outline" size="sm" className="rounded-lg">
+          canShowFollowAction ? (
+            <Button
+              variant={isFollowing ? 'default' : 'outline'}
+              size="sm"
+              className="rounded-lg"
+              onClick={handleFollowClick}
+              disabled={isFollowPending}
+            >
               <UsersIcon className="size-4" />
-              Follow
+              {isFollowPending
+                ? 'Saving...'
+                : isFollowing
+                  ? 'Following'
+                  : 'Follow'}
             </Button>
           ) : undefined
         }

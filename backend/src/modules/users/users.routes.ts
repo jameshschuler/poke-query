@@ -414,12 +414,16 @@ export async function userRoutes(fastify: FastifyTypebox) {
       }
 
       const [targetTrainer] = await fastify.db
-        .select({ id: trainers.id })
+        .select({ id: trainers.id, isProfilePublic: trainers.isProfilePublic })
         .from(trainers)
         .where(eq(trainers.id, targetTrainerId));
 
       if (!targetTrainer) {
         return reply.code(404).send({ error: "Trainer not found" });
+      }
+
+      if (!targetTrainer.isProfilePublic) {
+        return reply.code(403).send({ error: "You cannot follow a private account" });
       }
 
       await fastify.db

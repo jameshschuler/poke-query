@@ -18,6 +18,8 @@ type PageShellProps = {
   subtitle: string
   children: ReactNode
   headerControls?: ReactNode
+  contentHeaderVariant?: 'inline' | 'floating' | 'none'
+  showSidebar?: boolean
 }
 
 export function PageShell({
@@ -26,15 +28,20 @@ export function PageShell({
   subtitle,
   children,
   headerControls,
+  contentHeaderVariant = 'inline',
+  showSidebar,
 }: PageShellProps) {
   const { user } = useAuth()
+  const shouldShowSidebar = showSidebar ?? Boolean(user)
 
   const pageContent = (
     <>
       <header className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border/60 px-5 py-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 sm:flex-nowrap md:px-8 lg:px-10">
         <div className="flex items-center gap-2">
-          {user ? <SidebarTrigger className="-ml-1" /> : null}
-          {user ? <Separator orientation="vertical" className="mr-1" /> : null}
+          {shouldShowSidebar ? <SidebarTrigger className="-ml-1" /> : null}
+          {shouldShowSidebar ? (
+            <Separator orientation="vertical" className="mr-1" />
+          ) : null}
           {headerPrefix ? (
             <p className="text-sm font-medium text-muted-foreground md:text-base">
               {headerPrefix}
@@ -76,16 +83,28 @@ export function PageShell({
       </header>
 
       <main className="flex flex-1 flex-col p-5 md:p-8 lg:p-10">
+        {contentHeaderVariant === 'floating' ? (
+          <div className="mb-6 rounded-2xl border border-border/60 bg-card/80 p-4 shadow-sm backdrop-blur">
+            <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
+          </div>
+        ) : null}
+
         <section className="rounded-3xl border border-border/60 bg-card/80 p-6 shadow-sm backdrop-blur">
-          <p className="text-sm text-muted-foreground">{subtitle}</p>
-          <Separator className="my-5" />
+          {contentHeaderVariant === 'inline' ? (
+            <>
+              <p className="text-sm text-muted-foreground">{subtitle}</p>
+              <Separator className="my-5" />
+            </>
+          ) : null}
+
           {children}
         </section>
       </main>
     </>
   )
 
-  if (!user) {
+  if (!shouldShowSidebar) {
     return (
       <div className="flex min-h-screen flex-col bg-background">
         {pageContent}

@@ -152,6 +152,7 @@ export const FollowTrainerSchema = {
   response: {
     204: Type.Null(),
     400: Type.Object({ error: Type.String() }),
+    403: Type.Object({ error: Type.String() }),
     401: Type.Object({ error: Type.String() }),
     404: Type.Object({ error: Type.String() }),
   },
