@@ -4,6 +4,10 @@ import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import type { FastifyTypebox } from "../../types/fastify.js";
 
 const isProduction = process.env.NODE_ENV === "production";
+const accessTokenMaxAgeSeconds = Number(process.env.ACCESS_TOKEN_MAX_AGE_SECONDS ?? 60 * 60);
+const refreshTokenMaxAgeSeconds = Number(
+  process.env.REFRESH_TOKEN_MAX_AGE_SECONDS ?? 60 * 60 * 24 * 7,
+);
 
 export async function authRoutes(fastify: FastifyTypebox) {
   const server = fastify.withTypeProvider<TypeBoxTypeProvider>();
@@ -53,7 +57,7 @@ export async function authRoutes(fastify: FastifyTypebox) {
         httpOnly: true,
         secure: isProduction,
         sameSite: "lax",
-        maxAge: 60 * 60, // 1 hour
+        maxAge: accessTokenMaxAgeSeconds,
       });
 
       reply.setCookie("sb-refresh-token", data.session.refresh_token, {
@@ -61,7 +65,7 @@ export async function authRoutes(fastify: FastifyTypebox) {
         httpOnly: true,
         secure: isProduction,
         sameSite: "lax",
-        maxAge: 60 * 60 * 24 * 7, // 1 week
+        maxAge: refreshTokenMaxAgeSeconds,
       });
 
       return { message: "Authenticated successfully" };

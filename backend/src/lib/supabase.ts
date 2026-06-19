@@ -14,6 +14,15 @@ const supabaseAnonKey = getRequiredEnv("SUPABASE_ANON_KEY");
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+export function createSupabaseAuthClient() {
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+}
+
 let supabaseAdminClient: ReturnType<typeof createClient> | null = null;
 
 export function getSupabaseAdmin() {
