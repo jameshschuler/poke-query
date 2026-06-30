@@ -202,6 +202,31 @@ const publicQueryItem = Type.Object({
   createdAt: Type.String(),
 });
 
+const managedQueryItem = Type.Object({
+  id: Type.String(),
+  title: Type.String(),
+  query: Type.String(),
+  description: Type.Union([Type.String(), Type.Null()]),
+  isPublic: Type.Boolean(),
+  copyCount: Type.Integer(),
+  favoriteCount: Type.Integer(),
+  forkCount: Type.Integer(),
+  autoTags: Type.Array(Type.String()),
+  createdAt: Type.String(),
+  updatedAt: Type.String(),
+});
+
+export const GetMeQueriesSchema = {
+  security: cookieAuthSecurity,
+  response: {
+    200: Type.Object({
+      queries: Type.Array(managedQueryItem),
+    }),
+    401: Type.Object({ error: Type.String() }),
+    404: Type.Object({ error: Type.String() }),
+  },
+};
+
 export const GetTrainerByUsernameSchema = {
   params: Type.Object({ username: Type.String() }),
   response: {

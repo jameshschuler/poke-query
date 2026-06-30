@@ -5,7 +5,6 @@
 ### 1) Manage/CRUD Queries
 
 - [ ] Build full "My Queries" page backed by API (replace placeholder cards)
-- [ ] Create query flow from frontend (title, query, description, visibility)
 - [ ] Edit query flow (owner-only) with optimistic UI + error handling
 - [ ] Delete query flow (owner-only) with confirm dialog + undo toast
 - [ ] Validate query input and title limits consistently (frontend + backend)

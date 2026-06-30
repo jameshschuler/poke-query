@@ -5,6 +5,7 @@ import {
   DeactivateTrainerSchema,
   DeleteTrainerSchema,
   GetMeSchema,
+  GetMeQueriesSchema,
   GetTrainerSchema,
   GetTrainerByUsernameSchema,
   GetTrainerStringsSchema,
@@ -82,6 +83,24 @@ export async function userRoutes(fastify: FastifyTypebox) {
     createdAt: Date;
   }) => ({ ...q, createdAt: q.createdAt.toISOString() });
 
+  const serializeManagedQuery = (q: {
+    id: string;
+    title: string;
+    query: string;
+    description: string | null;
+    isPublic: boolean;
+    copyCount: number;
+    favoriteCount: number;
+    forkCount: number;
+    autoTags: string[];
+    createdAt: Date;
+    updatedAt: Date;
+  }) => ({
+    ...q,
+    createdAt: q.createdAt.toISOString(),
+    updatedAt: q.updatedAt.toISOString(),
+  });
+
   // ── /me ──────────────────────────────────────────────────────────────────
 
   server.get(
@@ -149,6 +168,44 @@ export async function userRoutes(fastify: FastifyTypebox) {
         trainerCode: row.trainerCode,
         isProfilePublic: row.isProfilePublic,
       };
+    },
+  );
+
+  server.get(
+    "/me/queries",
+    { preHandler: [fastify.authenticate], schema: GetMeQueriesSchema },
+    async (request, reply) => {
+      const userId = request.user.id;
+
+      const [trainer] = await fastify.db
+        .select({ id: trainers.id })
+        .from(trainers)
+        .where(eq(trainers.userId, userId));
+
+      if (!trainer) {
+        return reply.code(404).send({ error: "Trainer not found" });
+      }
+
+      const rows = await fastify.db
+        .select({
+          id: searchQueries.id,
+          title: searchQueries.title,
+          query: searchQueries.query,
+          description: searchQueries.description,
+          isPublic: searchQueries.isPublic,
+          copyCount: searchQueries.copyCount,
+          favoriteCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM pokequery.favorites f WHERE f.query_id = ${searchQueries.id}), 0)`,
+          forkCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM pokequery.search_queries forked WHERE forked.parent_query_id = ${searchQueries.id}), 0)`,
+          autoTags: sql<string[]>`COALESCE(${searchQueries.metadata}->'autoTags', '[]'::jsonb)`,
+          createdAt: searchQueries.createdAt,
+          updatedAt: searchQueries.updatedAt,
+        })
+        .from(searchQueries)
+        .where(eq(searchQueries.creatorId, trainer.id))
+        .orderBy(desc(searchQueries.updatedAt))
+        .limit(100);
+
+      return reply.send({ queries: rows.map(serializeManagedQuery) });
     },
   );
 

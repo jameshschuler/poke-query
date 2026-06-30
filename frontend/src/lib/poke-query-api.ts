@@ -337,6 +337,11 @@ export type TrainerPublicQuery = {
   createdAt: string
 }
 
+export type ManagedQuery = TrainerPublicQuery & {
+  isPublic: boolean
+  updatedAt: string
+}
+
 export type TrainerProfile = {
   id: string
   username: string
@@ -377,6 +382,10 @@ export function getTrainerFavorites(
   id: string,
 ): Promise<{ favorites: TrainerPublicQuery[] }> {
   return apiRequest(`/api/v1/users/${encodeURIComponent(id)}/favorites`)
+}
+
+export function getMyQueries(): Promise<{ queries: ManagedQuery[] }> {
+  return apiRequest('/api/v1/users/me/queries')
 }
 
 export function followTrainer(id: string): Promise<void> {
