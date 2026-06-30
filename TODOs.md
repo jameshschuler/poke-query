@@ -4,10 +4,10 @@
 
 ### 1) Manage/CRUD Queries
 
-- [ ] Build full "My Queries" page backed by API (replace placeholder cards)
-- [ ] Edit query flow (owner-only) with optimistic UI + error handling
-- [ ] Delete query flow (owner-only) with confirm dialog + undo toast
-- [ ] Validate query input and title limits consistently (frontend + backend)
+- [x] Build full "My Queries" page backed by API (replace placeholder cards)
+- [x] Edit query flow (owner-only) with optimistic UI + error handling
+- [x] Delete query flow (owner-only) with confirm dialog + undo toast
+- [x] Validate query input and title limits consistently (frontend + backend)
 - [ ] Add query ownership checks in UI states (disable/hide actions for non-owners)
 
 ### 2) Manage/CRUD Forked Queries

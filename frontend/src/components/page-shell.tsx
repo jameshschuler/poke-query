@@ -4,6 +4,7 @@ import { PlusIcon, SearchIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { AppSidebar } from '#/components/app-sidebar'
+import { ThemeToggle } from '#/components/theme-toggle'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { Separator } from '#/components/ui/separator'
@@ -21,6 +22,7 @@ type PageShellProps = {
   headerControls?: ReactNode
   contentHeaderVariant?: 'inline' | 'floating' | 'none'
   showSidebar?: boolean
+  showHeaderSearch?: boolean
 }
 
 export function PageShell({
@@ -31,6 +33,7 @@ export function PageShell({
   headerControls,
   contentHeaderVariant = 'inline',
   showSidebar,
+  showHeaderSearch = true,
 }: PageShellProps) {
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -56,8 +59,11 @@ export function PageShell({
         </div>
 
         {headerControls ? (
-          headerControls
-        ) : (
+          <div className="ml-auto flex items-center gap-2">
+            {headerControls}
+            <ThemeToggle placement="inline" />
+          </div>
+        ) : showHeaderSearch ? (
           <div className="flex w-full items-center gap-2 md:ml-auto md:max-w-xl">
             <div className="relative flex-1">
               <SearchIcon className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -85,19 +91,24 @@ export function PageShell({
                 <span>New String</span>
               </Button>
             ) : null}
+            <ThemeToggle placement="inline" />
+          </div>
+        ) : (
+          <div className="ml-auto flex items-center gap-2">
+            <ThemeToggle placement="inline" />
           </div>
         )}
       </header>
 
       <main className="flex flex-1 flex-col p-5 md:p-8 lg:p-10">
         {contentHeaderVariant === 'floating' ? (
-          <div className="mb-6 rounded-2xl border border-border/60 bg-card/80 p-4 shadow-sm backdrop-blur">
+          <div className="mb-6 rounded-2xl border border-border/70 bg-card/95 p-4 text-foreground shadow-sm backdrop-blur dark:bg-card">
             <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
             <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
           </div>
         ) : null}
 
-        <section className="rounded-3xl border border-border/60 bg-card/80 p-6 shadow-sm backdrop-blur">
+        <section className="rounded-3xl border border-border/70 bg-card/95 p-6 text-foreground shadow-sm backdrop-blur dark:bg-card">
           {contentHeaderVariant === 'inline' ? (
             <>
               <p className="text-sm text-muted-foreground">{subtitle}</p>

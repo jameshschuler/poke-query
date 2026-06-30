@@ -7,7 +7,6 @@ import type { ReactNode } from 'react'
 import { Toaster } from 'sonner'
 import { ApiRequestError, getMe } from '#/lib/poke-query-api'
 import { setCachedUser } from '#/lib/route-auth'
-import { ThemeToggle } from '#/components/theme-toggle'
 import { TooltipProvider } from '#/components/ui/tooltip'
 
 export function AppProviders({ children }: { children: ReactNode }) {
@@ -66,7 +65,6 @@ export function AppProviders({ children }: { children: ReactNode }) {
         <QueryClientProvider client={queryClient}>
           {children}
           <Toaster richColors position="bottom-right" />
-          <ThemeToggle />
           <ReactQueryDevtools initialIsOpen={false} />
         </QueryClientProvider>
       </AuthProvider>

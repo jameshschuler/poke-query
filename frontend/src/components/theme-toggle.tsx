@@ -4,6 +4,7 @@ import { MoonIcon, SunIcon } from 'lucide-react'
 import { Button } from '#/components/ui/button'
 
 type Theme = 'light' | 'dark'
+type ThemeTogglePlacement = 'floating' | 'inline'
 
 const THEME_STORAGE_KEY = 'poke-query-theme'
 
@@ -26,7 +27,11 @@ function getPreferredTheme(): Theme {
     : 'light'
 }
 
-export function ThemeToggle() {
+type ThemeToggleProps = {
+  placement?: ThemeTogglePlacement
+}
+
+export function ThemeToggle({ placement = 'floating' }: ThemeToggleProps) {
   const [isMounted, setIsMounted] = useState(false)
   const [theme, setTheme] = useState<Theme>('light')
 
@@ -49,16 +54,25 @@ export function ThemeToggle() {
   }
 
   const isDark = theme === 'dark'
+  const isFloating = placement === 'floating'
 
   return (
     <Button
       variant="outline"
       size="icon"
-      className="fixed z-100 rounded-full shadow-md"
-      style={{
-        right: 'max(1rem, env(safe-area-inset-right))',
-        bottom: 'max(1rem, env(safe-area-inset-bottom))',
-      }}
+      className={
+        isFloating
+          ? 'fixed z-100 rounded-full shadow-md'
+          : 'shrink-0 rounded-full'
+      }
+      style={
+        isFloating
+          ? {
+              right: 'max(1rem, env(safe-area-inset-right))',
+              bottom: 'max(1rem, env(safe-area-inset-bottom))',
+            }
+          : undefined
+      }
       onClick={handleToggle}
       aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
       title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}

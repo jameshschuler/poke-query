@@ -1,5 +1,5 @@
 import { useAuth } from '@authabase/react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { Loader2Icon, XIcon } from 'lucide-react'
@@ -16,6 +16,7 @@ import {
   DrawerTitle,
 } from '#/components/ui/drawer'
 import { createQuery, updateQuery } from '#/lib/poke-query-api'
+import type { ManagedQuery } from '#/lib/poke-query-api'
 
 type QueryCreateDrawerProps = {
   open: boolean
@@ -42,6 +43,7 @@ export function QueryCreateDrawer({
   initialQuery,
 }: QueryCreateDrawerProps) {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { user } = useAuth()
   const [title, setTitle] = useState('')
   const [query, setQuery] = useState('')
@@ -91,6 +93,39 @@ export function QueryCreateDrawer({
 
       return createQuery(payload)
     },
+    onMutate: async (isPublic) => {
+      if (mode !== 'edit' || !queryId) {
+        return { previousQueries: null as { queries: ManagedQuery[] } | null }
+      }
+
+      await queryClient.cancelQueries({ queryKey: ['my-queries'] })
+
+      const previousQueries = queryClient.getQueryData<{
+        queries: ManagedQuery[]
+      }>(['my-queries'])
+
+      if (previousQueries) {
+        const nextDescription = description.trim() || null
+        const nextUpdatedAt = new Date().toISOString()
+
+        queryClient.setQueryData<{ queries: ManagedQuery[] }>(['my-queries'], {
+          queries: previousQueries.queries.map((item) =>
+            item.id === queryId
+              ? {
+                  ...item,
+                  title: title.trim(),
+                  query: query.trim(),
+                  description: nextDescription,
+                  isPublic,
+                  updatedAt: nextUpdatedAt,
+                }
+              : item,
+          ),
+        })
+      }
+
+      return { previousQueries }
+    },
     onSuccess: async (result, isPublic) => {
       const verb =
         mode === 'edit'
@@ -118,7 +153,11 @@ export function QueryCreateDrawer({
       onOpenChange(false)
       await navigate({ to: '/library', replace: true })
     },
-    onError: () => {
+    onError: (_error, _variables, context) => {
+      if (context?.previousQueries) {
+        queryClient.setQueryData(['my-queries'], context.previousQueries)
+      }
+
       toast.error('Could not save string.')
     },
   })

@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
   Edit3Icon,
@@ -8,7 +8,7 @@ import {
   PlusIcon,
   Trash2Icon,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import { QueryCreateDrawer } from '#/components/query-create-drawer'
@@ -74,22 +74,20 @@ function LibraryPage() {
     window.localStorage.setItem(LIBRARY_LAYOUT_STORAGE_KEY, layoutMode)
   }, [layoutMode])
 
+  const pendingDeleteTimeoutsRef = useRef<Map<string, number>>(new Map())
+
+  useEffect(() => {
+    return () => {
+      for (const timeoutId of pendingDeleteTimeoutsRef.current.values()) {
+        window.clearTimeout(timeoutId)
+      }
+      pendingDeleteTimeoutsRef.current.clear()
+    }
+  }, [])
+
   const { data, isLoading, error } = useQuery({
     queryKey: ['my-queries'],
     queryFn: getMyQueries,
-  })
-
-  const deleteMutation = useMutation({
-    mutationFn: deleteQuery,
-    onSuccess: async () => {
-      toast.success('String deleted.')
-      setEditingQuery(null)
-      setQueryToDelete(null)
-      await queryClient.invalidateQueries({ queryKey: ['my-queries'] })
-    },
-    onError: () => {
-      toast.error('Could not delete query.')
-    },
   })
 
   const queries = data?.queries ?? []
@@ -129,23 +127,100 @@ function LibraryPage() {
         : 'mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3'
   const loadingCardClass =
     layoutMode === 'list'
-      ? 'h-24 animate-pulse rounded-2xl border border-border/60 bg-background/70'
-      : 'h-40 animate-pulse rounded-2xl border border-border/60 bg-background/70'
+      ? 'h-24 animate-pulse rounded-2xl border border-border/70 bg-card/95 dark:bg-card'
+      : 'h-40 animate-pulse rounded-2xl border border-border/70 bg-card/95 dark:bg-card'
 
   function handleDelete(query: ManagedQuery) {
-    if (deleteMutation.isPending) {
-      return
-    }
-
     setQueryToDelete(query)
   }
 
   function handleDeleteConfirm() {
-    if (!queryToDelete || deleteMutation.isPending) {
+    if (!queryToDelete) {
       return
     }
 
-    deleteMutation.mutate(queryToDelete.id)
+    const deletedItem = queryToDelete
+    setQueryToDelete(null)
+
+    queryClient.setQueryData<{ queries: ManagedQuery[] }>(
+      ['my-queries'],
+      (current) => {
+        if (!current) {
+          return current
+        }
+
+        return {
+          queries: current.queries.filter((item) => item.id !== deletedItem.id),
+        }
+      },
+    )
+
+    const timeoutId = window.setTimeout(async () => {
+      pendingDeleteTimeoutsRef.current.delete(deletedItem.id)
+
+      try {
+        await deleteQuery(deletedItem.id)
+        await queryClient.invalidateQueries({ queryKey: ['my-queries'] })
+      } catch {
+        queryClient.setQueryData<{ queries: ManagedQuery[] }>(
+          ['my-queries'],
+          (current) => {
+            const existing = current?.queries ?? []
+
+            if (existing.some((item) => item.id === deletedItem.id)) {
+              return current ?? { queries: existing }
+            }
+
+            return {
+              queries: [deletedItem, ...existing].sort(
+                (a, b) =>
+                  new Date(b.updatedAt).getTime() -
+                  new Date(a.updatedAt).getTime(),
+              ),
+            }
+          },
+        )
+
+        toast.error('Could not delete string.')
+      }
+    }, 5000)
+
+    pendingDeleteTimeoutsRef.current.set(deletedItem.id, timeoutId)
+
+    toast.success('String deleted.', {
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          const pendingTimeoutId = pendingDeleteTimeoutsRef.current.get(
+            deletedItem.id,
+          )
+
+          if (pendingTimeoutId) {
+            window.clearTimeout(pendingTimeoutId)
+            pendingDeleteTimeoutsRef.current.delete(deletedItem.id)
+          }
+
+          queryClient.setQueryData<{ queries: ManagedQuery[] }>(
+            ['my-queries'],
+            (current) => {
+              const existing = current?.queries ?? []
+
+              if (existing.some((item) => item.id === deletedItem.id)) {
+                return current ?? { queries: existing }
+              }
+
+              return {
+                queries: [deletedItem, ...existing].sort(
+                  (a, b) =>
+                    new Date(b.updatedAt).getTime() -
+                    new Date(a.updatedAt).getTime(),
+                ),
+              }
+            },
+          )
+        },
+      },
+    })
   }
 
   function renderRelativeTime(iso: string) {
@@ -169,6 +244,7 @@ function LibraryPage() {
         subtitle="Manage your personal search strings and draft strings."
         contentHeaderVariant="floating"
         showSidebar
+        showHeaderSearch={false}
       >
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {[
@@ -182,7 +258,7 @@ function LibraryPage() {
           ].map((stat) => (
             <div
               key={stat.label}
-              className="rounded-2xl border border-border/60 bg-background/70 px-4 py-3"
+              className="rounded-2xl border border-border/70 bg-card/95 px-4 py-3 text-foreground dark:bg-card"
             >
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
                 {stat.label}
@@ -221,7 +297,7 @@ function LibraryPage() {
             value={searchText}
             onChange={(event) => setSearchText(event.target.value)}
             placeholder="Search by title, string, description, or tag"
-            className="h-10 min-w-64 flex-1 rounded-xl border border-border/60 bg-background/70"
+            className="h-10 min-w-64 flex-1 rounded-xl border border-border/70 bg-card/95 dark:bg-card"
           />
 
           <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -275,11 +351,11 @@ function LibraryPage() {
             ))}
           </div>
         ) : error ? (
-          <div className="mt-4 rounded-2xl border border-border/60 bg-background/70 p-6 text-sm text-muted-foreground">
+          <div className="mt-4 rounded-2xl border border-border/70 bg-card/95 p-6 text-sm text-muted-foreground dark:bg-card">
             Your library could not be loaded right now.
           </div>
         ) : queries.length === 0 ? (
-          <div className="mt-4 rounded-2xl border border-dashed border-border/70 bg-background/70 p-8 text-center">
+          <div className="mt-4 rounded-2xl border border-dashed border-border/70 bg-card/95 p-8 text-center dark:bg-card">
             <h3 className="text-base font-semibold">No strings yet</h3>
             <p className="mt-1 text-sm text-muted-foreground">
               Start a private draft or publish a new search string to build your
@@ -301,7 +377,7 @@ function LibraryPage() {
             </Button>
           </div>
         ) : filteredQueries.length === 0 ? (
-          <div className="mt-4 rounded-2xl border border-border/60 bg-background/70 p-6 text-center text-sm text-muted-foreground">
+          <div className="mt-4 rounded-2xl border border-border/70 bg-card/95 p-6 text-center text-sm text-muted-foreground dark:bg-card">
             No strings match this search and status filter.
           </div>
         ) : (
@@ -309,7 +385,7 @@ function LibraryPage() {
             {filteredQueries.map((query) => (
               <article
                 key={query.id}
-                className="rounded-2xl border border-border/60 bg-background/70 px-4 py-4"
+                className="rounded-2xl border border-border/70 bg-card/95 px-4 py-4 text-foreground dark:bg-card"
               >
                 <div className="flex flex-col gap-4">
                   <div className="min-w-0 flex-1 space-y-2">
@@ -404,7 +480,6 @@ function LibraryPage() {
                         variant="outline"
                         size="sm"
                         className="rounded-lg text-destructive hover:text-destructive"
-                        disabled={deleteMutation.isPending}
                         onClick={() => handleDelete(query)}
                       >
                         <Trash2Icon className="size-4" />
@@ -467,7 +542,6 @@ function LibraryPage() {
             <Button
               type="button"
               variant="outline"
-              disabled={deleteMutation.isPending}
               onClick={() => setQueryToDelete(null)}
             >
               Cancel
@@ -475,7 +549,7 @@ function LibraryPage() {
             <Button
               type="button"
               variant="destructive"
-              disabled={deleteMutation.isPending || !queryToDelete}
+              disabled={!queryToDelete}
               onClick={handleDeleteConfirm}
             >
               Delete
