@@ -104,6 +104,31 @@ export const ForkQuerySchema = {
   },
 };
 
+export const SyncForkQuerySchema = {
+  security: cookieAuthSecurity,
+  params: Type.Object({
+    id: Type.String(),
+  }),
+  body: Type.Object({}),
+  response: {
+    200: Type.Object({
+      id: Type.String(),
+    }),
+    400: Type.Object({
+      error: Type.String(),
+    }),
+    401: Type.Object({
+      error: Type.String(),
+    }),
+    404: Type.Object({
+      error: Type.String(),
+    }),
+    409: Type.Object({
+      error: Type.String(),
+    }),
+  },
+};
+
 export const UpdateQuerySchema = {
   security: cookieAuthSecurity,
   params: Type.Object({

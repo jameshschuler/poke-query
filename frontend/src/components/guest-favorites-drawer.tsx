@@ -140,11 +140,7 @@ export function GuestFavoritesDrawer({
                       {query.autoTags.length > 0 ? (
                         <div className="mt-2 flex flex-wrap gap-2">
                           {query.autoTags.map((tag) => (
-                            <Badge
-                              key={tag}
-                              variant="outline"
-                              className="text-xs"
-                            >
+                            <Badge key={tag} variant="outline">
                               {formatTagLabel(tag)}
                             </Badge>
                           ))}

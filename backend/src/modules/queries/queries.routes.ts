@@ -9,6 +9,7 @@ import {
   FavoriteQuerySchema,
   ForkQuerySchema,
   GetQuerySchema,
+  SyncForkQuerySchema,
   GetTagsSchema,
   UnfavoriteQuerySchema,
   UpdateQuerySchema,
@@ -283,6 +284,59 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
         }
       } catch (_error) {
         return reply.code(400).send({ error: "Failed to fork query" });
+      }
+    },
+  );
+
+  server.post(
+    "/:id/sync",
+    { preHandler: [fastify.authenticate], schema: SyncForkQuerySchema },
+    async (request, reply) => {
+      try {
+        const { id } = request.params;
+        const userId = request.user.id;
+
+        const fork = await fastify.db.query.searchQueries.findFirst({
+          where: and(eq(searchQueries.id, id), eq(searchQueries.creatorId, userId)),
+        });
+
+        if (!fork || !fork.parentQueryId) {
+          return reply.code(404).send({ error: "Fork not found" });
+        }
+
+        const source = await fastify.db.query.searchQueries.findFirst({
+          where: eq(searchQueries.id, fork.parentQueryId),
+        });
+
+        if (!source) {
+          return reply.code(409).send({
+            error: "Original search string is no longer available",
+          });
+        }
+
+        if (!source.isPublic) {
+          return reply.code(409).send({
+            error: "Original search string is no longer public",
+          });
+        }
+
+        const [updatedFork] = await fastify.db
+          .update(searchQueries)
+          .set({
+            query: source.query,
+            originalQuerySnapshot: source.query,
+            metadata: source.metadata,
+          })
+          .where(and(eq(searchQueries.id, id), eq(searchQueries.creatorId, userId)))
+          .returning({ id: searchQueries.id });
+
+        if (!updatedFork) {
+          return reply.code(404).send({ error: "Fork not found" });
+        }
+
+        return reply.code(200).send({ id: updatedFork.id });
+      } catch (_error) {
+        return reply.code(400).send({ error: "Failed to sync fork" });
       }
     },
   );

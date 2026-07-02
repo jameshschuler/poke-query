@@ -12,6 +12,9 @@ import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import { QueryCreateDrawer } from '#/components/query-create-drawer'
+import { QueryCardActions } from '#/components/query-card-actions'
+import { QueryCardHeader } from '#/components/query-card-header'
+import { TimestampTooltip } from '#/components/timestamp-tooltip'
 import { PageShell } from '#/components/page-shell'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
@@ -27,6 +30,7 @@ import { Input } from '#/components/ui/input'
 import { deleteQuery, getMyQueries } from '#/lib/poke-query-api'
 import type { ManagedQuery } from '#/lib/poke-query-api'
 import { requireAuthenticated } from '#/lib/route-auth'
+import { QueryTagBadges } from '../components/query-tag-badges'
 
 type LibrarySearch = {
   create?: string
@@ -253,7 +257,13 @@ function LibraryPage() {
             { label: 'Published', value: String(publicCount) },
             {
               label: 'Last Edited',
-              value: lastEdited ? renderRelativeTime(lastEdited) : '—',
+              value: lastEdited ? (
+                <TimestampTooltip iso={lastEdited}>
+                  {renderRelativeTime(lastEdited)}
+                </TimestampTooltip>
+              ) : (
+                '—'
+              ),
             },
           ].map((stat) => (
             <div
@@ -389,38 +399,37 @@ function LibraryPage() {
               >
                 <div className="flex flex-col gap-4">
                   <div className="min-w-0 flex-1 space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        className="text-left text-sm font-semibold hover:underline"
-                        onClick={() => setEditingQuery(query)}
-                      >
-                        {query.title}
-                      </button>
+                    <QueryCardHeader
+                      title={query.title}
+                      onTitleClick={() => setEditingQuery(query)}
+                      action={
+                        query.isPublic ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="rounded-lg"
+                            onClick={() =>
+                              void navigate({
+                                to: '/queries/$queryId',
+                                params: { queryId: query.id },
+                              })
+                            }
+                          >
+                            View
+                          </Button>
+                        ) : null
+                      }
+                    >
                       {query.isPublic ? (
-                        <Badge
-                          variant="outline"
-                          className="rounded-full px-2.5 py-0.5 text-xs"
-                        >
-                          Public
-                        </Badge>
+                        <Badge variant="outline">Public</Badge>
                       ) : (
                         <>
-                          <Badge
-                            variant="outline"
-                            className="rounded-full px-2.5 py-0.5 text-xs"
-                          >
-                            Draft
-                          </Badge>
-                          <Badge
-                            variant="outline"
-                            className="rounded-full px-2.5 py-0.5 text-xs"
-                          >
-                            Private
-                          </Badge>
+                          <Badge variant="outline">Draft</Badge>
+                          <Badge variant="outline">Private</Badge>
                         </>
                       )}
-                    </div>
+                    </QueryCardHeader>
 
                     <p className="line-clamp-2 text-sm text-muted-foreground">
                       {query.description ?? 'No description yet.'}
@@ -434,37 +443,11 @@ function LibraryPage() {
                       Updated {renderRelativeTime(query.updatedAt)}
                     </p>
 
-                    <div className="flex flex-wrap gap-2">
-                      {query.autoTags.map((tag) => (
-                        <Badge
-                          key={tag}
-                          variant="secondary"
-                          className="h-auto rounded-full px-2.5 py-1"
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
+                    <QueryTagBadges tags={query.autoTags} />
                   </div>
 
                   <div className="flex flex-col items-start gap-3">
-                    <div className="flex flex-wrap gap-2">
-                      {query.isPublic ? (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="rounded-lg"
-                          onClick={() =>
-                            void navigate({
-                              to: '/queries/$queryId',
-                              params: { queryId: query.id },
-                            })
-                          }
-                        >
-                          Open
-                        </Button>
-                      ) : null}
+                    <QueryCardActions>
                       <Button
                         type="button"
                         variant="outline"
@@ -485,7 +468,7 @@ function LibraryPage() {
                         <Trash2Icon className="size-4" />
                         Delete
                       </Button>
-                    </div>
+                    </QueryCardActions>
                   </div>
                 </div>
               </article>
@@ -493,7 +476,6 @@ function LibraryPage() {
           </div>
         )}
       </PageShell>
-
       <QueryCreateDrawer
         open={isCreateOpen || editingQuery !== null}
         mode={editingQuery ? 'edit' : 'create'}

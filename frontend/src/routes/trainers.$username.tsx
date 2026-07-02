@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useAuth } from '@authabase/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CopyIcon, UserRoundXIcon, UsersIcon } from 'lucide-react'
@@ -13,6 +13,7 @@ import {
   getTrainerFavorites,
   getTrainerFollowers,
   followTrainer,
+  forkQuery,
   unfollowTrainer,
   ApiRequestError,
 } from '#/lib/poke-query-api'
@@ -50,6 +51,7 @@ const monthFormatter = new Intl.DateTimeFormat(undefined, {
 function TrainerProfilePage() {
   const { username } = Route.useParams()
   const { user } = useAuth()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
 
   const [activeTab, setActiveTab] = useState<'strings' | 'forks' | 'favorites'>(
@@ -128,6 +130,34 @@ function TrainerProfilePage() {
     },
   })
 
+  const forkMutation = useMutation({
+    mutationFn: forkQuery,
+    onSuccess: async (result) => {
+      toast.success('Fork saved to your library.')
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['my-forks'] }),
+        queryClient.invalidateQueries({ queryKey: ['my-queries'] }),
+      ])
+      await navigate({
+        to: '/forks',
+        search: { detail: result.id },
+      })
+    },
+    onError: (mutationError: unknown) => {
+      if (
+        mutationError instanceof ApiRequestError &&
+        mutationError.status === 404
+      ) {
+        toast.error(
+          'This string can’t be forked because the original is private or no longer exists.',
+        )
+        return
+      }
+
+      toast.error('Could not fork string.')
+    },
+  })
+
   const isFollowPending = followMutation.isPending || unfollowMutation.isPending
 
   const canShowFollowAction =
@@ -148,6 +178,14 @@ function TrainerProfilePage() {
     }
 
     followMutation.mutate(trainer.id)
+  }
+
+  function handleFork(queryId: string) {
+    if (forkMutation.isPending) {
+      return
+    }
+
+    forkMutation.mutate(queryId)
   }
 
   return (
@@ -220,7 +258,7 @@ function TrainerProfilePage() {
                       <div className="flex flex-wrap items-center gap-2">
                         {trainer.isProfilePublic && trainer.team ? (
                           <Badge
-                            className={`rounded-full border-0 gap-1.5 ${teamBadgeClass[trainer.team]}`}
+                            className={`border-0 gap-1.5 ${teamBadgeClass[trainer.team]}`}
                           >
                             <span
                               className={`size-2.5 rounded-full ${teamDotClass[trainer.team]}`}
@@ -229,11 +267,9 @@ function TrainerProfilePage() {
                           </Badge>
                         ) : null}
                         {trainer.isProfilePublic && trainer.level ? (
-                          <Badge variant="outline" className="rounded-full">
-                            Lv. {trainer.level}
-                          </Badge>
+                          <Badge variant="outline">Lv. {trainer.level}</Badge>
                         ) : null}
-                        <Badge variant="outline" className="rounded-full">
+                        <Badge variant="outline">
                           Joined{' '}
                           {monthFormatter.format(new Date(trainer.createdAt))}
                         </Badge>
@@ -341,6 +377,8 @@ function TrainerProfilePage() {
                               card={card}
                               variant="trainer"
                               isAuthenticated={Boolean(user)}
+                              onFork={handleFork}
+                              isForkPending={forkMutation.isPending}
                             />
                           ))
                         ) : (
@@ -356,6 +394,8 @@ function TrainerProfilePage() {
                               card={card}
                               variant="trainer"
                               isAuthenticated={Boolean(user)}
+                              onFork={handleFork}
+                              isForkPending={forkMutation.isPending}
                             />
                           ))
                         ) : (
@@ -370,6 +410,8 @@ function TrainerProfilePage() {
                             card={card}
                             variant="trainer"
                             isAuthenticated={Boolean(user)}
+                            onFork={handleFork}
+                            isForkPending={forkMutation.isPending}
                           />
                         ))
                       ) : (

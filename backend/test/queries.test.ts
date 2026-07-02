@@ -107,4 +107,42 @@ describe("Queries Endpoint", () => {
     expect(response.statusCode).toBe(204);
     expect(where).toHaveBeenCalled();
   });
+
+  it("should sync a fork from its source", async () => {
+    app.db.query = {
+      searchQueries: {
+        findFirst: vi
+          .fn()
+          .mockResolvedValueOnce({
+            id: "fork-id",
+            creatorId: "uuid-123",
+            parentQueryId: "source-id",
+          })
+          .mockResolvedValueOnce({
+            id: "source-id",
+            isPublic: true,
+            query: "shadow&4*&age0-30",
+            metadata: { autoTags: ["high-iv"] },
+          }),
+      },
+    };
+
+    app.db.update = vi.fn(() => ({
+      set: vi.fn(() => ({
+        where: vi.fn(() => ({
+          returning: vi.fn().mockResolvedValue([{ id: "fork-id" }]),
+        })),
+      })),
+    }));
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/queries/fork-id/sync",
+      cookies: { "sb-access-token": "MOCK_TOKEN_HERE" },
+      payload: {},
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ id: "fork-id" });
+  });
 });

@@ -39,6 +39,27 @@ const buildSelectChain = (result: object[]) => ({
   })),
 });
 
+const buildWhereChain = (result: object[]) => ({
+  from: vi.fn(() => ({
+    where: vi.fn().mockResolvedValue(result),
+  })),
+});
+
+const buildOrderByLimitChain = (result: object[]) => ({
+  from: vi.fn(() => {
+    const joinable = {
+      leftJoin: vi.fn(),
+      where: vi.fn(() => ({
+        orderBy: vi.fn(() => ({
+          limit: vi.fn().mockResolvedValue(result),
+        })),
+      })),
+    };
+    joinable.leftJoin.mockReturnValue(joinable);
+    return joinable;
+  }),
+});
+
 vi.mock("../src/db/index.js", () => ({
   queryClient: { end: vi.fn() },
   db: {
@@ -161,5 +182,93 @@ describe("DELETE /api/v1/users/me", () => {
     expect(res.statusCode).toBe(204);
     expect(mockAdminDeleteUser).toHaveBeenCalledWith("uuid-123");
     expect(res.headers["set-cookie"]).toBeDefined();
+  });
+});
+
+describe("GET /api/v1/users/me/forks", () => {
+  let app: Awaited<ReturnType<typeof buildApp>>;
+
+  beforeAll(async () => {
+    app = await buildApp();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it("returns managed forks with source metadata and sync status", async () => {
+    mockSelect.mockReturnValueOnce(buildWhereChain([{ id: "uuid-123" }]));
+    mockSelect.mockReturnValueOnce(
+      buildOrderByLimitChain([
+        {
+          id: "fork-1",
+          title: "Fork of Shadow Hundos",
+          query: "shadow&4*",
+          description: "My fork",
+          isPublic: false,
+          copyCount: 3,
+          favoriteCount: 2,
+          forkCount: 0,
+          autoTags: ["raid", "high-iv"],
+          createdAt: new Date("2026-06-01T12:00:00.000Z"),
+          updatedAt: new Date("2026-06-02T12:00:00.000Z"),
+          parentQueryId: "source-1",
+          originalQuerySnapshot: "shadow&4*",
+          syncStatus: "behind",
+          sourceId: "source-1",
+          sourceTitle: "Shadow Hundos",
+          sourceQuery: "shadow&4*&age0-30",
+          sourceIsPublic: true,
+          sourceUpdatedAt: new Date("2026-06-03T12:00:00.000Z"),
+          sourceCreatorId: "trainer-2",
+          sourceCreatorUsername: "Misty",
+          sourceCreatorAvatarUrl: null,
+          sourceCreatorTeam: "mystic",
+          sourceCreatorLevel: 44,
+        },
+      ]),
+    );
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/users/me/forks",
+      cookies: { "sb-access-token": "mock-token" },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({
+      forks: [
+        {
+          id: "fork-1",
+          title: "Fork of Shadow Hundos",
+          query: "shadow&4*",
+          description: "My fork",
+          isPublic: false,
+          copyCount: 3,
+          favoriteCount: 2,
+          forkCount: 0,
+          autoTags: ["raid", "high-iv"],
+          createdAt: "2026-06-01T12:00:00.000Z",
+          updatedAt: "2026-06-02T12:00:00.000Z",
+          parentQueryId: "source-1",
+          originalQuerySnapshot: "shadow&4*",
+          syncStatus: "behind",
+          sourceQuery: {
+            id: "source-1",
+            title: "Shadow Hundos",
+            query: "shadow&4*&age0-30",
+            isPublic: true,
+            updatedAt: "2026-06-03T12:00:00.000Z",
+            creator: {
+              id: "trainer-2",
+              username: "Misty",
+              avatarUrl: null,
+              team: "mystic",
+              level: 44,
+            },
+          },
+        },
+      ],
+    });
   });
 });

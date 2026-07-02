@@ -227,6 +227,61 @@ export const GetMeQueriesSchema = {
   },
 };
 
+const trainerSummarySchema = Type.Object({
+  id: Type.String(),
+  username: Type.String(),
+  team: Type.Union([
+    Type.Literal("mystic"),
+    Type.Literal("valor"),
+    Type.Literal("instinct"),
+    Type.Null(),
+  ]),
+  level: Type.Union([Type.Integer(), Type.Null()]),
+  avatarUrl: Type.Union([Type.String(), Type.Null()]),
+});
+
+const managedForkSourceItem = Type.Object({
+  id: Type.String(),
+  title: Type.String(),
+  query: Type.String(),
+  isPublic: Type.Boolean(),
+  updatedAt: Type.String(),
+  creator: Type.Union([trainerSummarySchema, Type.Null()]),
+});
+
+const managedForkItem = Type.Object({
+  id: Type.String(),
+  title: Type.String(),
+  query: Type.String(),
+  description: Type.Union([Type.String(), Type.Null()]),
+  isPublic: Type.Boolean(),
+  copyCount: Type.Integer(),
+  favoriteCount: Type.Integer(),
+  forkCount: Type.Integer(),
+  autoTags: Type.Array(Type.String()),
+  createdAt: Type.String(),
+  updatedAt: Type.String(),
+  parentQueryId: Type.Union([Type.String(), Type.Null()]),
+  originalQuerySnapshot: Type.Union([Type.String(), Type.Null()]),
+  syncStatus: Type.Union([
+    Type.Literal("up-to-date"),
+    Type.Literal("behind"),
+    Type.Literal("orphaned"),
+  ]),
+  sourceQuery: Type.Union([managedForkSourceItem, Type.Null()]),
+});
+
+export const GetMeForksSchema = {
+  security: cookieAuthSecurity,
+  response: {
+    200: Type.Object({
+      forks: Type.Array(managedForkItem),
+    }),
+    401: Type.Object({ error: Type.String() }),
+    404: Type.Object({ error: Type.String() }),
+  },
+};
+
 export const GetTrainerByUsernameSchema = {
   params: Type.Object({ username: Type.String() }),
   response: {

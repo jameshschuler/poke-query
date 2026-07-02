@@ -16,6 +16,8 @@ type SearchStringCardProps = {
   isFavorited?: boolean
   isFavoritePending?: boolean
   onToggleFavorite?: (queryId: string, isFavorited: boolean) => void
+  onFork?: (queryId: string) => void
+  isForkPending?: boolean
 }
 
 function isCommunityQuery(
@@ -31,6 +33,8 @@ export function SearchStringCard({
   isFavorited = false,
   isFavoritePending = false,
   onToggleFavorite,
+  onFork,
+  isForkPending = false,
 }: SearchStringCardProps) {
   const dateFormatter = useMemo(
     () =>
@@ -50,6 +54,8 @@ export function SearchStringCard({
       toast.success('Copied to clipboard!')
     })
   }
+
+  const canFork = isAuthenticated && typeof onFork === 'function'
 
   return (
     <article className="overflow-hidden rounded-2xl border border-border/60 bg-background/70">
@@ -150,18 +156,31 @@ export function SearchStringCard({
             </Button>
           ) : null}
 
-          {variant === 'discover' && isAuthenticated ? (
+          {variant === 'discover' && canFork ? (
             <Button
               variant="outline"
               size="sm"
               className="cursor-pointer rounded-xl"
+              disabled={isForkPending}
+              onClick={() => onFork(card.id)}
             >
               <GitForkIcon className="size-4" />
-              Fork
+              {isForkPending ? 'Forking...' : 'Fork'}
             </Button>
           ) : null}
 
-          {variant === 'trainer' && isAuthenticated ? (
+          {variant === 'trainer' && canFork ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="cursor-pointer rounded-xl"
+              disabled={isForkPending}
+              onClick={() => onFork(card.id)}
+            >
+              <GitForkIcon className="size-4" />
+              {isForkPending ? 'Forking...' : 'Fork'}
+            </Button>
+          ) : variant === 'trainer' ? (
             <Link
               to="/queries/$queryId"
               params={{ queryId: card.id }}
@@ -173,7 +192,7 @@ export function SearchStringCard({
                 className="cursor-pointer rounded-xl"
               >
                 <GitForkIcon className="size-4" />
-                Fork
+                View
               </Button>
             </Link>
           ) : null}

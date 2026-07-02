@@ -22,6 +22,7 @@ import {
   getCommunityQueriesPage,
   favoriteGuestQuery,
   favoriteQuery,
+  forkQuery,
   getGuestFavorites,
   getQueryTags,
   unfavoriteGuestQuery,
@@ -148,6 +149,31 @@ function DiscoverPage() {
     },
     onError: () => {
       toast.error('Could not save favorite.')
+    },
+  })
+
+  const forkMutation = useMutation({
+    mutationFn: forkQuery,
+    onSuccess: async (result) => {
+      toast.success('Fork saved to your library.')
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['my-forks'] }),
+        queryClient.invalidateQueries({ queryKey: ['my-queries'] }),
+      ])
+      await navigate({
+        to: '/forks',
+        search: { detail: result.id },
+      })
+    },
+    onError: (error: unknown) => {
+      if (error instanceof ApiRequestError && error.status === 404) {
+        toast.error(
+          'This string can’t be forked because the original is private or no longer exists.',
+        )
+        return
+      }
+
+      toast.error('Could not fork string.')
     },
   })
 
@@ -349,6 +375,14 @@ function DiscoverPage() {
     }
 
     guestFavoriteMutation.mutate(queryId)
+  }
+
+  function handleFork(queryId: string) {
+    if (forkMutation.isPending) {
+      return
+    }
+
+    forkMutation.mutate(queryId)
   }
 
   function handleRemoveGuestFavorite(queryId: string) {
@@ -592,6 +626,8 @@ function DiscoverPage() {
                   guestUnfavoriteMutation.isPending
                 }
                 onToggleFavorite={handleToggleFavorite}
+                onFork={handleFork}
+                isForkPending={forkMutation.isPending}
               />
             ))}
           </div>

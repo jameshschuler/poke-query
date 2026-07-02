@@ -404,4 +404,66 @@ integrationDescribe("Queries CRUD Integration", () => {
     expect(names).not.toContain("private-only");
     expect(body.tags.find((tag) => tag.name === "raid")?.queryCount).toBeGreaterThan(0);
   });
+
+  it("returns a valid source for newly created forks in /users/me/forks", async () => {
+    const createOriginalRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/queries",
+      cookies: { "sb-access-token": "owner-token" },
+      payload: {
+        title: "Fork Source Integrity",
+        query: "type:dragon&4*",
+        description: "source for forks list",
+        isPublic: true,
+      },
+    });
+
+    expect(createOriginalRes.statusCode).toBe(201);
+    const { id: originalId } = createOriginalRes.json();
+
+    (supabase.auth.getUser as any).mockResolvedValueOnce({
+      data: { user: { id: OTHER_USER_ID, email: "other@example.com" } },
+      error: null,
+    });
+
+    const forkRes = await app.inject({
+      method: "POST",
+      url: `/api/v1/queries/${originalId}/fork`,
+      cookies: { "sb-access-token": "other-user-token" },
+      payload: {},
+    });
+
+    expect(forkRes.statusCode).toBe(201);
+    const { id: forkId } = forkRes.json();
+
+    (supabase.auth.getUser as any).mockResolvedValueOnce({
+      data: { user: { id: OTHER_USER_ID, email: "other@example.com" } },
+      error: null,
+    });
+
+    const myForksRes = await app.inject({
+      method: "GET",
+      url: "/api/v1/users/me/forks",
+      cookies: { "sb-access-token": "other-user-token" },
+    });
+
+    expect(myForksRes.statusCode).toBe(200);
+
+    const body: {
+      forks: Array<{
+        id: string;
+        parentQueryId: string | null;
+        syncStatus: "up-to-date" | "behind" | "orphaned";
+        sourceQuery: { id: string; title: string; query: string } | null;
+      }>;
+    } = myForksRes.json();
+
+    const createdFork = body.forks.find((fork) => fork.id === forkId);
+
+    expect(createdFork).toBeTruthy();
+    expect(createdFork?.parentQueryId).toBe(originalId);
+    expect(createdFork?.syncStatus).toBe("up-to-date");
+    expect(createdFork?.sourceQuery).toBeTruthy();
+    expect(createdFork?.sourceQuery?.id).toBe(originalId);
+  });
 });

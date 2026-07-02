@@ -1,6 +1,6 @@
 import { useAuth } from '@authabase/react'
-import { useQuery } from '@tanstack/react-query'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { CopyIcon, GitForkIcon, HeartIcon, ShareIcon } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -9,7 +9,12 @@ import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Separator } from '#/components/ui/separator'
 import { PageHeader } from '#/components/page-header'
-import { copyQuery, getQueryById } from '#/lib/poke-query-api'
+import {
+  ApiRequestError,
+  copyQuery,
+  forkQuery,
+  getQueryById,
+} from '#/lib/poke-query-api'
 
 export const Route = createFileRoute('/queries/$queryId')({
   ssr: false,
@@ -40,6 +45,8 @@ function relativeTime(iso: string): string {
 function QueryDetailPage() {
   const { queryId } = Route.useParams()
   const { user } = useAuth()
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
 
   const {
     data: query,
@@ -48,6 +55,34 @@ function QueryDetailPage() {
   } = useQuery({
     queryKey: ['query', queryId],
     queryFn: () => getQueryById(queryId),
+  })
+
+  const forkMutation = useMutation({
+    mutationFn: forkQuery,
+    onSuccess: async (result) => {
+      toast.success('Fork saved to your library.')
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['my-forks'] }),
+        queryClient.invalidateQueries({ queryKey: ['my-queries'] }),
+      ])
+      await navigate({
+        to: '/forks',
+        search: { detail: result.id },
+      })
+    },
+    onError: (mutationError: unknown) => {
+      if (
+        mutationError instanceof ApiRequestError &&
+        mutationError.status === 404
+      ) {
+        toast.error(
+          'This string can’t be forked because the original is private or no longer exists.',
+        )
+        return
+      }
+
+      toast.error('Could not fork string.')
+    },
   })
 
   function handleCopy() {
@@ -87,9 +122,14 @@ function QueryDetailPage() {
                 Copy
               </Button>
               {user ? (
-                <Button size="sm" className="rounded-lg">
+                <Button
+                  size="sm"
+                  className="rounded-lg"
+                  disabled={forkMutation.isPending}
+                  onClick={() => forkMutation.mutate(query.id)}
+                >
                   <GitForkIcon className="size-4" />
-                  Fork
+                  {forkMutation.isPending ? 'Forking...' : 'Fork'}
                 </Button>
               ) : null}
             </>
@@ -123,23 +163,15 @@ function QueryDetailPage() {
                 {query.autoTags.map((tag) => (
                   <Badge
                     key={tag}
-                    className="rounded-full bg-foreground px-3 py-0.5 text-xs font-medium text-background"
+                    className="bg-foreground font-medium text-background"
                   >
                     {tagLabels[tag] ?? tag}
                   </Badge>
                 ))}
-                <Badge
-                  variant="outline"
-                  className="rounded-full px-3 py-0.5 text-xs"
-                >
+                <Badge variant="outline">
                   {query.isPublic ? 'Public' : 'Private'}
                 </Badge>
-                <Badge
-                  variant="outline"
-                  className="rounded-full px-3 py-0.5 text-xs"
-                >
-                  v1
-                </Badge>
+                <Badge variant="outline">v1</Badge>
               </div>
               <p className="text-sm text-muted-foreground">
                 Updated {relativeTime(query.updatedAt)}

@@ -6,6 +6,7 @@ import {
   DeleteTrainerSchema,
   GetMeSchema,
   GetMeQueriesSchema,
+  GetMeForksSchema,
   GetTrainerSchema,
   GetTrainerByUsernameSchema,
   GetTrainerStringsSchema,
@@ -18,10 +19,13 @@ import {
 } from "./users.schema.js";
 import { getSupabaseAdmin } from "../../lib/supabase.js";
 import { trainers, searchQueries, favorites, followers } from "../../db/schema.js";
+import { alias } from "drizzle-orm/pg-core";
 import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
 
 export async function userRoutes(fastify: FastifyTypebox) {
   const server = fastify.withTypeProvider<TypeBoxTypeProvider>();
+  const parentQueries = alias(searchQueries, "parent_queries");
+  const sourceCreators = alias(trainers, "source_creators");
 
   const normalizeTrainerCode = (value: string) => {
     const digits = value.replace(/\D/g, "");
@@ -99,6 +103,68 @@ export async function userRoutes(fastify: FastifyTypebox) {
     ...q,
     createdAt: q.createdAt.toISOString(),
     updatedAt: q.updatedAt.toISOString(),
+  });
+
+  const serializeManagedForkQuery = (q: {
+    id: string;
+    title: string;
+    query: string;
+    description: string | null;
+    isPublic: boolean;
+    copyCount: number;
+    favoriteCount: number;
+    forkCount: number;
+    autoTags: string[];
+    createdAt: Date;
+    updatedAt: Date;
+    parentQueryId: string | null;
+    originalQuerySnapshot: string | null;
+    syncStatus: "up-to-date" | "behind" | "orphaned";
+    sourceId: string | null;
+    sourceTitle: string | null;
+    sourceQuery: string | null;
+    sourceIsPublic: boolean | null;
+    sourceUpdatedAt: Date | null;
+    sourceCreatorId: string | null;
+    sourceCreatorUsername: string | null;
+    sourceCreatorAvatarUrl: string | null;
+    sourceCreatorTeam: string | null;
+    sourceCreatorLevel: number | null;
+  }) => ({
+    id: q.id,
+    title: q.title,
+    query: q.query,
+    description: q.description,
+    isPublic: q.isPublic,
+    copyCount: q.copyCount,
+    favoriteCount: q.favoriteCount,
+    forkCount: q.forkCount,
+    autoTags: q.autoTags,
+    createdAt: q.createdAt.toISOString(),
+    updatedAt: q.updatedAt.toISOString(),
+    parentQueryId: q.parentQueryId,
+    originalQuerySnapshot: q.originalQuerySnapshot,
+    syncStatus: q.syncStatus,
+    sourceQuery:
+      q.sourceId && q.sourceTitle && q.sourceQuery && q.sourceUpdatedAt
+        ? {
+            id: q.sourceId,
+            title: q.sourceTitle,
+            query: q.sourceQuery,
+            isPublic: Boolean(q.sourceIsPublic),
+            updatedAt: q.sourceUpdatedAt.toISOString(),
+            creator:
+              q.sourceCreatorId && q.sourceCreatorUsername
+                ? {
+                    id: q.sourceCreatorId,
+                    username: q.sourceCreatorUsername,
+                    avatarUrl: q.sourceCreatorAvatarUrl,
+                    team: q.sourceCreatorTeam as "mystic" | "valor" | "instinct" | null,
+                    level: q.sourceCreatorLevel,
+                  }
+                : null,
+          }
+        : null,
   });
 
   // ── /me ──────────────────────────────────────────────────────────────────
@@ -206,6 +272,71 @@ export async function userRoutes(fastify: FastifyTypebox) {
         .limit(100);
 
       return reply.send({ queries: rows.map(serializeManagedQuery) });
+    },
+  );
+
+  server.get(
+    "/me/forks",
+    { preHandler: [fastify.authenticate], schema: GetMeForksSchema },
+    async (request, reply) => {
+      const userId = request.user.id;
+
+      const [trainer] = await fastify.db
+        .select({ id: trainers.id })
+        .from(trainers)
+        .where(eq(trainers.userId, userId));
+
+      if (!trainer) {
+        return reply.code(404).send({ error: "Trainer not found" });
+      }
+
+      const rows = await fastify.db
+        .select({
+          id: searchQueries.id,
+          title: searchQueries.title,
+          query: searchQueries.query,
+          description: searchQueries.description,
+          isPublic: searchQueries.isPublic,
+          copyCount: searchQueries.copyCount,
+          favoriteCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM pokequery.favorites f WHERE f.query_id = ${searchQueries.id}), 0)`,
+          forkCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM pokequery.search_queries forked WHERE forked.parent_query_id = ${searchQueries.id}), 0)`,
+          autoTags: sql<string[]>`COALESCE(${searchQueries.metadata}->'autoTags', '[]'::jsonb)`,
+          createdAt: searchQueries.createdAt,
+          updatedAt: searchQueries.updatedAt,
+          parentQueryId: searchQueries.parentQueryId,
+          originalQuerySnapshot: searchQueries.originalQuerySnapshot,
+          syncStatus: sql<"up-to-date" | "behind" | "orphaned">`
+            CASE
+              WHEN ${searchQueries.parentQueryId} IS NULL THEN 'orphaned'
+              WHEN ${parentQueries.id} IS NULL THEN 'orphaned'
+              WHEN COALESCE(${parentQueries.query}, '') IS DISTINCT FROM COALESCE(${searchQueries.originalQuerySnapshot}, '') THEN 'behind'
+              ELSE 'up-to-date'
+            END
+          `,
+          sourceId: parentQueries.id,
+          sourceTitle: parentQueries.title,
+          sourceQuery: parentQueries.query,
+          sourceIsPublic: parentQueries.isPublic,
+          sourceUpdatedAt: parentQueries.updatedAt,
+          sourceCreatorId: sourceCreators.id,
+          sourceCreatorUsername: sourceCreators.username,
+          sourceCreatorAvatarUrl: sourceCreators.avatarUrl,
+          sourceCreatorTeam: sourceCreators.team,
+          sourceCreatorLevel: sourceCreators.level,
+        })
+        .from(searchQueries)
+        .leftJoin(parentQueries, eq(parentQueries.id, searchQueries.parentQueryId))
+        .leftJoin(sourceCreators, eq(sourceCreators.id, parentQueries.creatorId))
+        .where(
+          and(
+            eq(searchQueries.creatorId, trainer.id),
+            sql`${searchQueries.parentQueryId} IS NOT NULL`,
+          ),
+        )
+        .orderBy(desc(searchQueries.updatedAt))
+        .limit(100);
+
+      return reply.send({ forks: rows.map(serializeManagedForkQuery) });
     },
   );
 

@@ -342,6 +342,26 @@ export type ManagedQuery = TrainerPublicQuery & {
   updatedAt: string
 }
 
+export type ManagedForkQuery = ManagedQuery & {
+  parentQueryId: string | null
+  originalQuerySnapshot: string | null
+  syncStatus: 'up-to-date' | 'behind' | 'orphaned'
+  sourceQuery: {
+    id: string
+    title: string
+    query: string
+    isPublic: boolean
+    updatedAt: string
+    creator: {
+      id: string
+      username: string
+      avatarUrl: string | null
+      team: Team | null
+      level: number | null
+    } | null
+  } | null
+}
+
 export type TrainerProfile = {
   id: string
   username: string
@@ -386,6 +406,10 @@ export function getTrainerFavorites(
 
 export function getMyQueries(): Promise<{ queries: ManagedQuery[] }> {
   return apiRequest('/api/v1/users/me/queries')
+}
+
+export function getMyForks(): Promise<{ forks: ManagedForkQuery[] }> {
+  return apiRequest('/api/v1/users/me/forks')
 }
 
 export function followTrainer(id: string): Promise<void> {
@@ -486,6 +510,13 @@ export function createQuery(body: CreateQueryRequest): Promise<IdResponse> {
 
 export function forkQuery(id: string): Promise<IdResponse> {
   return apiRequest<IdResponse>(`/api/v1/queries/${id}/fork`, {
+    method: 'POST',
+    body: {},
+  })
+}
+
+export function syncForkQuery(id: string): Promise<IdResponse> {
+  return apiRequest<IdResponse>(`/api/v1/queries/${id}/sync`, {
     method: 'POST',
     body: {},
   })
