@@ -32,8 +32,8 @@ import {
   getMyForks,
   ApiRequestError,
   syncForkQuery,
-  type ManagedForkQuery,
 } from '#/lib/poke-query-api'
+import type { ManagedForkQuery } from '#/lib/poke-query-api'
 import { requireAuthenticated } from '#/lib/route-auth'
 import { QueryTagBadges } from '../components/query-tag-badges'
 
@@ -94,7 +94,7 @@ export const Route = createFileRoute('/forks')({
   component: ForksPage,
 })
 
-function ForksPage() {
+export function ForksPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const search = Route.useSearch()

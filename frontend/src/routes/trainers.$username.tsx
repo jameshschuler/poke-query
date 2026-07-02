@@ -107,8 +107,11 @@ function TrainerProfilePage() {
         queryKey: ['trainer-followers', trainer?.id],
       })
     },
-    onError: (error: unknown) => {
-      if (error instanceof ApiRequestError && error.status === 403) {
+    onError: (mutationError: unknown) => {
+      if (
+        mutationError instanceof ApiRequestError &&
+        mutationError.status === 403
+      ) {
         toast.error('You cannot follow a private account.')
         return
       }
@@ -252,7 +255,7 @@ function TrainerProfilePage() {
                       </AvatarFallback>
                     </Avatar>
                     <div className="space-y-2">
-                      <h1 className="break-words text-xl font-bold sm:text-2xl">
+                      <h1 className="wrap-break-word text-xl font-bold sm:text-2xl">
                         {trainer.username}
                       </h1>
                       <div className="flex flex-wrap items-center gap-2">

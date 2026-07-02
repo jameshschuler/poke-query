@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ComponentProps, ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { Route } from '#/routes/forks'
+import { ForksPage } from '#/routes/forks'
 
 const { mockNavigate, mockGetMyForks, mockSyncForkQuery } = vi.hoisted(() => ({
   mockNavigate: vi.fn(),
@@ -13,7 +13,7 @@ const { mockNavigate, mockGetMyForks, mockSyncForkQuery } = vi.hoisted(() => ({
 
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: unknown) => ({
-    ...((options as Record<string, unknown>) ?? {}),
+    ...(options as Record<string, unknown>),
     useSearch: () => ({}),
   }),
   Link: ({ children, ...props }: ComponentProps<'a'>) => (
@@ -98,8 +98,6 @@ describe('ForksPage', () => {
   })
 
   it('renders forks data and syncs a behind fork from source', async () => {
-    const ForksPage = Route.component as () => ReactNode
-
     mockGetMyForks.mockResolvedValue({
       forks: [
         {
