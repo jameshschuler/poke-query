@@ -7,6 +7,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '#/components/ui/avatar'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '#/components/ui/tooltip'
+import {
+  favoriteQuery,
+  getMyFavoriteIds,
   getTrainerByUsername,
   getTrainerStrings,
   getTrainerForks,
@@ -14,6 +21,7 @@ import {
   getTrainerFollowers,
   followTrainer,
   forkQuery,
+  unfavoriteQuery,
   unfollowTrainer,
   ApiRequestError,
 } from '#/lib/poke-query-api'
@@ -91,6 +99,13 @@ function TrainerProfilePage() {
     enabled: !!trainer?.id,
   })
 
+  const { data: myFavoriteIds } = useQuery({
+    queryKey: ['my-favorite-ids'],
+    queryFn: getMyFavoriteIds,
+    enabled: Boolean(user),
+    staleTime: 60_000,
+  })
+
   const strings = stringsData?.strings ?? []
   const forks = forksData?.forks ?? []
   const favs = favoritesData?.favorites ?? []
@@ -161,7 +176,40 @@ function TrainerProfilePage() {
     },
   })
 
+  const favoriteMutation = useMutation({
+    mutationFn: favoriteQuery,
+    onSuccess: async () => {
+      toast.success('Saved to favorites!')
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['my-favorite-ids'] }),
+        queryClient.invalidateQueries({ queryKey: ['my-favorites-page'] }),
+        queryClient.invalidateQueries({ queryKey: ['community-discover'] }),
+      ])
+    },
+    onError: () => {
+      toast.error('Could not save favorite.')
+    },
+  })
+
+  const unfavoriteMutation = useMutation({
+    mutationFn: unfavoriteQuery,
+    onSuccess: async () => {
+      toast.success('Removed from favorites.')
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['my-favorite-ids'] }),
+        queryClient.invalidateQueries({ queryKey: ['my-favorites-page'] }),
+        queryClient.invalidateQueries({ queryKey: ['community-discover'] }),
+      ])
+    },
+    onError: () => {
+      toast.error('Could not remove favorite.')
+    },
+  })
+
   const isFollowPending = followMutation.isPending || unfollowMutation.isPending
+  const favoriteIdSet = new Set(myFavoriteIds?.favoriteQueryIds ?? [])
+  const isFavoritePending =
+    favoriteMutation.isPending || unfavoriteMutation.isPending
 
   const canShowFollowAction =
     trainer &&
@@ -189,6 +237,19 @@ function TrainerProfilePage() {
     }
 
     forkMutation.mutate(queryId)
+  }
+
+  function handleToggleFavorite(queryId: string, isFavorited: boolean) {
+    if (!user) {
+      return
+    }
+
+    if (isFavorited) {
+      unfavoriteMutation.mutate(queryId)
+      return
+    }
+
+    favoriteMutation.mutate(queryId)
   }
 
   return (
@@ -282,21 +343,28 @@ function TrainerProfilePage() {
                           <span className="select-all rounded bg-muted px-2 py-1 font-mono text-sm sm:text-base">
                             {trainer.trainerCode}
                           </span>
-                          <Button
-                            type="button"
-                            size="icon"
-                            variant="outline"
-                            className="rounded-full"
-                            onClick={() => {
-                              void navigator.clipboard.writeText(
-                                trainer.trainerCode!,
-                              )
-                              toast.success('Trainer code copied!')
-                            }}
-                            aria-label="Copy trainer code"
-                          >
-                            <CopyIcon className="size-4" />
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger
+                              render={
+                                <Button
+                                  type="button"
+                                  size="icon"
+                                  variant="outline"
+                                  className="rounded-full"
+                                  onClick={() => {
+                                    void navigator.clipboard.writeText(
+                                      trainer.trainerCode!,
+                                    )
+                                    toast.success('Trainer code copied!')
+                                  }}
+                                  aria-label="Copy trainer code"
+                                >
+                                  <CopyIcon className="size-4" />
+                                </Button>
+                              }
+                            />
+                            <TooltipContent>Copy trainer code</TooltipContent>
+                          </Tooltip>
                         </div>
                       ) : null}
                     </div>
@@ -380,6 +448,9 @@ function TrainerProfilePage() {
                               card={card}
                               variant="trainer"
                               isAuthenticated={Boolean(user)}
+                              isFavorited={favoriteIdSet.has(card.id)}
+                              isFavoritePending={isFavoritePending}
+                              onToggleFavorite={handleToggleFavorite}
                               onFork={handleFork}
                               isForkPending={forkMutation.isPending}
                             />
@@ -397,6 +468,9 @@ function TrainerProfilePage() {
                               card={card}
                               variant="trainer"
                               isAuthenticated={Boolean(user)}
+                              isFavorited={favoriteIdSet.has(card.id)}
+                              isFavoritePending={isFavoritePending}
+                              onToggleFavorite={handleToggleFavorite}
                               onFork={handleFork}
                               isForkPending={forkMutation.isPending}
                             />
@@ -413,6 +487,9 @@ function TrainerProfilePage() {
                             card={card}
                             variant="trainer"
                             isAuthenticated={Boolean(user)}
+                            isFavorited={favoriteIdSet.has(card.id)}
+                            isFavoritePending={isFavoritePending}
+                            onToggleFavorite={handleToggleFavorite}
                             onFork={handleFork}
                             isForkPending={forkMutation.isPending}
                           />

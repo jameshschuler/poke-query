@@ -1,9 +1,11 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
+  EyeIcon,
   Edit3Icon,
   Grid2x2Icon,
   Grid3x3Icon,
+  HeartIcon,
   ListIcon,
   PlusIcon,
   Trash2Icon,
@@ -27,7 +29,18 @@ import {
   DialogTitle,
 } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
-import { deleteQuery, getMyQueries } from '#/lib/poke-query-api'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '#/components/ui/tooltip'
+import {
+  deleteQuery,
+  favoriteQuery,
+  getMyFavoriteIds,
+  getMyQueries,
+  unfavoriteQuery,
+} from '#/lib/poke-query-api'
 import type { ManagedQuery } from '#/lib/poke-query-api'
 import { requireAuthenticated } from '#/lib/route-auth'
 import { QueryTagBadges } from '../components/query-tag-badges'
@@ -94,7 +107,48 @@ function LibraryPage() {
     queryFn: getMyQueries,
   })
 
+  const { data: myFavoriteIds } = useQuery({
+    queryKey: ['my-favorite-ids'],
+    queryFn: getMyFavoriteIds,
+    staleTime: 60_000,
+  })
+
+  const favoriteMutation = useMutation({
+    mutationFn: favoriteQuery,
+    onSuccess: async () => {
+      toast.success('Saved to favorites!')
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['my-favorite-ids'] }),
+        queryClient.invalidateQueries({ queryKey: ['my-favorites-page'] }),
+        queryClient.invalidateQueries({ queryKey: ['community-discover'] }),
+        queryClient.invalidateQueries({ queryKey: ['my-queries'] }),
+      ])
+    },
+    onError: () => {
+      toast.error('Could not save favorite.')
+    },
+  })
+
+  const unfavoriteMutation = useMutation({
+    mutationFn: unfavoriteQuery,
+    onSuccess: async () => {
+      toast.success('Removed from favorites.')
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['my-favorite-ids'] }),
+        queryClient.invalidateQueries({ queryKey: ['my-favorites-page'] }),
+        queryClient.invalidateQueries({ queryKey: ['community-discover'] }),
+        queryClient.invalidateQueries({ queryKey: ['my-queries'] }),
+      ])
+    },
+    onError: () => {
+      toast.error('Could not remove favorite.')
+    },
+  })
+
   const queries = data?.queries ?? []
+  const favoriteIdSet = new Set(myFavoriteIds?.favoriteQueryIds ?? [])
+  const isFavoritePending =
+    favoriteMutation.isPending || unfavoriteMutation.isPending
   const draftCount = queries.filter((query) => !query.isPublic).length
   const publicCount = queries.length - draftCount
   const lastEdited = queries[0]?.updatedAt ?? null
@@ -136,6 +190,19 @@ function LibraryPage() {
 
   function handleDelete(query: ManagedQuery) {
     setQueryToDelete(query)
+  }
+
+  function handleToggleFavorite(queryId: string) {
+    if (isFavoritePending) {
+      return
+    }
+
+    if (favoriteIdSet.has(queryId)) {
+      unfavoriteMutation.mutate(queryId)
+      return
+    }
+
+    favoriteMutation.mutate(queryId)
   }
 
   function handleDeleteConfirm() {
@@ -404,20 +471,28 @@ function LibraryPage() {
                       onTitleClick={() => setEditingQuery(query)}
                       action={
                         query.isPublic ? (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="rounded-lg"
-                            onClick={() =>
-                              void navigate({
-                                to: '/queries/$queryId',
-                                params: { queryId: query.id },
-                              })
-                            }
-                          >
-                            View
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger
+                              render={
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon-sm"
+                                  className="rounded-lg"
+                                  aria-label="View"
+                                  onClick={() =>
+                                    void navigate({
+                                      to: '/queries/$queryId',
+                                      params: { queryId: query.id },
+                                    })
+                                  }
+                                >
+                                  <EyeIcon className="size-4" />
+                                </Button>
+                              }
+                            />
+                            <TooltipContent>View</TooltipContent>
+                          </Tooltip>
                         ) : null
                       }
                     >
@@ -448,26 +523,76 @@ function LibraryPage() {
 
                   <div className="flex flex-col items-start gap-3">
                     <QueryCardActions>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="rounded-lg"
-                        onClick={() => setEditingQuery(query)}
-                      >
-                        <Edit3Icon className="size-4" />
-                        Edit
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="rounded-lg text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(query)}
-                      >
-                        <Trash2Icon className="size-4" />
-                        Delete
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon-sm"
+                              className={`rounded-lg ${
+                                favoriteIdSet.has(query.id)
+                                  ? 'border-rose-300 text-rose-600 hover:bg-rose-50 hover:text-rose-600'
+                                  : ''
+                              }`}
+                              aria-label={
+                                favoriteIdSet.has(query.id)
+                                  ? 'Favorited'
+                                  : 'Favorite'
+                              }
+                              disabled={isFavoritePending}
+                              onClick={() => handleToggleFavorite(query.id)}
+                            >
+                              <HeartIcon
+                                className={`size-4 ${
+                                  favoriteIdSet.has(query.id)
+                                    ? 'fill-current text-rose-600'
+                                    : ''
+                                }`}
+                              />
+                            </Button>
+                          }
+                        />
+                        <TooltipContent>
+                          {favoriteIdSet.has(query.id)
+                            ? 'Favorited'
+                            : 'Favorite'}
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon-sm"
+                              className="rounded-lg"
+                              aria-label="Edit"
+                              onClick={() => setEditingQuery(query)}
+                            >
+                              <Edit3Icon className="size-4" />
+                            </Button>
+                          }
+                        />
+                        <TooltipContent>Edit</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon-sm"
+                              className="rounded-lg text-destructive hover:text-destructive"
+                              aria-label="Delete"
+                              onClick={() => handleDelete(query)}
+                            >
+                              <Trash2Icon className="size-4" />
+                            </Button>
+                          }
+                        />
+                        <TooltipContent>Delete</TooltipContent>
+                      </Tooltip>
                     </QueryCardActions>
                   </div>
                 </div>

@@ -22,9 +22,11 @@ import {
   getCommunityQueriesPage,
   favoriteGuestQuery,
   favoriteQuery,
+  getMyFavoriteIds,
   forkQuery,
   getGuestFavorites,
   getQueryTags,
+  unfavoriteQuery,
   unfavoriteGuestQuery,
   ApiRequestError,
 } from '#/lib/poke-query-api'
@@ -41,6 +43,11 @@ import { Input } from '#/components/ui/input'
 import { SearchStringCard } from '#/components/search-string-card'
 import { GuestFavoritesDrawer } from '#/components/guest-favorites-drawer'
 import { PageShell } from '#/components/page-shell'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '#/components/ui/tooltip'
 import { formatTagLabel } from '#/lib/utils'
 
 type SortMode =
@@ -142,13 +149,38 @@ function DiscoverPage() {
     staleTime: 60_000,
   })
 
+  const { data: myFavoriteIds } = useQuery({
+    queryKey: ['my-favorite-ids'],
+    queryFn: getMyFavoriteIds,
+    enabled: Boolean(user),
+    staleTime: 60_000,
+  })
+
   const favoriteMutation = useMutation({
     mutationFn: favoriteQuery,
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success('Saved to favorites!')
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['my-favorite-ids'] }),
+        queryClient.invalidateQueries({ queryKey: ['my-favorites-page'] }),
+      ])
     },
     onError: () => {
       toast.error('Could not save favorite.')
+    },
+  })
+
+  const unfavoriteMutation = useMutation({
+    mutationFn: unfavoriteQuery,
+    onSuccess: async () => {
+      toast.success('Removed from favorites.')
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['my-favorite-ids'] }),
+        queryClient.invalidateQueries({ queryKey: ['my-favorites-page'] }),
+      ])
+    },
+    onError: () => {
+      toast.error('Could not remove favorite.')
     },
   })
 
@@ -350,6 +382,10 @@ function DiscoverPage() {
     () => new Set(guestFavorites?.favoriteQueryIds ?? []),
     [guestFavorites?.favoriteQueryIds],
   )
+  const myFavoriteIdSet = useMemo(
+    () => new Set(myFavoriteIds?.favoriteQueryIds ?? []),
+    [myFavoriteIds?.favoriteQueryIds],
+  )
   const guestFavoritesCount = guestFavorites?.favoritesCount ?? 0
   const guestFavoritesBadgeLabel =
     guestFavoritesCount > 99 ? '99+' : String(guestFavoritesCount)
@@ -365,6 +401,11 @@ function DiscoverPage() {
 
   function handleToggleFavorite(queryId: string, isFavorited: boolean) {
     if (user) {
+      if (isFavorited) {
+        unfavoriteMutation.mutate(queryId)
+        return
+      }
+
       favoriteMutation.mutate(queryId)
       return
     }
@@ -551,19 +592,24 @@ function DiscoverPage() {
               {resultsCount} search strings found
             </p>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-xl"
-                aria-label="Copy search link"
-                title="Copy search link"
-                onClick={() => {
-                  void handleCopySearchLink()
-                }}
-              >
-                <Share2Icon className="size-4" />
-                <span>Share</span>
-              </Button>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="icon-sm"
+                      className="rounded-xl"
+                      aria-label="Share"
+                      onClick={() => {
+                        void handleCopySearchLink()
+                      }}
+                    >
+                      <Share2Icon className="size-4" />
+                    </Button>
+                  }
+                />
+                <TooltipContent>Share</TooltipContent>
+              </Tooltip>
 
               <DropdownMenu>
                 <DropdownMenuTrigger
@@ -619,9 +665,14 @@ function DiscoverPage() {
                 card={card}
                 variant="discover"
                 isAuthenticated={Boolean(user)}
-                isFavorited={!user && guestFavoriteIds.has(card.id)}
+                isFavorited={
+                  user
+                    ? myFavoriteIdSet.has(card.id)
+                    : guestFavoriteIds.has(card.id)
+                }
                 isFavoritePending={
                   favoriteMutation.isPending ||
+                  unfavoriteMutation.isPending ||
                   guestFavoriteMutation.isPending ||
                   guestUnfavoriteMutation.isPending
                 }

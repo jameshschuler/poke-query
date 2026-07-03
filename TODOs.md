@@ -12,19 +12,19 @@
 
 ### 2) Manage/CRUD Forked Queries
 
-- [ ] Build "Forks" page with real data from `/api/v1/users/:id/forks` and own fork list
-- [ ] Add fork details view (original source, fork timestamp, sync status)
-- [ ] Enable editing/deleting forked queries as first-class queries
-- [ ] Add "fork from discover/query detail" flow with success navigation
-- [ ] Prevent invalid fork actions (private/orphaned originals) with clear messaging
+- [x] Build "Forks" page with real data from `/api/v1/users/:id/forks` and own fork list
+- [x] Add fork details view (original source, fork timestamp, sync status)
+- [x] Enable editing/deleting forked queries as first-class queries
+- [x] Add "fork from discover/query detail" flow with success navigation
+- [x] Prevent invalid fork actions (private/orphaned originals) with clear messaging
 
 ### 3) Manage Favorites
 
-- [ ] Build authenticated "Favorites" page from API (replace placeholders)
-- [ ] Add favorite/unfavorite persistence across discover, detail, and profile views
-- [ ] Ensure favorite state is hydrated on page load (no stale button states)
-- [ ] Add empty/loading/error states for favorites list
-- [ ] Add pagination or infinite loading for large favorites lists
+- [x] Build authenticated "Favorites" page from API (replace placeholders)
+- [x] Add favorite/unfavorite persistence across discover, detail, and profile views
+- [x] Ensure favorite state is hydrated on page load (no stale button states)
+- [x] Add empty/loading/error states for favorites list
+- [x] Add pagination or infinite loading for large favorites lists
 
 ### 4) Manage Account/Profile
 
@@ -42,6 +42,10 @@
 - [ ] Add notification center UI (list, unread badge, mark read/all)
 - [ ] Add in-app toasts for high-priority events
 - [ ] Add notification preferences in account settings
+
+### 6) Dashboard
+
+- [ ] Recent Activity
 
 ## P0 - Security, Trust, and Data Safety
 
@@ -65,6 +69,7 @@
 - [ ] Add success/error toast consistency across all mutations
 - [ ] Add accessible labels, keyboard flows, and focus states to all critical UI
 - [ ] Add responsive QA pass for mobile discover/profile/settings pages
+- [ ] Add theme / colors
 
 ## P1 - Launch Operations
 

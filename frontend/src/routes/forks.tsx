@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import {
+  CircleEllipsisIcon,
   Edit3Icon,
   Grid2x2Icon,
   Grid3x3Icon,
@@ -27,6 +28,11 @@ import {
   DialogTitle,
 } from '#/components/ui/dialog'
 import { Input } from '#/components/ui/input'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '#/components/ui/tooltip'
 import {
   deleteQuery,
   getMyForks,
@@ -586,15 +592,23 @@ export function ForksPage() {
 
                   <div className="flex flex-col items-start gap-3">
                     <QueryCardActions>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="rounded-lg"
-                        onClick={() => openDetails(fork.id)}
-                      >
-                        Details
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon-sm"
+                              className="rounded-lg"
+                              aria-label="Details"
+                              onClick={() => openDetails(fork.id)}
+                            >
+                              <CircleEllipsisIcon className="size-4" />
+                            </Button>
+                          }
+                        />
+                        <TooltipContent>Details</TooltipContent>
+                      </Tooltip>
                       {fork.syncStatus === 'behind' ? (
                         <Button
                           type="button"
@@ -608,26 +622,40 @@ export function ForksPage() {
                             : 'Sync from source'}
                         </Button>
                       ) : null}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="rounded-lg"
-                        onClick={() => setEditingFork(fork)}
-                      >
-                        <Edit3Icon className="size-4" />
-                        Edit
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="rounded-lg text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(fork)}
-                      >
-                        <Trash2Icon className="size-4" />
-                        Delete
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon-sm"
+                              className="rounded-lg"
+                              aria-label="Edit"
+                              onClick={() => setEditingFork(fork)}
+                            >
+                              <Edit3Icon className="size-4" />
+                            </Button>
+                          }
+                        />
+                        <TooltipContent>Edit</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon-sm"
+                              className="rounded-lg text-destructive hover:text-destructive"
+                              aria-label="Delete"
+                              onClick={() => handleDelete(fork)}
+                            >
+                              <Trash2Icon className="size-4" />
+                            </Button>
+                          }
+                        />
+                        <TooltipContent>Delete</TooltipContent>
+                      </Tooltip>
                     </QueryCardActions>
                   </div>
                 </div>

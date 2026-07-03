@@ -227,6 +227,55 @@ export const GetMeQueriesSchema = {
   },
 };
 
+const meFavoriteItem = Type.Object({
+  id: Type.String(),
+  title: Type.String(),
+  query: Type.String(),
+  description: Type.Union([Type.String(), Type.Null()]),
+  isPublic: Type.Boolean(),
+  copyCount: Type.Integer(),
+  favoriteCount: Type.Integer(),
+  forkCount: Type.Integer(),
+  autoTags: Type.Array(Type.String()),
+  createdAt: Type.String(),
+  updatedAt: Type.String(),
+  favoritedAt: Type.String(),
+});
+
+export const GetMeFavoritesSchema = {
+  security: cookieAuthSecurity,
+  querystring: Type.Object({
+    limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 50 })),
+    offset: Type.Optional(Type.Integer({ minimum: 0 })),
+  }),
+  response: {
+    200: Type.Object({
+      favorites: Type.Array(meFavoriteItem),
+      pagination: Type.Object({
+        limit: Type.Integer(),
+        offset: Type.Integer(),
+        nextOffset: Type.Union([Type.Integer(), Type.Null()]),
+        hasMore: Type.Boolean(),
+        total: Type.Integer(),
+      }),
+    }),
+    401: Type.Object({ error: Type.String() }),
+    404: Type.Object({ error: Type.String() }),
+  },
+};
+
+export const GetMeFavoriteIdsSchema = {
+  security: cookieAuthSecurity,
+  response: {
+    200: Type.Object({
+      favoriteQueryIds: Type.Array(Type.String()),
+      favoritesCount: Type.Integer(),
+    }),
+    401: Type.Object({ error: Type.String() }),
+    404: Type.Object({ error: Type.String() }),
+  },
+};
+
 const trainerSummarySchema = Type.Object({
   id: Type.String(),
   username: Type.String(),

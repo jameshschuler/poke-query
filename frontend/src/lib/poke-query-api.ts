@@ -362,6 +362,42 @@ export type ManagedForkQuery = ManagedQuery & {
   } | null
 }
 
+export type MyFavoriteQuery = {
+  id: string
+  title: string
+  query: string
+  description: string | null
+  isPublic: boolean
+  copyCount: number
+  favoriteCount: number
+  forkCount: number
+  autoTags: string[]
+  createdAt: string
+  updatedAt: string
+  favoritedAt: string
+}
+
+export type MyFavoritesPage = {
+  favorites: MyFavoriteQuery[]
+  pagination: {
+    limit: number
+    offset: number
+    nextOffset: number | null
+    hasMore: boolean
+    total: number
+  }
+}
+
+export type MyFavoritesParams = {
+  limit?: number
+  offset?: number
+}
+
+export type MyFavoriteIdsResponse = {
+  favoriteQueryIds: string[]
+  favoritesCount: number
+}
+
 export type TrainerProfile = {
   id: string
   username: string
@@ -406,6 +442,31 @@ export function getTrainerFavorites(
 
 export function getMyQueries(): Promise<{ queries: ManagedQuery[] }> {
   return apiRequest('/api/v1/users/me/queries')
+}
+
+export function getMyFavoritesPage(
+  params: MyFavoritesParams = {},
+): Promise<MyFavoritesPage> {
+  const search = new URLSearchParams()
+
+  if (typeof params.limit === 'number') {
+    search.set('limit', String(params.limit))
+  }
+
+  if (typeof params.offset === 'number') {
+    search.set('offset', String(params.offset))
+  }
+
+  const queryString = search.toString()
+  const path = queryString
+    ? `/api/v1/users/me/favorites?${queryString}`
+    : '/api/v1/users/me/favorites'
+
+  return apiRequest<MyFavoritesPage>(path)
+}
+
+export function getMyFavoriteIds(): Promise<MyFavoriteIdsResponse> {
+  return apiRequest<MyFavoriteIdsResponse>('/api/v1/users/me/favorites/ids')
 }
 
 export function getMyForks(): Promise<{ forks: ManagedForkQuery[] }> {

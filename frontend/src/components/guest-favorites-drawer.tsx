@@ -21,6 +21,11 @@ import { Button } from '#/components/ui/button'
 import { getQueryById } from '#/lib/poke-query-api'
 import type { QueryDetail } from '#/lib/poke-query-api'
 import { formatTagLabel } from '#/lib/utils'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '#/components/ui/tooltip'
 
 type GuestFavoritesDrawerProps = {
   isOpen: boolean
@@ -103,21 +108,28 @@ export function GuestFavoritesDrawer({
                 <p className="text-xs text-muted-foreground">
                   {favoritesCount} / {maxFavorites} favorites
                 </p>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 cursor-pointer px-2 text-destructive hover:text-destructive"
-                  onClick={() => onClearFavorites()}
-                  disabled={isClearingFavorites || isRemovingFavorite}
-                >
-                  {isClearingFavorites ? (
-                    <Loader2Icon className="size-3.5 animate-spin" />
-                  ) : (
-                    <Trash2Icon className="size-3.5" />
-                  )}
-                  Clear all
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 cursor-pointer text-destructive hover:text-destructive"
+                        onClick={() => onClearFavorites()}
+                        disabled={isClearingFavorites || isRemovingFavorite}
+                        aria-label="Clear all favorites"
+                      >
+                        {isClearingFavorites ? (
+                          <Loader2Icon className="size-3.5 animate-spin" />
+                        ) : (
+                          <Trash2Icon className="size-3.5" />
+                        )}
+                      </Button>
+                    }
+                  />
+                  <TooltipContent>Clear all</TooltipContent>
+                </Tooltip>
               </div>
 
               {queries.map((query) => (
@@ -148,24 +160,33 @@ export function GuestFavoritesDrawer({
                       ) : null}
                     </div>
 
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 shrink-0 cursor-pointer text-muted-foreground hover:text-destructive"
-                      onClick={() => onRemoveFavorite(query.id)}
-                      disabled={
-                        isClearingFavorites ||
-                        (isRemovingFavorite && removingFavoriteId === query.id)
-                      }
-                      aria-label={`Remove ${query.title} from favorites`}
-                    >
-                      {isRemovingFavorite && removingFavoriteId === query.id ? (
-                        <Loader2Icon className="size-4 animate-spin" />
-                      ) : (
-                        <XIcon className="size-4" />
-                      )}
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 shrink-0 cursor-pointer text-muted-foreground hover:text-destructive"
+                            onClick={() => onRemoveFavorite(query.id)}
+                            disabled={
+                              isClearingFavorites ||
+                              (isRemovingFavorite &&
+                                removingFavoriteId === query.id)
+                            }
+                            aria-label={`Remove ${query.title} from favorites`}
+                          >
+                            {isRemovingFavorite &&
+                            removingFavoriteId === query.id ? (
+                              <Loader2Icon className="size-4 animate-spin" />
+                            ) : (
+                              <XIcon className="size-4" />
+                            )}
+                          </Button>
+                        }
+                      />
+                      <TooltipContent>Remove</TooltipContent>
+                    </Tooltip>
                   </div>
 
                   {query.description ? (

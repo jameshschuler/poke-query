@@ -6,6 +6,8 @@ import {
   DeleteTrainerSchema,
   GetMeSchema,
   GetMeQueriesSchema,
+  GetMeFavoritesSchema,
+  GetMeFavoriteIdsSchema,
   GetMeForksSchema,
   GetTrainerSchema,
   GetTrainerByUsernameSchema,
@@ -20,7 +22,7 @@ import {
 import { getSupabaseAdmin } from "../../lib/supabase.js";
 import { trainers, searchQueries, favorites, followers } from "../../db/schema.js";
 import { alias } from "drizzle-orm/pg-core";
-import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, count, desc, eq, isNull, or, sql } from "drizzle-orm";
 
 export async function userRoutes(fastify: FastifyTypebox) {
   const server = fastify.withTypeProvider<TypeBoxTypeProvider>();
@@ -103,6 +105,34 @@ export async function userRoutes(fastify: FastifyTypebox) {
     ...q,
     createdAt: q.createdAt.toISOString(),
     updatedAt: q.updatedAt.toISOString(),
+  });
+
+  const serializeMeFavoriteQuery = (q: {
+    id: string;
+    title: string;
+    query: string;
+    description: string | null;
+    isPublic: boolean;
+    copyCount: number;
+    favoriteCount: number;
+    forkCount: number;
+    autoTags: string[];
+    createdAt: Date;
+    updatedAt: Date;
+    favoritedAt: Date;
+  }) => ({
+    id: q.id,
+    title: q.title,
+    query: q.query,
+    description: q.description,
+    isPublic: q.isPublic,
+    copyCount: q.copyCount,
+    favoriteCount: q.favoriteCount,
+    forkCount: q.forkCount,
+    autoTags: q.autoTags,
+    createdAt: q.createdAt.toISOString(),
+    updatedAt: q.updatedAt.toISOString(),
+    favoritedAt: q.favoritedAt.toISOString(),
   });
 
   const serializeManagedForkQuery = (q: {
@@ -272,6 +302,105 @@ export async function userRoutes(fastify: FastifyTypebox) {
         .limit(100);
 
       return reply.send({ queries: rows.map(serializeManagedQuery) });
+    },
+  );
+
+  server.get(
+    "/me/favorites",
+    { preHandler: [fastify.authenticate], schema: GetMeFavoritesSchema },
+    async (request, reply) => {
+      const userId = request.user.id;
+      const limit = Math.min(50, Math.max(1, request.query.limit ?? 20));
+      const offset = Math.max(0, request.query.offset ?? 0);
+
+      const [trainer] = await fastify.db
+        .select({ id: trainers.id })
+        .from(trainers)
+        .where(eq(trainers.userId, userId));
+
+      if (!trainer) {
+        return reply.code(404).send({ error: "Trainer not found" });
+      }
+
+      const visibilityWhere = and(
+        eq(favorites.trainerId, trainer.id),
+        or(eq(searchQueries.isPublic, true), eq(searchQueries.creatorId, trainer.id)),
+      );
+
+      const rows = await fastify.db
+        .select({
+          id: searchQueries.id,
+          title: searchQueries.title,
+          query: searchQueries.query,
+          description: searchQueries.description,
+          isPublic: searchQueries.isPublic,
+          copyCount: searchQueries.copyCount,
+          favoriteCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM pokequery.favorites f WHERE f.query_id = ${searchQueries.id}), 0)`,
+          forkCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM pokequery.search_queries forked WHERE forked.parent_query_id = ${searchQueries.id}), 0)`,
+          autoTags: sql<string[]>`COALESCE(${searchQueries.metadata}->'autoTags', '[]'::jsonb)`,
+          createdAt: searchQueries.createdAt,
+          updatedAt: searchQueries.updatedAt,
+          favoritedAt: favorites.createdAt,
+        })
+        .from(favorites)
+        .innerJoin(searchQueries, eq(searchQueries.id, favorites.queryId))
+        .where(visibilityWhere)
+        .orderBy(desc(favorites.createdAt))
+        .limit(limit)
+        .offset(offset);
+
+      const [totals] = await fastify.db
+        .select({ total: count() })
+        .from(favorites)
+        .innerJoin(searchQueries, eq(searchQueries.id, favorites.queryId))
+        .where(visibilityWhere);
+
+      const total = totals?.total ?? 0;
+      const nextOffset = offset + rows.length < total ? offset + rows.length : null;
+
+      return reply.send({
+        favorites: rows.map(serializeMeFavoriteQuery),
+        pagination: {
+          limit,
+          offset,
+          nextOffset,
+          hasMore: nextOffset !== null,
+          total,
+        },
+      });
+    },
+  );
+
+  server.get(
+    "/me/favorites/ids",
+    { preHandler: [fastify.authenticate], schema: GetMeFavoriteIdsSchema },
+    async (request, reply) => {
+      const userId = request.user.id;
+
+      const [trainer] = await fastify.db
+        .select({ id: trainers.id })
+        .from(trainers)
+        .where(eq(trainers.userId, userId));
+
+      if (!trainer) {
+        return reply.code(404).send({ error: "Trainer not found" });
+      }
+
+      const rows = await fastify.db
+        .select({ queryId: favorites.queryId })
+        .from(favorites)
+        .innerJoin(searchQueries, eq(searchQueries.id, favorites.queryId))
+        .where(
+          and(
+            eq(favorites.trainerId, trainer.id),
+            or(eq(searchQueries.isPublic, true), eq(searchQueries.creatorId, trainer.id)),
+          ),
+        );
+
+      return reply.send({
+        favoriteQueryIds: rows.map((row) => row.queryId),
+        favoritesCount: rows.length,
+      });
     },
   );
 

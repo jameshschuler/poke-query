@@ -1,10 +1,21 @@
 import { Link } from '@tanstack/react-router'
-import { CopyIcon, GitForkIcon, HeartIcon } from 'lucide-react'
+import {
+  CopyIcon,
+  EyeIcon,
+  GitForkIcon,
+  HeartIcon,
+  Loader2Icon,
+} from 'lucide-react'
 import { useMemo } from 'react'
 import { toast } from 'sonner'
 
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '#/components/ui/tooltip'
 import { copyQuery } from '#/lib/poke-query-api'
 import type { CommunityQuery, TrainerPublicQuery } from '#/lib/poke-query-api'
 import { formatTagLabel } from '#/lib/utils'
@@ -56,6 +67,8 @@ export function SearchStringCard({
   }
 
   const canFork = isAuthenticated && typeof onFork === 'function'
+  const canToggleFavorite =
+    isAuthenticated && typeof onToggleFavorite === 'function'
 
   return (
     <article className="overflow-hidden rounded-2xl border border-border/60 bg-background/70">
@@ -125,76 +138,121 @@ export function SearchStringCard({
 
       <div className="flex flex-col gap-3 border-t border-border/60 bg-card/60 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="cursor-pointer rounded-xl"
-            onClick={handleCopy}
-          >
-            <CopyIcon className="size-4" />
-            Copy
-          </Button>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="icon-sm"
+                  className="cursor-pointer rounded-xl"
+                  aria-label="Copy"
+                  onClick={handleCopy}
+                >
+                  <CopyIcon className="size-4" />
+                </Button>
+              }
+            />
+            <TooltipContent>Copy</TooltipContent>
+          </Tooltip>
 
-          {variant === 'discover' ? (
-            <Button
-              variant="outline"
-              size="sm"
-              className={`rounded-xl ${
-                isFavorited
-                  ? 'border-rose-300 text-rose-600 hover:bg-rose-50 hover:text-rose-600'
-                  : ''
-              } cursor-pointer`}
-              disabled={isFavoritePending}
-              onClick={() => {
-                onToggleFavorite?.(card.id, isFavorited)
-              }}
-            >
-              <HeartIcon
-                className={`size-4 ${isFavorited ? 'fill-current text-rose-600' : ''}`}
+          {canToggleFavorite ? (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="icon-sm"
+                    className={`rounded-xl ${
+                      isFavorited
+                        ? 'border-rose-300 text-rose-600 hover:bg-rose-50 hover:text-rose-600'
+                        : ''
+                    } cursor-pointer`}
+                    disabled={isFavoritePending}
+                    aria-label={isFavorited ? 'Favorited' : 'Favorite'}
+                    onClick={() => {
+                      onToggleFavorite(card.id, isFavorited)
+                    }}
+                  >
+                    <HeartIcon
+                      className={`size-4 ${isFavorited ? 'fill-current text-rose-600' : ''}`}
+                    />
+                  </Button>
+                }
               />
-              {isFavorited ? 'Favorited' : 'Favorite'}
-            </Button>
+              <TooltipContent>
+                {isFavorited ? 'Favorited' : 'Favorite'}
+              </TooltipContent>
+            </Tooltip>
           ) : null}
 
           {variant === 'discover' && canFork ? (
-            <Button
-              variant="outline"
-              size="sm"
-              className="cursor-pointer rounded-xl"
-              disabled={isForkPending}
-              onClick={() => onFork(card.id)}
-            >
-              <GitForkIcon className="size-4" />
-              {isForkPending ? 'Forking...' : 'Fork'}
-            </Button>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="icon-sm"
+                    className="cursor-pointer rounded-xl"
+                    disabled={isForkPending}
+                    aria-label="Fork"
+                    onClick={() => onFork(card.id)}
+                  >
+                    {isForkPending ? (
+                      <Loader2Icon className="size-4 animate-spin" />
+                    ) : (
+                      <GitForkIcon className="size-4" />
+                    )}
+                  </Button>
+                }
+              />
+              <TooltipContent>Fork</TooltipContent>
+            </Tooltip>
           ) : null}
 
           {variant === 'trainer' && canFork ? (
-            <Button
-              variant="outline"
-              size="sm"
-              className="cursor-pointer rounded-xl"
-              disabled={isForkPending}
-              onClick={() => onFork(card.id)}
-            >
-              <GitForkIcon className="size-4" />
-              {isForkPending ? 'Forking...' : 'Fork'}
-            </Button>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    size="icon-sm"
+                    className="cursor-pointer rounded-xl"
+                    disabled={isForkPending}
+                    aria-label="Fork"
+                    onClick={() => onFork(card.id)}
+                  >
+                    {isForkPending ? (
+                      <Loader2Icon className="size-4 animate-spin" />
+                    ) : (
+                      <GitForkIcon className="size-4" />
+                    )}
+                  </Button>
+                }
+              />
+              <TooltipContent>Fork</TooltipContent>
+            </Tooltip>
           ) : variant === 'trainer' ? (
-            <Link
-              to="/queries/$queryId"
-              params={{ queryId: card.id }}
-              className="inline-flex"
-            >
-              <Button
-                variant="outline"
-                size="sm"
-                className="cursor-pointer rounded-xl"
-              >
-                <GitForkIcon className="size-4" />
-                View
-              </Button>
-            </Link>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Link
+                    to="/queries/$queryId"
+                    params={{ queryId: card.id }}
+                    className="inline-flex"
+                  >
+                    <Button
+                      variant="outline"
+                      size="icon-sm"
+                      className="cursor-pointer rounded-xl"
+                      aria-label="View"
+                    >
+                      <EyeIcon className="size-4" />
+                    </Button>
+                  </Link>
+                }
+              />
+              <TooltipContent>View</TooltipContent>
+            </Tooltip>
           ) : null}
         </div>
 

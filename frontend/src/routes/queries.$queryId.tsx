@@ -1,19 +1,33 @@
 import { useAuth } from '@authabase/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { CopyIcon, GitForkIcon, HeartIcon, ShareIcon } from 'lucide-react'
+import {
+  CopyIcon,
+  GitForkIcon,
+  HeartIcon,
+  Loader2Icon,
+  ShareIcon,
+} from 'lucide-react'
 import { toast } from 'sonner'
 
 import { Avatar, AvatarFallback, AvatarImage } from '#/components/ui/avatar'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Separator } from '#/components/ui/separator'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '#/components/ui/tooltip'
 import { PageHeader } from '#/components/page-header'
 import {
   ApiRequestError,
   copyQuery,
+  favoriteQuery,
   forkQuery,
+  getMyFavoriteIds,
   getQueryById,
+  unfavoriteQuery,
 } from '#/lib/poke-query-api'
 
 export const Route = createFileRoute('/queries/$queryId')({
@@ -55,6 +69,47 @@ function QueryDetailPage() {
   } = useQuery({
     queryKey: ['query', queryId],
     queryFn: () => getQueryById(queryId),
+  })
+
+  const { data: myFavoriteIds } = useQuery({
+    queryKey: ['my-favorite-ids'],
+    queryFn: getMyFavoriteIds,
+    enabled: Boolean(user),
+    staleTime: 60_000,
+  })
+
+  const isFavorited = myFavoriteIds?.favoriteQueryIds.includes(queryId) ?? false
+
+  const favoriteMutation = useMutation({
+    mutationFn: favoriteQuery,
+    onSuccess: async () => {
+      toast.success('Saved to favorites!')
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['my-favorite-ids'] }),
+        queryClient.invalidateQueries({ queryKey: ['my-favorites-page'] }),
+        queryClient.invalidateQueries({ queryKey: ['community-discover'] }),
+        queryClient.invalidateQueries({ queryKey: ['query', queryId] }),
+      ])
+    },
+    onError: () => {
+      toast.error('Could not save favorite.')
+    },
+  })
+
+  const unfavoriteMutation = useMutation({
+    mutationFn: unfavoriteQuery,
+    onSuccess: async () => {
+      toast.success('Removed from favorites.')
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['my-favorite-ids'] }),
+        queryClient.invalidateQueries({ queryKey: ['my-favorites-page'] }),
+        queryClient.invalidateQueries({ queryKey: ['community-discover'] }),
+        queryClient.invalidateQueries({ queryKey: ['query', queryId] }),
+      ])
+    },
+    onError: () => {
+      toast.error('Could not remove favorite.')
+    },
   })
 
   const forkMutation = useMutation({
@@ -100,37 +155,83 @@ function QueryDetailPage() {
         actions={
           query ? (
             <>
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-lg"
-                onClick={() => {
-                  void navigator.clipboard.writeText(window.location.href)
-                  toast.success('Link copied!')
-                }}
-              >
-                <ShareIcon className="size-4" />
-                Share
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-lg"
-                onClick={handleCopy}
-              >
-                <CopyIcon className="size-4" />
-                Copy
-              </Button>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="icon-sm"
+                      className="rounded-lg"
+                      aria-label="Share"
+                      onClick={() => {
+                        void navigator.clipboard.writeText(window.location.href)
+                        toast.success('Link copied!')
+                      }}
+                    >
+                      <ShareIcon className="size-4" />
+                    </Button>
+                  }
+                />
+                <TooltipContent>Share</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="icon-sm"
+                      className="rounded-lg"
+                      aria-label="Copy"
+                      onClick={handleCopy}
+                    >
+                      <CopyIcon className="size-4" />
+                    </Button>
+                  }
+                />
+                <TooltipContent>Copy</TooltipContent>
+              </Tooltip>
               {user ? (
                 <Button
+                  variant={isFavorited ? 'default' : 'outline'}
                   size="sm"
                   className="rounded-lg"
-                  disabled={forkMutation.isPending}
-                  onClick={() => forkMutation.mutate(query.id)}
+                  disabled={
+                    favoriteMutation.isPending || unfavoriteMutation.isPending
+                  }
+                  onClick={() => {
+                    if (isFavorited) {
+                      unfavoriteMutation.mutate(query.id)
+                      return
+                    }
+
+                    favoriteMutation.mutate(query.id)
+                  }}
                 >
-                  <GitForkIcon className="size-4" />
-                  {forkMutation.isPending ? 'Forking...' : 'Fork'}
+                  <HeartIcon className="size-4" />
+                  {isFavorited ? 'Favorited' : 'Favorite'}
                 </Button>
+              ) : null}
+              {user ? (
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        size="icon-sm"
+                        className="rounded-lg"
+                        disabled={forkMutation.isPending}
+                        aria-label="Fork"
+                        onClick={() => forkMutation.mutate(query.id)}
+                      >
+                        {forkMutation.isPending ? (
+                          <Loader2Icon className="size-4 animate-spin" />
+                        ) : (
+                          <GitForkIcon className="size-4" />
+                        )}
+                      </Button>
+                    }
+                  />
+                  <TooltipContent>Fork</TooltipContent>
+                </Tooltip>
               ) : null}
             </>
           ) : undefined
@@ -230,15 +331,22 @@ function QueryDetailPage() {
                   {query.query}
                 </pre>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-4 rounded-lg"
-                onClick={handleCopy}
-              >
-                <CopyIcon className="size-4" />
-                Copy string
-              </Button>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="icon-sm"
+                      className="mt-4 rounded-lg"
+                      aria-label="Copy string"
+                      onClick={handleCopy}
+                    >
+                      <CopyIcon className="size-4" />
+                    </Button>
+                  }
+                />
+                <TooltipContent>Copy string</TooltipContent>
+              </Tooltip>
             </div>
 
             {/* About */}
