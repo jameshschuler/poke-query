@@ -68,3 +68,40 @@ From `backend/`:
 - One-page API docs site: [docs-site/README.md](docs-site/README.md)
 - Contributing guide: [CONTRIBUTING.md](CONTRIBUTING.md)
 - License: [LICENSE](LICENSE)
+
+## Deploy On Render
+
+This repository includes a Render Blueprint at [render.yaml](render.yaml) that provisions:
+
+- Backend web service (`backend/`)
+- Frontend static site (`frontend/`)
+- Docs static site (`docs-site/`)
+
+### Steps
+
+1. Push this repo to GitHub.
+2. In Render, create a new Blueprint and select this repository.
+3. Render will detect [render.yaml](render.yaml) and create all three services.
+4. Set the required environment variables in each service (below), then deploy.
+
+### Required Environment Variables
+
+Backend service:
+
+- `DATABASE_URL`
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `CORS_ORIGIN` (set to your frontend URL; include multiple origins comma-separated if needed)
+
+Frontend service:
+
+- `VITE_API_BASE_URL` (your backend Render URL)
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+- `VITE_AUTH_REDIRECT_URL` (your frontend URL)
+
+Notes:
+
+- Backend migrations run automatically during deploy via the blueprint `preDeployCommand`.
+- The docs site build regenerates OpenAPI from the backend before publishing.

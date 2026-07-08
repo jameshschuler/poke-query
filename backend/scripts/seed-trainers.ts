@@ -24,6 +24,11 @@ function buildSeedUsername(userId: string, index: number): string {
   return `seed_${index + 1}_${suffix}`;
 }
 
+function buildDiceBearAvatarUrl(seed: string): string {
+  const encodedSeed = encodeURIComponent(seed);
+  return `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodedSeed}`;
+}
+
 function getCandidateUserIds(): string[] {
   const fromList = (process.env.SEED_TRAINER_USER_IDS ?? "")
     .split(",")
@@ -71,6 +76,7 @@ async function run() {
     for (const [index, user] of existingAuthUsers.entries()) {
       const team: Team = teams[index % teams.length];
       const username = buildSeedUsername(user.id, index);
+      const avatarUrl = buildDiceBearAvatarUrl(username);
       const isProfilePublic = index === 0 ? false : true;
 
       await db
@@ -82,7 +88,7 @@ async function run() {
           team,
           level: 20 + ((index * 7) % 31),
           trainerCode: formatTrainerCode(index + 1),
-          avatarUrl: null,
+          avatarUrl,
           isProfilePublic,
           createdAt: now,
           updatedAt: now,
@@ -95,6 +101,7 @@ async function run() {
             team,
             level: 20 + ((index * 7) % 31),
             trainerCode: formatTrainerCode(index + 1),
+            avatarUrl,
             isProfilePublic,
             updatedAt: now,
           },
