@@ -8,6 +8,9 @@ Recent backend changes added:
 - community discovery with text search, tag filters, sorting, and pagination
 - follower endpoints and privacy-aware public trainer fields
 - seed data that covers league, raid, and other common discovery tags
+- authenticated favorites endpoints for paginated favorites pages and favorite id hydration
+- account metadata fields (`profileCompleted`, `deactivatedAt`) for onboarding UX
+- account deletion policy that removes private strings but preserves public strings
 
 **Repository:** [github.com/jameshschuler/poke-query](https://github.com/jameshschuler/poke-query)
 
@@ -105,6 +108,25 @@ Public trainer profiles are split for better caching and tab loading on the fron
 - `GET /api/v1/users/:id/favorites` returns up to 20 public favorites.
 - `GET /api/v1/users/:id/followers` returns the trainer's follower list with privacy-aware trainer fields.
 - `GET /api/v1/users/me/followers` returns the authenticated trainer's follower list.
+
+Authenticated trainer management endpoints:
+
+- `GET /api/v1/users/me/queries` returns the authenticated trainer's strings.
+- `GET /api/v1/users/me/forks` returns the authenticated trainer's forks with sync metadata.
+- `GET /api/v1/users/me/favorites` returns paginated favorites for authenticated users.
+- `GET /api/v1/users/me/favorites/ids` returns favorite query ids for UI hydration.
+
+`GET /api/v1/users/me` now includes:
+
+- `profileCompleted`: frontend onboarding/account-completion flag
+- `deactivatedAt`: deactivation timestamp or `null`
+
+`PATCH /api/v1/users/me` returns `409` when the requested username is already taken.
+
+Account lifecycle behavior:
+
+- `POST /api/v1/users/me/deactivate` marks an account as deactivated and leaves strings unchanged.
+- `DELETE /api/v1/users/me` removes non-public strings and preserves public strings with anonymized ownership.
 
 ## Seed Data
 

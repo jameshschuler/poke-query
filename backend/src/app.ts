@@ -75,7 +75,7 @@ export async function buildApp() {
   await fastify.register(swagger, {
     openapi: {
       info: {
-        title: "Poke Query API",
+        title: "PokeQuery API",
         version: "1.0.0",
         description,
       },

@@ -7,6 +7,15 @@ import { CommunitySchema } from "./community.schema.js";
 export async function communityRoutes(fastify: FastifyTypebox) {
   const server = fastify.withTypeProvider<TypeBoxTypeProvider>();
 
+  const displayNameExpr = (trainerTable: typeof trainers) =>
+    sql<string>`
+      CASE
+        WHEN ${trainerTable.visibleUsername} = 'pogo' AND NULLIF(TRIM(${trainerTable.pogoUsername}), '') IS NOT NULL
+          THEN TRIM(${trainerTable.pogoUsername})
+        ELSE ${trainerTable.username}
+      END
+    `;
+
   server.get("/", { schema: CommunitySchema }, async (request, reply) => {
     const { tag, sort, filter, limit, offset, search } = request.query;
     const mode = filter ?? "all";
@@ -44,7 +53,13 @@ export async function communityRoutes(fastify: FastifyTypebox) {
         lower(coalesce(${searchQueries.description}, '')) like ${like} or
         exists (
           select 1 from pokequery.trainers t
-          where t.id = ${searchQueries.creatorId} and lower(t.username) like ${like}
+          where t.id = ${searchQueries.creatorId} and lower(
+            CASE
+              WHEN t.visible_username = 'pogo' AND NULLIF(TRIM(t.pogo_username), '') IS NOT NULL
+                THEN TRIM(t.pogo_username)
+              ELSE t.username
+            END
+          ) like ${like}
         )
       )`);
     }
@@ -112,6 +127,7 @@ export async function communityRoutes(fastify: FastifyTypebox) {
         updatedAt: searchQueries.updatedAt,
         creatorId: trainers.id,
         creatorUsername: trainers.username,
+        creatorDisplayName: displayNameExpr(trainers),
         creatorAvatarUrl: trainers.avatarUrl,
         creatorTeam: trainers.team,
         creatorLevel: trainers.level,
@@ -145,6 +161,7 @@ export async function communityRoutes(fastify: FastifyTypebox) {
           ? {
               id: row.creatorId,
               username: row.creatorUsername,
+              displayName: row.creatorDisplayName,
               avatarUrl: row.creatorAvatarUrl,
               team: row.creatorIsProfilePublic
                 ? (row.creatorTeam as "mystic" | "valor" | "instinct" | null)

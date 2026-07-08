@@ -26,6 +26,18 @@ function hasRowsArray(value: unknown): value is { rows: unknown[] } {
   );
 }
 
+function resolveDisplayName(row: {
+  username: string;
+  pogoUsername: string | null;
+  visibleUsername: string | null;
+}): string {
+  if (row.visibleUsername === "pogo" && row.pogoUsername?.trim()) {
+    return row.pogoUsername.trim();
+  }
+
+  return row.username;
+}
+
 export async function queriesRoutes(fastify: FastifyTypebox) {
   const server = fastify.withTypeProvider<TypeBoxTypeProvider>();
 
@@ -101,6 +113,8 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
         updatedAt: searchQueries.updatedAt,
         creatorId: trainers.id,
         creatorUsername: trainers.username,
+        creatorPogoUsername: trainers.pogoUsername,
+        creatorVisibleUsername: trainers.visibleUsername,
         creatorAvatarUrl: trainers.avatarUrl,
         creatorTeam: trainers.team,
         creatorLevel: trainers.level,
@@ -122,6 +136,8 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
         createdAt: searchQueries.createdAt,
         creatorId: trainers.id,
         creatorUsername: trainers.username,
+        creatorPogoUsername: trainers.pogoUsername,
+        creatorVisibleUsername: trainers.visibleUsername,
         creatorAvatarUrl: trainers.avatarUrl,
         creatorTeam: trainers.team,
         creatorLevel: trainers.level,
@@ -148,6 +164,11 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
         ? {
             id: row.creatorId,
             username: row.creatorUsername!,
+            displayName: resolveDisplayName({
+              username: row.creatorUsername!,
+              pogoUsername: row.creatorPogoUsername,
+              visibleUsername: row.creatorVisibleUsername,
+            }),
             avatarUrl: row.creatorAvatarUrl,
             team: row.creatorTeam,
             level: row.creatorLevel,
@@ -161,6 +182,11 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
           ? {
               id: fork.creatorId,
               username: fork.creatorUsername!,
+              displayName: resolveDisplayName({
+                username: fork.creatorUsername!,
+                pogoUsername: fork.creatorPogoUsername,
+                visibleUsername: fork.creatorVisibleUsername,
+              }),
               avatarUrl: fork.creatorAvatarUrl,
               team: fork.creatorTeam,
               level: fork.creatorLevel,

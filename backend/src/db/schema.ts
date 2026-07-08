@@ -25,6 +25,8 @@ export const trainers = pokeSchema.table("trainers", {
     .unique()
     .references(() => _authUsers.id, { onDelete: "cascade" }),
   username: text("username").notNull().unique(),
+  pogoUsername: text("pogo_username"),
+  visibleUsername: text("visible_username").default("pokequery").notNull(),
   team: text("team"),
   level: integer("level").default(1),
   trainerCode: text("trainer_code"),

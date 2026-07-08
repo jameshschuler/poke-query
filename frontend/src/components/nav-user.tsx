@@ -16,11 +16,12 @@ import {
 } from '@/components/ui/sidebar'
 import {
   ChevronsUpDownIcon,
-  SparklesIcon,
+  CircleAlertIcon,
   BadgeCheckIcon,
   BellIcon,
   LogOutIcon,
 } from 'lucide-react'
+import { useNavigate } from '@tanstack/react-router'
 
 interface NavUserProps {
   user: {
@@ -30,13 +31,16 @@ interface NavUserProps {
   }
   onLogout?: () => void | Promise<void>
   isLoggingOut?: boolean
+  showAccountAlert?: boolean
 }
 
 export function NavUser({
   user,
   onLogout,
   isLoggingOut = false,
+  showAccountAlert = false,
 }: NavUserProps) {
+  const navigate = useNavigate()
   const { isMobile } = useSidebar()
   return (
     <SidebarMenu>
@@ -79,9 +83,16 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  void navigate({ to: '/account' })
+                }}
+              >
                 <BadgeCheckIcon />
-                Account
+                <span>Account</span>
+                {showAccountAlert ? (
+                  <CircleAlertIcon className="ml-auto size-4 text-amber-500" />
+                ) : null}
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <BellIcon />

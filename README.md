@@ -20,10 +20,13 @@ At a high level, the project lets trainers create, manage, and discover reusable
 - Auth via Supabase (OTP/session cookies)
 - Query lifecycle: create, update, delete, fork, copy, favorite, unfavorite
 - Guest favorites (cookie-backed) with max 10 without authentication
+- Authenticated favorites endpoints for paginated favorites pages and favorite-id hydration
 - Query tags support both user-supplied tags and parser-generated `autoTags`
 - Query tags endpoint for frontend filter options: `GET /api/v1/queries/tags`
 - Community route supports text search, tag filtering, sort options, and pagination
 - Community and profile responses hide trainer team, level, and trainer code when a profile is private
+- `/api/v1/users/me` includes `profileCompleted` and `deactivatedAt` for onboarding/account UX
+- Account deletion policy preserves public strings (anonymized) and removes private strings
 - Trainer profiles by username with split public lists for strings, forks, favorites, and followers
 - Seed scripts for trainers, search queries, and followers
 - Drizzle ORM + Postgres schema/migrations

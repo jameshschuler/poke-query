@@ -28,12 +28,12 @@
 
 ### 4) Manage Account/Profile
 
-- [ ] Build account settings page (username, team, level, trainer code, avatar, visibility)
-- [ ] Add profile privacy toggle UX and explain public/private implications
-- [ ] Add account deactivation/reactivation flow in frontend
-- [ ] Add account delete flow with explicit confirmation + final sign-out
-- [ ] Add client-side validation for username/trainer code before submit
-- [ ] Handle profile conflicts (duplicate username) with actionable errors
+- [x] Build account settings page (username, team, level, trainer code, avatar, visibility)
+- [x] Add profile privacy toggle UX and explain public/private implications
+- [x] Add account deactivation/reactivation flow in frontend
+- [x] Add account delete flow with explicit confirmation + final sign-out
+- [x] Add client-side validation for username/trainer code before submit
+- [x] Handle profile conflicts (duplicate username) with actionable errors
 
 ### 5) Manage Notifications
 

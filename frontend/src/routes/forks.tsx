@@ -577,8 +577,8 @@ export function ForksPage() {
                         {fork.sourceQuery ? (
                           <>
                             {fork.sourceQuery.title}
-                            {fork.sourceQuery.creator?.username
-                              ? ` by ${fork.sourceQuery.creator.username}`
+                            {fork.sourceQuery.creator?.displayName
+                              ? ` by ${fork.sourceQuery.creator.displayName}`
                               : ''}
                           </>
                         ) : (
@@ -759,8 +759,8 @@ export function ForksPage() {
                           {selectedFork.sourceQuery.title}
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {selectedFork.sourceQuery.creator?.username
-                            ? `By ${selectedFork.sourceQuery.creator.username}`
+                          {selectedFork.sourceQuery.creator?.displayName
+                            ? `By ${selectedFork.sourceQuery.creator.displayName}`
                             : 'Creator unavailable'}
                         </p>
                         <p className="text-xs text-muted-foreground">

@@ -1,6 +1,7 @@
 export type TrainerFollower = {
   id: string
   username: string
+  displayName: string
   team: Team | null
   level: number | null
   trainerCode: string | null
@@ -22,6 +23,7 @@ export function getMeFollowers(): Promise<{
   return apiRequest('/api/v1/users/me/followers')
 }
 export type Team = 'mystic' | 'valor' | 'instinct'
+export type VisibleUsername = 'pokequery' | 'pogo'
 
 export type ApiErrorResponse = {
   error: string
@@ -183,6 +185,7 @@ export type IdResponse = {
 export type TrainerSummary = {
   id: string
   username: string
+  displayName: string
   team: Team | null
   level: number | null
   avatarUrl: string | null
@@ -195,7 +198,13 @@ export type GetTrainerResponse = TrainerSummary & {
 
 export type GetMeResponse = TrainerSummary & {
   hasTrainer: boolean
+  profileCompleted: boolean
   email: string | null
+  pogoUsername: string | null
+  visibleUsername: VisibleUsername
+  trainerCode: string | null
+  isProfilePublic: boolean
+  deactivatedAt: string | null
   queryCount: number
   favoriteCount: number
   followerCount: number
@@ -204,8 +213,12 @@ export type GetMeResponse = TrainerSummary & {
 
 export type UpdateMeRequest = {
   username?: string
+  pogoUsername?: string
+  visibleUsername?: VisibleUsername
   level?: number
   team?: Team
+  trainerCode?: string
+  isProfilePublic?: boolean
   avatarUrl?: string
 }
 
@@ -251,6 +264,7 @@ export type CommunityQuery = {
   creator: {
     id: string
     username: string
+    displayName: string
     avatarUrl: string | null
     team: Team | null
     level: number | null
@@ -266,6 +280,7 @@ export type QueryDetail = CommunityQuery & {
     creator: {
       id: string
       username: string
+      displayName: string
       avatarUrl: string | null
       team: string | null
       level: number | null
@@ -355,6 +370,7 @@ export type ManagedForkQuery = ManagedQuery & {
     creator: {
       id: string
       username: string
+      displayName: string
       avatarUrl: string | null
       team: Team | null
       level: number | null
@@ -401,6 +417,7 @@ export type MyFavoriteIdsResponse = {
 export type TrainerProfile = {
   id: string
   username: string
+  displayName: string
   team: Team | null
   level: number | null
   avatarUrl: string | null

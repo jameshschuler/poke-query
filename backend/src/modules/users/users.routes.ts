@@ -29,6 +29,8 @@ export async function userRoutes(fastify: FastifyTypebox) {
   const parentQueries = alias(searchQueries, "parent_queries");
   const sourceCreators = alias(trainers, "source_creators");
 
+  type VisibleUsername = "pokequery" | "pogo";
+
   const normalizeTrainerCode = (value: string) => {
     const digits = value.replace(/\D/g, "");
     if (digits.length !== 12) {
@@ -48,11 +50,41 @@ export async function userRoutes(fastify: FastifyTypebox) {
     trainerCode: row.isProfilePublic ? row.trainerCode : null,
   });
 
+  const resolveDisplayName = (row: {
+    username: string;
+    pogoUsername: string | null;
+    visibleUsername: string | null;
+  }) => {
+    if (row.visibleUsername === "pogo" && row.pogoUsername?.trim()) {
+      return row.pogoUsername.trim();
+    }
+
+    return row.username;
+  };
+
+  const isProfileCompleted = (profile: {
+    hasTrainer: boolean;
+    username: string;
+    team: string | null;
+    level: number | null;
+    trainerCode: string | null;
+  }) => {
+    return (
+      profile.hasTrainer &&
+      profile.username.trim().length >= 3 &&
+      profile.team !== null &&
+      profile.level !== null &&
+      profile.trainerCode !== null
+    );
+  };
+
   const selectFollowers = (trainerId: string) =>
     fastify.db
       .select({
         id: trainers.id,
         username: trainers.username,
+        pogoUsername: trainers.pogoUsername,
+        visibleUsername: trainers.visibleUsername,
         team: trainers.team,
         level: trainers.level,
         trainerCode: trainers.trainerCode,
@@ -157,6 +189,8 @@ export async function userRoutes(fastify: FastifyTypebox) {
     sourceUpdatedAt: Date | null;
     sourceCreatorId: string | null;
     sourceCreatorUsername: string | null;
+    sourceCreatorPogoUsername: string | null;
+    sourceCreatorVisibleUsername: string | null;
     sourceCreatorAvatarUrl: string | null;
     sourceCreatorTeam: string | null;
     sourceCreatorLevel: number | null;
@@ -188,6 +222,11 @@ export async function userRoutes(fastify: FastifyTypebox) {
                 ? {
                     id: q.sourceCreatorId,
                     username: q.sourceCreatorUsername,
+                    displayName: resolveDisplayName({
+                      username: q.sourceCreatorUsername,
+                      pogoUsername: q.sourceCreatorPogoUsername,
+                      visibleUsername: q.sourceCreatorVisibleUsername,
+                    }),
                     avatarUrl: q.sourceCreatorAvatarUrl,
                     team: q.sourceCreatorTeam as "mystic" | "valor" | "instinct" | null,
                     level: q.sourceCreatorLevel,
@@ -210,10 +249,13 @@ export async function userRoutes(fastify: FastifyTypebox) {
         .select({
           id: trainers.id,
           username: trainers.username,
+          pogoUsername: trainers.pogoUsername,
+          visibleUsername: trainers.visibleUsername,
           team: trainers.team,
           level: trainers.level,
           trainerCode: trainers.trainerCode,
           isProfilePublic: trainers.isProfilePublic,
+          deactivatedAt: trainers.deactivatedAt,
           avatarUrl: trainers.avatarUrl,
           queryCount: count(searchQueries.id).as("queryCount"),
           favoriteCount: count(favorites.queryId).as("favoriteCount"),
@@ -231,23 +273,31 @@ export async function userRoutes(fastify: FastifyTypebox) {
         .groupBy(
           trainers.id,
           trainers.username,
+          trainers.pogoUsername,
+          trainers.visibleUsername,
           trainers.team,
           trainers.level,
           trainers.trainerCode,
           trainers.isProfilePublic,
+          trainers.deactivatedAt,
           trainers.avatarUrl,
         );
 
       if (!row) {
         return reply.code(200).send({
           hasTrainer: false,
+          profileCompleted: false,
           id: userId,
           email,
           username: request.user.email?.split("@")[0] ?? `trainer_${userId.slice(0, 4)}`,
+          displayName: request.user.email?.split("@")[0] ?? `trainer_${userId.slice(0, 4)}`,
+          pogoUsername: null,
+          visibleUsername: "pokequery",
           team: null,
           level: null,
           trainerCode: null,
           isProfilePublic: false,
+          deactivatedAt: null,
           avatarUrl: null,
           queryCount: 0,
           favoriteCount: 0,
@@ -256,13 +306,25 @@ export async function userRoutes(fastify: FastifyTypebox) {
         });
       }
 
+      const profileCompleted = isProfileCompleted({
+        hasTrainer: true,
+        username: row.username,
+        team: row.team,
+        level: row.level,
+        trainerCode: row.trainerCode,
+      });
+
       return {
         hasTrainer: true,
+        profileCompleted,
         email,
         ...row,
+        displayName: resolveDisplayName(row),
         team: row.team as "mystic" | "valor" | "instinct" | null,
         trainerCode: row.trainerCode,
+        visibleUsername: row.visibleUsername as VisibleUsername,
         isProfilePublic: row.isProfilePublic,
+        deactivatedAt: row.deactivatedAt?.toISOString() ?? null,
       };
     },
   );
@@ -449,6 +511,8 @@ export async function userRoutes(fastify: FastifyTypebox) {
           sourceUpdatedAt: parentQueries.updatedAt,
           sourceCreatorId: sourceCreators.id,
           sourceCreatorUsername: sourceCreators.username,
+          sourceCreatorPogoUsername: sourceCreators.pogoUsername,
+          sourceCreatorVisibleUsername: sourceCreators.visibleUsername,
           sourceCreatorAvatarUrl: sourceCreators.avatarUrl,
           sourceCreatorTeam: sourceCreators.team,
           sourceCreatorLevel: sourceCreators.level,
@@ -488,11 +552,20 @@ export async function userRoutes(fastify: FastifyTypebox) {
 
       return {
         total: rows.length,
-        followers: rows.map((row) => ({
-          ...row,
-          ...toPublicTrainerProfile(row),
-          followedAt: row.followedAt.toISOString(),
-        })),
+        followers: rows.map((row) => {
+          const publicProfile = toPublicTrainerProfile(row);
+
+          return {
+            id: row.id,
+            username: row.username,
+            displayName: resolveDisplayName(row),
+            team: publicProfile.team,
+            level: publicProfile.level,
+            trainerCode: publicProfile.trainerCode,
+            avatarUrl: row.avatarUrl,
+            followedAt: row.followedAt.toISOString(),
+          };
+        }),
       };
     },
   );
@@ -509,6 +582,8 @@ export async function userRoutes(fastify: FastifyTypebox) {
         .select({
           id: trainers.id,
           username: trainers.username,
+          pogoUsername: trainers.pogoUsername,
+          visibleUsername: trainers.visibleUsername,
           team: trainers.team,
           level: trainers.level,
           trainerCode: trainers.trainerCode,
@@ -558,6 +633,7 @@ export async function userRoutes(fastify: FastifyTypebox) {
       return reply.send({
         id: trainer.id,
         username: trainer.username,
+        displayName: resolveDisplayName(trainer),
         team: trainer.isProfilePublic
           ? (trainer.team as "mystic" | "valor" | "instinct" | null)
           : null,
@@ -659,6 +735,8 @@ export async function userRoutes(fastify: FastifyTypebox) {
       .select({
         id: trainers.id,
         username: trainers.username,
+        pogoUsername: trainers.pogoUsername,
+        visibleUsername: trainers.visibleUsername,
         team: trainers.team,
         level: trainers.level,
         trainerCode: trainers.trainerCode,
@@ -678,6 +756,8 @@ export async function userRoutes(fastify: FastifyTypebox) {
       .groupBy(
         trainers.id,
         trainers.username,
+        trainers.pogoUsername,
+        trainers.visibleUsername,
         trainers.team,
         trainers.level,
         trainers.trainerCode,
@@ -690,7 +770,12 @@ export async function userRoutes(fastify: FastifyTypebox) {
     const publicProfile = toPublicTrainerProfile(row);
 
     return {
-      ...row,
+      id: row.id,
+      username: row.username,
+      displayName: resolveDisplayName(row),
+      avatarUrl: row.avatarUrl,
+      queryCount: row.queryCount,
+      forkCount: row.forkCount,
       ...publicProfile,
     };
   });
@@ -711,11 +796,20 @@ export async function userRoutes(fastify: FastifyTypebox) {
 
     return {
       total: rows.length,
-      followers: rows.map((row) => ({
-        ...row,
-        ...toPublicTrainerProfile(row),
-        followedAt: row.followedAt.toISOString(),
-      })),
+      followers: rows.map((row) => {
+        const publicProfile = toPublicTrainerProfile(row);
+
+        return {
+          id: row.id,
+          username: row.username,
+          displayName: resolveDisplayName(row),
+          team: publicProfile.team,
+          level: publicProfile.level,
+          trainerCode: publicProfile.trainerCode,
+          avatarUrl: row.avatarUrl,
+          followedAt: row.followedAt.toISOString(),
+        };
+      }),
     };
   });
 
@@ -780,32 +874,89 @@ export async function userRoutes(fastify: FastifyTypebox) {
     { preHandler: [fastify.authenticate], schema: UpdateTrainerSchema },
     async (request, reply) => {
       const userId = request.user.id;
-      const { username, level, team, trainerCode, isProfilePublic, avatarUrl } = request.body;
+      const {
+        username,
+        pogoUsername,
+        visibleUsername,
+        level,
+        team,
+        trainerCode,
+        isProfilePublic,
+        avatarUrl,
+      } = request.body;
 
-      const [updated] = await fastify.db
-        .insert(trainers)
-        .values({
-          id: userId,
-          userId,
-          username: username || `trainer_${userId.slice(0, 4)}`,
-          ...(level !== undefined && { level }),
-          ...(team !== undefined && { team }),
-          ...(trainerCode !== undefined && { trainerCode: normalizeTrainerCode(trainerCode) }),
-          ...(isProfilePublic !== undefined && { isProfilePublic }),
-          ...(avatarUrl !== undefined && { avatarUrl }),
+      const normalizedPogoUsername = pogoUsername !== undefined ? pogoUsername.trim() : undefined;
+
+      const [existingTrainer] = await fastify.db
+        .select({
+          pogoUsername: trainers.pogoUsername,
+          visibleUsername: trainers.visibleUsername,
         })
-        .onConflictDoUpdate({
-          target: trainers.userId,
-          set: {
-            ...(username !== undefined && { username }),
+        .from(trainers)
+        .where(eq(trainers.userId, userId))
+        .limit(1);
+
+      const effectiveVisibleUsername =
+        visibleUsername ??
+        (existingTrainer?.visibleUsername as VisibleUsername | undefined) ??
+        "pokequery";
+      const effectivePogoUsername = normalizedPogoUsername ?? existingTrainer?.pogoUsername ?? null;
+
+      if (
+        effectiveVisibleUsername === "pogo" &&
+        (!effectivePogoUsername || effectivePogoUsername.trim().length === 0)
+      ) {
+        return reply.code(400).send({ error: "Add a Pokemon GO username before making it public" });
+      }
+
+      let updated;
+
+      try {
+        [updated] = await fastify.db
+          .insert(trainers)
+          .values({
+            id: userId,
+            userId,
+            username: username || `trainer_${userId.slice(0, 4)}`,
+            ...(normalizedPogoUsername !== undefined && {
+              pogoUsername: normalizedPogoUsername,
+            }),
+            ...(visibleUsername !== undefined && { visibleUsername }),
             ...(level !== undefined && { level }),
             ...(team !== undefined && { team }),
             ...(trainerCode !== undefined && { trainerCode: normalizeTrainerCode(trainerCode) }),
             ...(isProfilePublic !== undefined && { isProfilePublic }),
             ...(avatarUrl !== undefined && { avatarUrl }),
-          },
-        })
-        .returning({ id: trainers.id });
+          })
+          .onConflictDoUpdate({
+            target: trainers.userId,
+            set: {
+              ...(username !== undefined && { username }),
+              ...(normalizedPogoUsername !== undefined && {
+                pogoUsername: normalizedPogoUsername,
+              }),
+              ...(visibleUsername !== undefined && { visibleUsername }),
+              ...(level !== undefined && { level }),
+              ...(team !== undefined && { team }),
+              ...(trainerCode !== undefined && { trainerCode: normalizeTrainerCode(trainerCode) }),
+              ...(isProfilePublic !== undefined && { isProfilePublic }),
+              ...(avatarUrl !== undefined && { avatarUrl }),
+            },
+          })
+          .returning({ id: trainers.id });
+      } catch (error) {
+        if (
+          typeof error === "object" &&
+          error !== null &&
+          "code" in error &&
+          (error as { code?: string }).code === "23505"
+        ) {
+          return reply.code(409).send({ error: "Username is already taken" });
+        }
+
+        request.log.error({ error, userId }, "Failed to update trainer profile");
+        return reply.code(500).send({ error: "Failed to update trainer" });
+      }
 
       if (!updated) {
         return reply.code(500).send({ error: "Failed to update trainer" });
@@ -861,6 +1012,11 @@ export async function userRoutes(fastify: FastifyTypebox) {
     async (request, reply) => {
       const userId = request.user.id;
 
+      // Preserve public strings after deletion, but remove non-public content.
+      await fastify.db
+        .delete(searchQueries)
+        .where(and(eq(searchQueries.creatorId, userId), eq(searchQueries.isPublic, false)));
+
       const { error: deleteAuthError } = await getSupabaseAdmin().auth.admin.deleteUser(userId);
 
       if (deleteAuthError) {
@@ -871,7 +1027,7 @@ export async function userRoutes(fastify: FastifyTypebox) {
         return reply.code(500).send({ error: "Failed to delete auth user" });
       }
 
-      // creatorId on search_queries is set null on delete, so queries are preserved
+      // creatorId on search_queries is set null on trainer delete, preserving public queries.
       const [deleted] = await fastify.db
         .delete(trainers)
         .where(eq(trainers.userId, userId))

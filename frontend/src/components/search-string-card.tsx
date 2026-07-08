@@ -121,7 +121,7 @@ export function SearchStringCard({
                   params={{ username: card.creator.username }}
                   className="hover:underline"
                 >
-                  {card.creator.username}
+                  {card.creator.displayName}
                 </Link>
               ) : (
                 'Anonymous trainer'

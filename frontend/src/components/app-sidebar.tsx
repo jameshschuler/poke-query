@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { useAuth } from '@authabase/react'
+import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useRouterState } from '@tanstack/react-router'
 
 import { NavMain } from '@/components/nav-main'
@@ -19,7 +20,7 @@ import {
   GitForkIcon,
   HeartIcon,
 } from 'lucide-react'
-import { ApiRequestError, logout } from '#/lib/poke-query-api'
+import { ApiRequestError, getMe, logout } from '#/lib/poke-query-api'
 import { setCachedUser } from '#/lib/route-auth'
 import { useMemo, useState } from 'react'
 
@@ -67,6 +68,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     select: (state) => state.location.pathname,
   })
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+
+  const { data: me } = useQuery({
+    queryKey: ['me'],
+    queryFn: getMe,
+    enabled: Boolean(user),
+    staleTime: 30_000,
+    retry: false,
+  })
 
   const sidebarUser = useMemo(
     () => ({
@@ -127,6 +136,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavUser
           user={sidebarUser}
           isLoggingOut={isLoggingOut}
+          showAccountAlert={Boolean(user) && me ? !me.profileCompleted : false}
           onLogout={handleLogout}
         />
       </SidebarFooter>

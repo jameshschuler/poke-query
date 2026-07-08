@@ -3,6 +3,7 @@
 A REST API for sharing and discovering Pokemon GO search queries. Trainers can create, save, and share in-game search strings with the community, tag them for discoverability, and favorite or copy queries from other players.
 
 Recent backend changes added normalized user tags, richer parser-generated `autoTags`, community search and pagination controls, follower endpoints, privacy-aware public profile fields, and seed data covering common tag filters.
+Recent account/profile updates added authenticated favorites management endpoints, profile completion metadata for onboarding UX, and explicit account deletion behavior that preserves only public strings.
 
 ## Tech Stack
 
@@ -99,11 +100,15 @@ The server starts on `http://localhost:3000`. Interactive API docs are available
 | `POST`   | `/api/v1/auth/verify`                            |      | Verify OTP and set session cookie                                    |
 | `POST`   | `/api/v1/auth/logout`                            | ✓    | End session                                                          |
 | `GET`    | `/api/v1/users/me`                               | ✓    | Get your own profile with query, favorite, follower, and fork counts |
+| `GET`    | `/api/v1/users/me/queries`                       | ✓    | List your own strings                                                |
+| `GET`    | `/api/v1/users/me/favorites`                     | ✓    | List your favorites with pagination                                  |
+| `GET`    | `/api/v1/users/me/favorites/ids`                 | ✓    | List favorited query ids for UI hydration                            |
+| `GET`    | `/api/v1/users/me/forks`                         | ✓    | List your own forked strings with sync metadata                      |
 | `GET`    | `/api/v1/users/me/followers`                     | ✓    | List trainers who follow you                                         |
 | `PATCH`  | `/api/v1/users/me`                               | ✓    | Update your profile                                                  |
 | `POST`   | `/api/v1/users/me/deactivate`                    | ✓    | Deactivate your account                                              |
 | `POST`   | `/api/v1/users/me/reactivate`                    | ✓    | Reactivate your account                                              |
-| `DELETE` | `/api/v1/users/me`                               | ✓    | Delete your account                                                  |
+| `DELETE` | `/api/v1/users/me`                               | ✓    | Delete account (removes private strings, preserves public strings)   |
 | `GET`    | `/api/v1/users/by-username/:username`            |      | Get a public trainer profile and aggregate public counts             |
 | `GET`    | `/api/v1/users/:id/strings`                      |      | List up to 20 public non-fork queries by trainer                     |
 | `GET`    | `/api/v1/users/:id/forks`                        |      | List up to 20 public forks by trainer                                |
@@ -112,7 +117,6 @@ The server starts on `http://localhost:3000`. Interactive API docs are available
 | `GET`    | `/api/v1/users/:id/followers`                    |      | List followers for a specific trainer                                |
 | `POST`   | `/api/v1/users/:id/follow`                       | ✓    | Follow another trainer                                               |
 | `POST`   | `/api/v1/users/:id/unfollow`                     | ✓    | Unfollow another trainer                                             |
-| `GET`    | `/api/v1/queries`                                | ✓    | List your queries                                                    |
 | `POST`   | `/api/v1/queries/guest/session`                  |      | Create/reuse guest identity cookie and return guest favorites usage  |
 | `GET`    | `/api/v1/queries/guest/favorites`                |      | List guest favorite query ids and current usage                      |
 | `POST`   | `/api/v1/queries/guest/favorites/:id`            |      | Favorite a public query as a guest (max 10)                          |
@@ -210,6 +214,18 @@ Constraints:
 - `GET /api/v1/users/:id/strings`, `/forks`, and `/favorites` each return up to 20 public records.
 - `GET /api/v1/users/:id/followers` and `GET /api/v1/users/me/followers` return follower lists with privacy-aware trainer fields.
 - Public endpoints hide `team`, `level`, and `trainerCode` when `isProfilePublic` is `false`.
+
+## Account Profile Completion
+
+- `GET /api/v1/users/me` includes `profileCompleted` and `deactivatedAt` fields.
+- `profileCompleted` is intended for onboarding and account completion UX in the frontend.
+- `PATCH /api/v1/users/me` returns `409` with a clear error when a username is already taken.
+
+## Account Deletion Policy
+
+- `POST /api/v1/users/me/deactivate` marks an account as deactivated and leaves strings unchanged.
+- `DELETE /api/v1/users/me` removes non-public strings created by the user.
+- Public strings are preserved after deletion and become anonymized because `creator_id` is set to `null` when the trainer record is removed.
 
 ## Seed Data
 

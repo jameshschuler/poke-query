@@ -37,6 +37,7 @@ export const CommunitySchema = {
             Type.Object({
               id: Type.String(),
               username: Type.String(),
+              displayName: Type.String(),
               avatarUrl: Type.Union([Type.String(), Type.Null()]),
               team: Type.Union([
                 Type.Literal("mystic"),

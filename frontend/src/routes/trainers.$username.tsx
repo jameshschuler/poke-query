@@ -255,7 +255,7 @@ function TrainerProfilePage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <PageHeader
-        title={trainer?.username}
+        title={trainer?.displayName}
         actions={
           canShowFollowAction ? (
             <Button
@@ -312,12 +312,12 @@ function TrainerProfilePage() {
                         <AvatarImage src={trainer.avatarUrl} />
                       ) : null}
                       <AvatarFallback>
-                        {trainer.username[0].toUpperCase()}
+                        {trainer.displayName[0].toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="space-y-2">
                       <h1 className="wrap-break-word text-xl font-bold sm:text-2xl">
-                        {trainer.username}
+                        {trainer.displayName}
                       </h1>
                       <div className="flex flex-wrap items-center gap-2">
                         {trainer.isProfilePublic && trainer.team ? (

@@ -9,6 +9,8 @@ const { mockSelect, mockAdminDeleteUser } = vi.hoisted(() => ({
 const mockRow = {
   id: "uuid-123",
   username: "AshKetchum",
+  pogoUsername: null,
+  visibleUsername: "pokequery",
   team: "mystic",
   level: 40,
   trainerCode: "1234 5678 9012",
@@ -116,6 +118,9 @@ describe("GET /api/v1/users/me", () => {
     expect(body.id).toBe("uuid-123");
     expect(body.email).toBe("ash@example.com");
     expect(body.username).toBe("AshKetchum");
+    expect(body.displayName).toBe("AshKetchum");
+    expect(body.pogoUsername).toBeNull();
+    expect(body.visibleUsername).toBe("pokequery");
     expect(body.team).toBe("mystic");
     expect(body.trainerCode).toBe("1234 5678 9012");
     expect(body.isProfilePublic).toBe(true);
@@ -222,6 +227,8 @@ describe("GET /api/v1/users/me/forks", () => {
           sourceUpdatedAt: new Date("2026-06-03T12:00:00.000Z"),
           sourceCreatorId: "trainer-2",
           sourceCreatorUsername: "Misty",
+          sourceCreatorPogoUsername: null,
+          sourceCreatorVisibleUsername: "pokequery",
           sourceCreatorAvatarUrl: null,
           sourceCreatorTeam: "mystic",
           sourceCreatorLevel: 44,
@@ -262,6 +269,7 @@ describe("GET /api/v1/users/me/forks", () => {
             creator: {
               id: "trainer-2",
               username: "Misty",
+              displayName: "Misty",
               avatarUrl: null,
               team: "mystic",
               level: 44,

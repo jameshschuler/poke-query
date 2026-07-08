@@ -197,7 +197,7 @@ export function GuestFavoritesDrawer({
 
                   {query.creator ? (
                     <p className="text-xs text-muted-foreground">
-                      by {query.creator.username}
+                      by {query.creator.displayName}
                     </p>
                   ) : null}
 

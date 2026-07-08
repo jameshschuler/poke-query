@@ -285,7 +285,7 @@ function QueryDetailPage() {
                       params={{ username: query.creator.username }}
                       className="hover:underline"
                     >
-                      {query.creator.username}
+                      {query.creator.displayName}
                     </Link>
                   </>
                 ) : null}

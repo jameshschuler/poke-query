@@ -1,6 +1,7 @@
 import { Type } from "@sinclair/typebox";
 
 const cookieAuthSecurity = [{ cookieAuth: [] }];
+const visibleUsernameSchema = Type.Union([Type.Literal("pokequery"), Type.Literal("pogo")]);
 
 export const GetTrainerSchema = {
   params: Type.Object({
@@ -10,6 +11,7 @@ export const GetTrainerSchema = {
     200: Type.Object({
       id: Type.String(),
       username: Type.String(),
+      displayName: Type.String(),
       team: Type.Union([
         Type.Literal("mystic"),
         Type.Literal("valor"),
@@ -31,9 +33,13 @@ export const GetMeSchema = {
   response: {
     200: Type.Object({
       hasTrainer: Type.Boolean(),
+      profileCompleted: Type.Boolean(),
       id: Type.String(),
       email: Type.Union([Type.String({ format: "email" }), Type.Null()]),
       username: Type.String(),
+      displayName: Type.String(),
+      pogoUsername: Type.Union([Type.String(), Type.Null()]),
+      visibleUsername: visibleUsernameSchema,
       team: Type.Union([
         Type.Literal("mystic"),
         Type.Literal("valor"),
@@ -43,6 +49,7 @@ export const GetMeSchema = {
       level: Type.Union([Type.Integer(), Type.Null()]),
       trainerCode: Type.Union([Type.String(), Type.Null()]),
       isProfilePublic: Type.Boolean(),
+      deactivatedAt: Type.Union([Type.String(), Type.Null()]),
       avatarUrl: Type.Union([Type.String(), Type.Null()]),
       queryCount: Type.Integer(),
       favoriteCount: Type.Integer(),
@@ -84,6 +91,14 @@ export const UpdateTrainerSchema = {
           pattern: "^[a-zA-Z0-9_]+$",
         }),
       ),
+      pogoUsername: Type.Optional(
+        Type.String({
+          minLength: 3,
+          maxLength: 30,
+          pattern: "^[a-zA-Z0-9._ -]+$",
+        }),
+      ),
+      visibleUsername: Type.Optional(visibleUsernameSchema),
       level: Type.Optional(Type.Integer({ minimum: 1, maximum: 50 })),
       team: Type.Optional(
         Type.Union([Type.Literal("mystic"), Type.Literal("valor"), Type.Literal("instinct")]),
@@ -101,6 +116,7 @@ export const UpdateTrainerSchema = {
   response: {
     200: Type.Object({ id: Type.String() }),
     400: Type.Object({ error: Type.String() }),
+    409: Type.Object({ error: Type.String() }),
     404: Type.Object({ error: Type.String() }),
     401: Type.Object({ error: Type.String() }),
     500: Type.Object({ error: Type.String() }),
@@ -129,6 +145,7 @@ export const DeleteTrainerSchema = {
 const followerResponseItem = Type.Object({
   id: Type.String(),
   username: Type.String(),
+  displayName: Type.String(),
   team: Type.Union([
     Type.Literal("mystic"),
     Type.Literal("valor"),
@@ -279,6 +296,7 @@ export const GetMeFavoriteIdsSchema = {
 const trainerSummarySchema = Type.Object({
   id: Type.String(),
   username: Type.String(),
+  displayName: Type.String(),
   team: Type.Union([
     Type.Literal("mystic"),
     Type.Literal("valor"),
@@ -337,6 +355,7 @@ export const GetTrainerByUsernameSchema = {
     200: Type.Object({
       id: Type.String(),
       username: Type.String(),
+      displayName: Type.String(),
       team: Type.Union([
         Type.Literal("mystic"),
         Type.Literal("valor"),

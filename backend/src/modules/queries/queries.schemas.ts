@@ -6,6 +6,7 @@ const TrainerSchema = Type.Union([
   Type.Object({
     id: Type.String(),
     username: Type.String(),
+    displayName: Type.String(),
     avatarUrl: Type.Union([Type.String(), Type.Null()]),
     team: Type.Union([Type.String(), Type.Null()]),
     level: Type.Union([Type.Integer(), Type.Null()]),
