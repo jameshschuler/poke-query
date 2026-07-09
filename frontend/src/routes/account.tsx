@@ -41,6 +41,7 @@ import type {
   NotificationPreferences,
   VisibleUsername,
 } from '#/lib/poke-query-api'
+import { findBlockedTerm } from '#/lib/content-policy'
 import { requireAuthenticated, setCachedUser } from '#/lib/route-auth'
 
 type AccountSearch = {
@@ -999,6 +1000,8 @@ function validateForm(state: FormState): FormErrors {
     errors.username = 'Username must be 3-20 characters.'
   } else if (!USERNAME_PATTERN.test(username)) {
     errors.username = 'Use letters, numbers, and underscores only.'
+  } else if (findBlockedTerm(username)) {
+    errors.username = 'Username contains blocked language.'
   }
 
   if (state.level.trim().length > 0) {
@@ -1029,6 +1032,8 @@ function validateForm(state: FormState): FormErrors {
     } else if (!POGO_USERNAME_PATTERN.test(pogoUsername)) {
       errors.pogoUsername =
         'Use letters, numbers, spaces, dots, underscores, or dashes only.'
+    } else if (findBlockedTerm(pogoUsername)) {
+      errors.pogoUsername = 'Pokemon GO username contains blocked language.'
     }
   }
 

@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 
 import { PageShell } from '#/components/page-shell'
 import { Button } from '#/components/ui/button'
+import { findBlockedTerm } from '#/lib/content-policy'
 import { createQuery } from '#/lib/poke-query-api'
 import { requireAuthenticated } from '#/lib/route-auth'
 
@@ -26,6 +27,11 @@ function NewLibraryQueryPage() {
   const [query, setQuery] = useState('')
   const [description, setDescription] = useState('')
   const [visibility, setVisibility] = useState<VisibilityMode>('public')
+
+  const titleBlockedTerm = findBlockedTerm(title.trim())
+  const descriptionBlockedTerm = description.trim()
+    ? findBlockedTerm(description.trim())
+    : null
 
   const createMutation = useMutation({
     mutationFn: async (nextVisibility: VisibilityMode) =>
@@ -59,7 +65,11 @@ function NewLibraryQueryPage() {
     },
   })
 
-  const canSubmit = title.trim().length >= 3 && query.trim().length > 0
+  const canSubmit =
+    title.trim().length >= 3 &&
+    query.trim().length > 0 &&
+    !titleBlockedTerm &&
+    !descriptionBlockedTerm
 
   function handleSubmit(nextVisibility: VisibilityMode) {
     if (!canSubmit || createMutation.isPending) {
@@ -81,13 +91,44 @@ function NewLibraryQueryPage() {
       showHeaderSearch={false}
     >
       <div className="space-y-5">
-        <nav className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Link to="/library" className="hover:text-foreground hover:underline">
-            Library
-          </Link>
-          <span>/</span>
-          <span className="text-foreground">New</span>
-        </nav>
+        <div className="flex items-start gap-4">
+          <nav className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Link
+              to="/library"
+              className="hover:text-foreground hover:underline"
+            >
+              Library
+            </Link>
+            <span>/</span>
+            <span className="text-foreground">New</span>
+          </nav>
+
+          <div className="ml-auto flex flex-row flex-wrap justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-xl"
+              disabled={!canSubmit || createMutation.isPending}
+              onClick={() => handleSubmit('private')}
+            >
+              {createMutation.isPending && visibility === 'private' ? (
+                <Loader2Icon className="size-4 animate-spin" />
+              ) : null}
+              Save Draft
+            </Button>
+            <Button
+              type="button"
+              className="rounded-xl"
+              disabled={!canSubmit || createMutation.isPending}
+              onClick={() => handleSubmit('public')}
+            >
+              {createMutation.isPending && visibility === 'public' ? (
+                <Loader2Icon className="size-4 animate-spin" />
+              ) : null}
+              Publish
+            </Button>
+          </div>
+        </div>
 
         <label className="space-y-2">
           <span className="text-sm font-medium">Name</span>
@@ -99,6 +140,11 @@ function NewLibraryQueryPage() {
             maxLength={100}
             autoComplete="off"
           />
+          {titleBlockedTerm ? (
+            <p className="text-xs text-destructive">
+              Remove blocked language from the name.
+            </p>
+          ) : null}
         </label>
 
         <label className="space-y-2">
@@ -120,6 +166,11 @@ function NewLibraryQueryPage() {
             className="min-h-24 w-full resize-none rounded-2xl border border-border/60 bg-background px-3 py-3 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/20"
             maxLength={500}
           />
+          {descriptionBlockedTerm ? (
+            <p className="text-xs text-destructive">
+              Remove blocked language from the description.
+            </p>
+          ) : null}
         </label>
 
         <div className="space-y-2">
@@ -153,43 +204,6 @@ function NewLibraryQueryPage() {
               ? 'Public strings can be discovered by the community.'
               : 'Private drafts stay in your library until you publish them.'}
           </p>
-        </div>
-
-        <div className="flex flex-col gap-2 border-t border-border/60 pt-4 sm:flex-row sm:justify-between">
-          <Button
-            type="button"
-            variant="outline"
-            className="rounded-xl"
-            onClick={() => navigate({ to: '/library' })}
-          >
-            Cancel
-          </Button>
-
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Button
-              type="button"
-              variant="outline"
-              className="rounded-xl"
-              disabled={!canSubmit || createMutation.isPending}
-              onClick={() => handleSubmit('private')}
-            >
-              {createMutation.isPending && visibility === 'private' ? (
-                <Loader2Icon className="size-4 animate-spin" />
-              ) : null}
-              Save Draft
-            </Button>
-            <Button
-              type="button"
-              className="rounded-xl"
-              disabled={!canSubmit || createMutation.isPending}
-              onClick={() => handleSubmit('public')}
-            >
-              {createMutation.isPending && visibility === 'public' ? (
-                <Loader2Icon className="size-4 animate-spin" />
-              ) : null}
-              Publish
-            </Button>
-          </div>
         </div>
       </div>
     </PageShell>

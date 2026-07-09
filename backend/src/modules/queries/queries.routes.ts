@@ -20,6 +20,16 @@ import {
   emitNotification,
   resolveDisplayNameForTrainer,
 } from "../notifications/notifications.service.js";
+import { findBlockedTerm } from "../../lib/content-policy.js";
+
+const queryMutationRateLimit = {
+  config: {
+    rateLimit: {
+      max: 10,
+      timeWindow: "1 minute",
+    },
+  },
+} as const;
 
 function hasRowsArray(value: unknown): value is { rows: unknown[] } {
   return (
@@ -202,11 +212,19 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
 
   server.post(
     "/",
-    { preHandler: [fastify.authenticate], schema: CreateQuerySchema },
+    { preHandler: [fastify.authenticate], schema: CreateQuerySchema, ...queryMutationRateLimit },
     async (request, reply) => {
       try {
         const { title, query, description, isPublic, tags: userTags = [] } = request.body;
         const userId = request.user.id;
+
+        if (findBlockedTerm(title.trim())) {
+          return reply.code(400).send({ error: "Title contains blocked language" });
+        }
+
+        if (description?.trim() && findBlockedTerm(description.trim())) {
+          return reply.code(400).send({ error: "Description contains blocked language" });
+        }
 
         // Generate the "Extensible Brain" data
         const metadata = generateMetadata(query);
@@ -392,13 +410,21 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
 
   server.patch(
     "/:id",
-    { preHandler: [fastify.authenticate], schema: UpdateQuerySchema },
+    { preHandler: [fastify.authenticate], schema: UpdateQuerySchema, ...queryMutationRateLimit },
     async (request, reply) => {
       try {
         const { id } = request.params;
         // Only pick allowed fields
         const { title, query, description, isPublic, tags: userTags = [] } = request.body;
         const userId = request.user.id;
+
+        if (findBlockedTerm(title.trim())) {
+          return reply.code(400).send({ error: "Title contains blocked language" });
+        }
+
+        if (description?.trim() && findBlockedTerm(description.trim())) {
+          return reply.code(400).send({ error: "Description contains blocked language" });
+        }
 
         const metadata = generateMetadata(query);
 
@@ -487,7 +513,7 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
 
   server.post(
     "/:id/favorite",
-    { preHandler: [fastify.authenticate], schema: FavoriteQuerySchema },
+    { preHandler: [fastify.authenticate], schema: FavoriteQuerySchema, ...queryMutationRateLimit },
     async (request, reply) => {
       try {
         const { id } = request.params;
@@ -537,7 +563,11 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
 
   server.post(
     "/:id/unfavorite",
-    { preHandler: [fastify.authenticate], schema: UnfavoriteQuerySchema },
+    {
+      preHandler: [fastify.authenticate],
+      schema: UnfavoriteQuerySchema,
+      ...queryMutationRateLimit,
+    },
     async (request, reply) => {
       try {
         const { id } = request.params;

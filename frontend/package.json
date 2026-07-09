@@ -38,6 +38,7 @@
     "lucide-react": "^0.545.0",
     "next-themes": "0.4.6",
     "nitro": "npm:nitro-nightly@3.0.1-20260511-231451-128a0f2d",
+    "obscenity": "^0.4.6",
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "recharts": "3.8.1",

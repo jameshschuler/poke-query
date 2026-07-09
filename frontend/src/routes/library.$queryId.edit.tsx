@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 
 import { PageShell } from '#/components/page-shell'
 import { Button } from '#/components/ui/button'
+import { findBlockedTerm } from '#/lib/content-policy'
 import { getMyQueries, updateQuery } from '#/lib/poke-query-api'
 import { requireAuthenticated } from '#/lib/route-auth'
 
@@ -27,6 +28,11 @@ function EditLibraryQueryPage() {
   const [query, setQuery] = useState('')
   const [description, setDescription] = useState('')
   const [visibility, setVisibility] = useState<VisibilityMode>('public')
+
+  const titleBlockedTerm = findBlockedTerm(title.trim())
+  const descriptionBlockedTerm = description.trim()
+    ? findBlockedTerm(description.trim())
+    : null
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['my-queries'],
@@ -67,7 +73,11 @@ function EditLibraryQueryPage() {
     },
   })
 
-  const canSubmit = title.trim().length >= 3 && query.trim().length > 0
+  const canSubmit =
+    title.trim().length >= 3 &&
+    query.trim().length > 0 &&
+    !titleBlockedTerm &&
+    !descriptionBlockedTerm
   const isPublic = visibility === 'public'
 
   return (
@@ -79,21 +89,49 @@ function EditLibraryQueryPage() {
       showHeaderSearch={false}
     >
       <div className="space-y-5">
-        <nav className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Link to="/library" className="hover:text-foreground hover:underline">
-            Library
-          </Link>
-          <span>/</span>
-          {currentQuery ? (
-            <span className="max-w-56 truncate text-foreground">
-              {currentQuery.title}
-            </span>
-          ) : (
-            <span className="text-foreground">String</span>
-          )}
-          <span>/</span>
-          <span className="text-foreground">Edit</span>
-        </nav>
+        <div className="flex items-start gap-4">
+          <nav className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Link
+              to="/library"
+              className="hover:text-foreground hover:underline"
+            >
+              Library
+            </Link>
+            <span>/</span>
+            {currentQuery ? (
+              <span className="max-w-56 truncate text-foreground">
+                {currentQuery.title}
+              </span>
+            ) : (
+              <span className="text-foreground">String</span>
+            )}
+            <span>/</span>
+            <span className="text-foreground">Edit</span>
+          </nav>
+
+          <div className="ml-auto flex flex-row flex-wrap justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-xl"
+              onClick={() => navigate({ to: '/library' })}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              type="button"
+              className="rounded-xl"
+              disabled={!canSubmit || updateMutation.isPending}
+              onClick={() => updateMutation.mutate()}
+            >
+              {updateMutation.isPending ? (
+                <Loader2Icon className="size-4 animate-spin" />
+              ) : null}
+              Save Changes
+            </Button>
+          </div>
+        </div>
 
         {isLoading ? (
           <div className="rounded-2xl border border-border/70 bg-card/95 p-6 text-sm text-muted-foreground">
@@ -127,6 +165,11 @@ function EditLibraryQueryPage() {
                 maxLength={100}
                 autoComplete="off"
               />
+              {titleBlockedTerm ? (
+                <p className="text-xs text-destructive">
+                  Remove blocked language from the name.
+                </p>
+              ) : null}
             </label>
 
             <label className="space-y-2">
@@ -148,6 +191,11 @@ function EditLibraryQueryPage() {
                 className="min-h-24 w-full resize-none rounded-2xl border border-border/60 bg-background px-3 py-3 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/20"
                 maxLength={500}
               />
+              {descriptionBlockedTerm ? (
+                <p className="text-xs text-destructive">
+                  Remove blocked language from the description.
+                </p>
+              ) : null}
             </label>
 
             <div className="space-y-2">
@@ -176,29 +224,6 @@ function EditLibraryQueryPage() {
                   Private
                 </button>
               </div>
-            </div>
-
-            <div className="flex flex-col gap-2 border-t border-border/60 pt-4 sm:flex-row sm:justify-between">
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-xl"
-                onClick={() => navigate({ to: '/library' })}
-              >
-                Cancel
-              </Button>
-
-              <Button
-                type="button"
-                className="rounded-xl"
-                disabled={!canSubmit || updateMutation.isPending}
-                onClick={() => updateMutation.mutate()}
-              >
-                {updateMutation.isPending ? (
-                  <Loader2Icon className="size-4 animate-spin" />
-                ) : null}
-                Save Changes
-              </Button>
             </div>
           </div>
         )}

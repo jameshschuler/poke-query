@@ -25,6 +25,16 @@ import { trainers, searchQueries, favorites, followers } from "../../db/schema.j
 import { alias } from "drizzle-orm/pg-core";
 import { and, count, desc, eq, isNull, or, sql } from "drizzle-orm";
 import { emitNotification } from "../notifications/notifications.service.js";
+import { findBlockedTerm } from "../../lib/content-policy.js";
+
+const socialMutationRateLimit = {
+  config: {
+    rateLimit: {
+      max: 10,
+      timeWindow: "1 minute",
+    },
+  },
+} as const;
 
 export async function userRoutes(fastify: FastifyTypebox) {
   const server = fastify.withTypeProvider<TypeBoxTypeProvider>();
@@ -873,7 +883,7 @@ export async function userRoutes(fastify: FastifyTypebox) {
 
   server.post(
     "/:id/follow",
-    { preHandler: [fastify.authenticate], schema: FollowTrainerSchema },
+    { preHandler: [fastify.authenticate], schema: FollowTrainerSchema, ...socialMutationRateLimit },
     async (request, reply) => {
       const targetTrainerId = request.params.id;
       const currentTrainerId = request.user.id;
@@ -957,7 +967,11 @@ export async function userRoutes(fastify: FastifyTypebox) {
 
   server.post(
     "/:id/unfollow",
-    { preHandler: [fastify.authenticate], schema: UnfollowTrainerSchema },
+    {
+      preHandler: [fastify.authenticate],
+      schema: UnfollowTrainerSchema,
+      ...socialMutationRateLimit,
+    },
     async (request, reply) => {
       const targetTrainerId = request.params.id;
       const currentTrainerId = request.user.id;
@@ -992,6 +1006,14 @@ export async function userRoutes(fastify: FastifyTypebox) {
       } = request.body;
 
       const normalizedPogoUsername = pogoUsername !== undefined ? pogoUsername.trim() : undefined;
+
+      if (username !== undefined && findBlockedTerm(username.trim())) {
+        return reply.code(400).send({ error: "Username contains blocked language" });
+      }
+
+      if (normalizedPogoUsername && findBlockedTerm(normalizedPogoUsername)) {
+        return reply.code(400).send({ error: "Pokemon GO username contains blocked language" });
+      }
 
       const [existingTrainer] = await fastify.db
         .select({

@@ -3,6 +3,15 @@ import { supabase } from "../../lib/supabase.js";
 import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import type { FastifyTypebox } from "../../types/fastify.js";
 
+const authRateLimit = {
+  config: {
+    rateLimit: {
+      max: 5,
+      timeWindow: "1 minute",
+    },
+  },
+} as const;
+
 const isProduction = process.env.NODE_ENV === "production";
 const accessTokenMaxAgeSeconds = Number(process.env.ACCESS_TOKEN_MAX_AGE_SECONDS ?? 60 * 60);
 const refreshTokenMaxAgeSeconds = Number(
@@ -12,7 +21,7 @@ const refreshTokenMaxAgeSeconds = Number(
 export async function authRoutes(fastify: FastifyTypebox) {
   const server = fastify.withTypeProvider<TypeBoxTypeProvider>();
 
-  server.post("/login", { schema: LoginSchema }, async (request, reply) => {
+  server.post("/login", { schema: LoginSchema, ...authRateLimit }, async (request, reply) => {
     const { email } = request.body;
     const { error } = await supabase.auth.signInWithOtp({ email });
 
@@ -24,6 +33,7 @@ export async function authRoutes(fastify: FastifyTypebox) {
     "/verify",
     {
       schema: VerifyRouteSchema,
+      ...authRateLimit,
     },
     async (request, reply) => {
       const { email, token, token_hash } = request.body;
@@ -77,6 +87,7 @@ export async function authRoutes(fastify: FastifyTypebox) {
     {
       preHandler: [fastify.authenticate],
       schema: LogoutSchema,
+      ...authRateLimit,
     },
     async (request, reply) => {
       request.log.info({ userId: request.user.id }, "User logged out");

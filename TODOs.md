@@ -57,12 +57,14 @@
 - Allow uploading trainer profile screen and parse out info
 - PWA support
 - Add contributing guide
+- User details flash between page loads
+- Add more vertical spacing between UI components
 
 ## P0 - Security, Trust, and Data Safety
 
-- [ ] Add RLS policies for all multi-tenant tables (trainers, queries, favorites, followers, guest_favorites)
-- [ ] Add profanity/bad-words validation for usernames, titles, descriptions
-- [ ] Add rate limiting for auth, follow, favorite, query create/update endpoints
+- [ ] Add RLS policies for all multi-tenant tables (trainers, queries, favorites, followers, guest_favorites, etc.)
+- [x] Add profanity/bad-words validation for usernames, titles, descriptions
+- [x] Add rate limiting for auth, follow, favorite, query create/update endpoints
 - [ ] Add abuse protections (basic spam heuristics + report flow)
 - [ ] Verify private profile and private query access controls with integration tests
 
@@ -80,8 +82,7 @@
 - [ ] Add success/error toast consistency across all mutations
 - [ ] Add accessible labels, keyboard flows, and focus states to all critical UI
 - [ ] Add responsive QA pass for mobile discover/profile/settings pages
-- [ ] Add theme / colors
-- [ ] Fix dark mode styles
+- [ ] Add theme / colors / allow user to select theme
 
 ## P1 - Launch Operations
 
