@@ -1,5 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import {
+  createFileRoute,
+  Link,
+  Outlet,
+  useNavigate,
+  useRouterState,
+} from '@tanstack/react-router'
 import {
   CircleEllipsisIcon,
   Edit3Icon,
@@ -16,7 +22,6 @@ import { PageShell } from '#/components/page-shell'
 import { QueryCardActions } from '#/components/query-card-actions'
 import { QueryCardHeader } from '#/components/query-card-header'
 import { TimestampTooltip } from '#/components/timestamp-tooltip'
-import { QueryCreateDrawer } from '#/components/query-create-drawer'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import {
@@ -42,10 +47,6 @@ import {
 import type { ManagedForkQuery } from '#/lib/poke-query-api'
 import { requireAuthenticated } from '#/lib/route-auth'
 import { QueryTagBadges } from '../components/query-tag-badges'
-
-type ForksSearch = {
-  detail?: string
-}
 
 type VisibilityFilter = 'all' | 'draft' | 'public'
 type SyncFilter = 'all' | 'up-to-date' | 'behind' | 'orphaned'
@@ -91,9 +92,6 @@ function formatSyncLabel(syncStatus: ManagedForkQuery['syncStatus']) {
 
 export const Route = createFileRoute('/forks')({
   ssr: false,
-  validateSearch: (search): ForksSearch => ({
-    detail: typeof search.detail === 'string' ? search.detail : undefined,
-  }),
   beforeLoad: async () => {
     await requireAuthenticated('/forks')
   },
@@ -101,10 +99,16 @@ export const Route = createFileRoute('/forks')({
 })
 
 export function ForksPage() {
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  })
+
+  if (pathname !== '/forks') {
+    return <Outlet />
+  }
+
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const search = Route.useSearch()
-  const [editingFork, setEditingFork] = useState<ManagedForkQuery | null>(null)
   const [forkToDelete, setForkToDelete] = useState<ManagedForkQuery | null>(
     null,
   )
@@ -173,9 +177,6 @@ export function ForksPage() {
   })
 
   const forks = data?.forks ?? []
-  const selectedFork = search.detail
-    ? (forks.find((fork) => fork.id === search.detail) ?? null)
-    : null
   const draftCount = forks.filter((fork) => !fork.isPublic).length
   const needSyncCount = forks.filter(
     (fork) => fork.syncStatus === 'behind',
@@ -217,16 +218,6 @@ export function ForksPage() {
     return searchableText.includes(normalizedSearch)
   })
 
-  useEffect(() => {
-    if (!search.detail || isLoading) {
-      return
-    }
-
-    if (!selectedFork) {
-      void navigate({ to: '/forks', replace: true })
-    }
-  }, [isLoading, navigate, search.detail, selectedFork])
-
   const resultsLayoutClass =
     layoutMode === 'list'
       ? 'mt-4 space-y-3'
@@ -240,14 +231,9 @@ export function ForksPage() {
 
   function openDetails(forkId: string) {
     void navigate({
-      to: '/forks',
-      search: { detail: forkId },
-      replace: true,
+      to: '/forks/$queryId',
+      params: { queryId: forkId },
     })
-  }
-
-  function closeDetails() {
-    void navigate({ to: '/forks', replace: true })
   }
 
   function handleDelete(fork: ManagedForkQuery) {
@@ -290,10 +276,6 @@ export function ForksPage() {
     updateCachedForks((items) =>
       items.filter((item) => item.id !== deletedFork.id),
     )
-
-    if (search.detail === deletedFork.id) {
-      closeDetails()
-    }
 
     const timeoutId = window.setTimeout(async () => {
       pendingDeleteTimeoutsRef.current.delete(deletedFork.id)
@@ -631,7 +613,12 @@ export function ForksPage() {
                               size="icon-sm"
                               className="rounded-lg"
                               aria-label="Edit"
-                              onClick={() => setEditingFork(fork)}
+                              render={
+                                <Link
+                                  to="/forks/$queryId/edit"
+                                  params={{ queryId: fork.id }}
+                                />
+                              }
                             >
                               <Edit3Icon className="size-4" />
                             </Button>
@@ -664,175 +651,6 @@ export function ForksPage() {
           </div>
         )}
       </PageShell>
-      <QueryCreateDrawer
-        open={editingFork !== null}
-        mode="edit"
-        queryId={editingFork?.id}
-        initialQuery={
-          editingFork
-            ? {
-                title: editingFork.title,
-                query: editingFork.query,
-                description: editingFork.description,
-                isPublic: editingFork.isPublic,
-              }
-            : undefined
-        }
-        onSuccess={() => {
-          void Promise.all([
-            queryClient.invalidateQueries({ queryKey: ['my-forks'] }),
-            queryClient.invalidateQueries({ queryKey: ['my-queries'] }),
-          ])
-        }}
-        onOpenChange={(nextOpen) => {
-          if (!nextOpen) {
-            setEditingFork(null)
-          }
-        }}
-      />
-
-      <Dialog
-        open={selectedFork !== null}
-        onOpenChange={(nextOpen) => {
-          if (!nextOpen) {
-            closeDetails()
-          }
-        }}
-      >
-        <DialogContent className="sm:max-w-3xl">
-          {selectedFork ? (
-            <>
-              <DialogHeader>
-                <DialogTitle>{selectedFork.title}</DialogTitle>
-                <DialogDescription>
-                  Review the fork source, sync status, and current string before
-                  editing or publishing.
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-5">
-                <div className="flex flex-wrap gap-2">
-                  <Badge
-                    variant="outline"
-                    size="sm"
-                    className={getSyncBadgeClasses(selectedFork.syncStatus)}
-                  >
-                    {formatSyncLabel(selectedFork.syncStatus)}
-                  </Badge>
-                  <Badge variant="outline" size="sm">
-                    Forked {renderRelativeTime(selectedFork.createdAt)}
-                  </Badge>
-                  <Badge variant="outline" size="sm">
-                    Updated {renderRelativeTime(selectedFork.updatedAt)}
-                  </Badge>
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="rounded-2xl border border-border/70 bg-card/95 p-4 dark:bg-card">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Your fork
-                    </p>
-                    <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-all font-mono text-sm text-foreground">
-                      {selectedFork.query}
-                    </pre>
-                  </div>
-
-                  <div className="rounded-2xl border border-border/70 bg-card/95 p-4 dark:bg-card">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Original snapshot
-                    </p>
-                    <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-all font-mono text-sm text-foreground">
-                      {selectedFork.originalQuerySnapshot ??
-                        'No snapshot saved.'}
-                    </pre>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-border/70 bg-card/95 p-4 dark:bg-card">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Source details
-                  </p>
-                  {selectedFork.sourceQuery ? (
-                    <div className="mt-3 space-y-3">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">
-                          {selectedFork.sourceQuery.title}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {selectedFork.sourceQuery.creator?.displayName
-                            ? `By ${selectedFork.sourceQuery.creator.displayName}`
-                            : 'Creator unavailable'}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Source updated{' '}
-                          {renderRelativeTime(
-                            selectedFork.sourceQuery.updatedAt,
-                          )}
-                        </p>
-                      </div>
-
-                      <pre className="overflow-x-auto whitespace-pre-wrap break-all rounded-xl border border-border/70 bg-background/80 px-4 py-3 font-mono text-sm text-foreground dark:bg-background">
-                        {selectedFork.sourceQuery.query}
-                      </pre>
-
-                      {selectedFork.sourceQuery.isPublic ? (
-                        <Link
-                          to="/queries/$queryId"
-                          params={{ queryId: selectedFork.sourceQuery.id }}
-                          className="inline-flex"
-                        >
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="rounded-lg"
-                          >
-                            View source query
-                          </Button>
-                        </Link>
-                      ) : (
-                        <p className="text-xs text-muted-foreground">
-                          This original search string is no longer public.
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="mt-3 text-sm text-muted-foreground">
-                      The original search string is no longer available. You can
-                      still edit or publish this fork on its own.
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={closeDetails}>
-                  Close
-                </Button>
-                {selectedFork.syncStatus === 'behind' ? (
-                  <Button
-                    type="button"
-                    disabled={syncMutation.isPending}
-                    onClick={() => handleSync(selectedFork)}
-                  >
-                    {syncMutation.isPending ? 'Syncing...' : 'Sync from source'}
-                  </Button>
-                ) : null}
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    closeDetails()
-                    setEditingFork(selectedFork)
-                  }}
-                >
-                  <Edit3Icon className="size-4" />
-                  Edit fork
-                </Button>
-              </DialogFooter>
-            </>
-          ) : null}
-        </DialogContent>
-      </Dialog>
 
       <Dialog
         open={forkToDelete !== null}

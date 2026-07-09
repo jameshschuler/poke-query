@@ -157,8 +157,8 @@ function TrainerProfilePage() {
         queryClient.invalidateQueries({ queryKey: ['my-queries'] }),
       ])
       await navigate({
-        to: '/forks',
-        search: { detail: result.id },
+        to: '/forks/$queryId',
+        params: { queryId: result.id },
       })
     },
     onError: (mutationError: unknown) => {

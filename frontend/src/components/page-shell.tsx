@@ -1,5 +1,5 @@
 import { useAuth } from '@authabase/react'
-import { useNavigate } from '@tanstack/react-router'
+import { Link } from '@tanstack/react-router'
 import { PlusIcon, SearchIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 
@@ -36,7 +36,6 @@ export function PageShell({
   showHeaderSearch = true,
 }: PageShellProps) {
   const { user } = useAuth()
-  const navigate = useNavigate()
   const shouldShowSidebar = showSidebar ?? Boolean(user)
 
   const pageContent = (
@@ -85,9 +84,7 @@ export function PageShell({
             {user ? (
               <Button
                 className="shrink-0 rounded-full px-3 sm:px-4"
-                onClick={() => {
-                  void navigate({ to: '/library', search: { create: '1' } })
-                }}
+                render={<Link to="/library/new" />}
               >
                 <PlusIcon />
                 <span>New String</span>

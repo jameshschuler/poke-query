@@ -5,7 +5,7 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useMemo, useState, useEffect } from 'react'
 import {
   ChevronsUpDownIcon,
@@ -193,8 +193,8 @@ function DiscoverPage() {
         queryClient.invalidateQueries({ queryKey: ['my-queries'] }),
       ])
       await navigate({
-        to: '/forks',
-        search: { detail: result.id },
+        to: '/forks/$queryId',
+        params: { queryId: result.id },
       })
     },
     onError: (error: unknown) => {
@@ -495,9 +495,7 @@ function DiscoverPage() {
             {user ? (
               <Button
                 className="shrink-0 rounded-full px-3 sm:px-4"
-                onClick={() => {
-                  void navigate({ to: '/library', search: { create: '1' } })
-                }}
+                render={<Link to="/library/new" />}
               >
                 <PlusIcon />
                 <span>New String</span>

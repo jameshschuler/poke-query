@@ -21,6 +21,10 @@ import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TrainersUsernameRouteImport } from './routes/trainers.$username'
 import { Route as QueriesQueryIdRouteImport } from './routes/queries.$queryId'
+import { Route as LibraryNewRouteImport } from './routes/library.new'
+import { Route as ForksQueryIdRouteImport } from './routes/forks.$queryId'
+import { Route as LibraryQueryIdEditRouteImport } from './routes/library.$queryId.edit'
+import { Route as ForksQueryIdEditRouteImport } from './routes/forks.$queryId.edit'
 
 const NotificationsRoute = NotificationsRouteImport.update({
   id: '/notifications',
@@ -82,6 +86,26 @@ const QueriesQueryIdRoute = QueriesQueryIdRouteImport.update({
   path: '/queries/$queryId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LibraryNewRoute = LibraryNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => LibraryRoute,
+} as any)
+const ForksQueryIdRoute = ForksQueryIdRouteImport.update({
+  id: '/$queryId',
+  path: '/$queryId',
+  getParentRoute: () => ForksRoute,
+} as any)
+const LibraryQueryIdEditRoute = LibraryQueryIdEditRouteImport.update({
+  id: '/$queryId/edit',
+  path: '/$queryId/edit',
+  getParentRoute: () => LibraryRoute,
+} as any)
+const ForksQueryIdEditRoute = ForksQueryIdEditRouteImport.update({
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => ForksQueryIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -90,12 +114,16 @@ export interface FileRoutesByFullPath {
   '/discover': typeof DiscoverRoute
   '/favorites': typeof FavoritesRoute
   '/following': typeof FollowingRoute
-  '/forks': typeof ForksRoute
-  '/library': typeof LibraryRoute
+  '/forks': typeof ForksRouteWithChildren
+  '/library': typeof LibraryRouteWithChildren
   '/login': typeof LoginRoute
   '/notifications': typeof NotificationsRoute
+  '/forks/$queryId': typeof ForksQueryIdRouteWithChildren
+  '/library/new': typeof LibraryNewRoute
   '/queries/$queryId': typeof QueriesQueryIdRoute
   '/trainers/$username': typeof TrainersUsernameRoute
+  '/forks/$queryId/edit': typeof ForksQueryIdEditRoute
+  '/library/$queryId/edit': typeof LibraryQueryIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -104,12 +132,16 @@ export interface FileRoutesByTo {
   '/discover': typeof DiscoverRoute
   '/favorites': typeof FavoritesRoute
   '/following': typeof FollowingRoute
-  '/forks': typeof ForksRoute
-  '/library': typeof LibraryRoute
+  '/forks': typeof ForksRouteWithChildren
+  '/library': typeof LibraryRouteWithChildren
   '/login': typeof LoginRoute
   '/notifications': typeof NotificationsRoute
+  '/forks/$queryId': typeof ForksQueryIdRouteWithChildren
+  '/library/new': typeof LibraryNewRoute
   '/queries/$queryId': typeof QueriesQueryIdRoute
   '/trainers/$username': typeof TrainersUsernameRoute
+  '/forks/$queryId/edit': typeof ForksQueryIdEditRoute
+  '/library/$queryId/edit': typeof LibraryQueryIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -119,12 +151,16 @@ export interface FileRoutesById {
   '/discover': typeof DiscoverRoute
   '/favorites': typeof FavoritesRoute
   '/following': typeof FollowingRoute
-  '/forks': typeof ForksRoute
-  '/library': typeof LibraryRoute
+  '/forks': typeof ForksRouteWithChildren
+  '/library': typeof LibraryRouteWithChildren
   '/login': typeof LoginRoute
   '/notifications': typeof NotificationsRoute
+  '/forks/$queryId': typeof ForksQueryIdRouteWithChildren
+  '/library/new': typeof LibraryNewRoute
   '/queries/$queryId': typeof QueriesQueryIdRoute
   '/trainers/$username': typeof TrainersUsernameRoute
+  '/forks/$queryId/edit': typeof ForksQueryIdEditRoute
+  '/library/$queryId/edit': typeof LibraryQueryIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -139,8 +175,12 @@ export interface FileRouteTypes {
     | '/library'
     | '/login'
     | '/notifications'
+    | '/forks/$queryId'
+    | '/library/new'
     | '/queries/$queryId'
     | '/trainers/$username'
+    | '/forks/$queryId/edit'
+    | '/library/$queryId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -153,8 +193,12 @@ export interface FileRouteTypes {
     | '/library'
     | '/login'
     | '/notifications'
+    | '/forks/$queryId'
+    | '/library/new'
     | '/queries/$queryId'
     | '/trainers/$username'
+    | '/forks/$queryId/edit'
+    | '/library/$queryId/edit'
   id:
     | '__root__'
     | '/'
@@ -167,8 +211,12 @@ export interface FileRouteTypes {
     | '/library'
     | '/login'
     | '/notifications'
+    | '/forks/$queryId'
+    | '/library/new'
     | '/queries/$queryId'
     | '/trainers/$username'
+    | '/forks/$queryId/edit'
+    | '/library/$queryId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -178,8 +226,8 @@ export interface RootRouteChildren {
   DiscoverRoute: typeof DiscoverRoute
   FavoritesRoute: typeof FavoritesRoute
   FollowingRoute: typeof FollowingRoute
-  ForksRoute: typeof ForksRoute
-  LibraryRoute: typeof LibraryRoute
+  ForksRoute: typeof ForksRouteWithChildren
+  LibraryRoute: typeof LibraryRouteWithChildren
   LoginRoute: typeof LoginRoute
   NotificationsRoute: typeof NotificationsRoute
   QueriesQueryIdRoute: typeof QueriesQueryIdRoute
@@ -272,8 +320,71 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QueriesQueryIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/library/new': {
+      id: '/library/new'
+      path: '/new'
+      fullPath: '/library/new'
+      preLoaderRoute: typeof LibraryNewRouteImport
+      parentRoute: typeof LibraryRoute
+    }
+    '/forks/$queryId': {
+      id: '/forks/$queryId'
+      path: '/$queryId'
+      fullPath: '/forks/$queryId'
+      preLoaderRoute: typeof ForksQueryIdRouteImport
+      parentRoute: typeof ForksRoute
+    }
+    '/library/$queryId/edit': {
+      id: '/library/$queryId/edit'
+      path: '/$queryId/edit'
+      fullPath: '/library/$queryId/edit'
+      preLoaderRoute: typeof LibraryQueryIdEditRouteImport
+      parentRoute: typeof LibraryRoute
+    }
+    '/forks/$queryId/edit': {
+      id: '/forks/$queryId/edit'
+      path: '/edit'
+      fullPath: '/forks/$queryId/edit'
+      preLoaderRoute: typeof ForksQueryIdEditRouteImport
+      parentRoute: typeof ForksQueryIdRoute
+    }
   }
 }
+
+interface ForksQueryIdRouteChildren {
+  ForksQueryIdEditRoute: typeof ForksQueryIdEditRoute
+}
+
+const ForksQueryIdRouteChildren: ForksQueryIdRouteChildren = {
+  ForksQueryIdEditRoute: ForksQueryIdEditRoute,
+}
+
+const ForksQueryIdRouteWithChildren = ForksQueryIdRoute._addFileChildren(
+  ForksQueryIdRouteChildren,
+)
+
+interface ForksRouteChildren {
+  ForksQueryIdRoute: typeof ForksQueryIdRouteWithChildren
+}
+
+const ForksRouteChildren: ForksRouteChildren = {
+  ForksQueryIdRoute: ForksQueryIdRouteWithChildren,
+}
+
+const ForksRouteWithChildren = ForksRoute._addFileChildren(ForksRouteChildren)
+
+interface LibraryRouteChildren {
+  LibraryNewRoute: typeof LibraryNewRoute
+  LibraryQueryIdEditRoute: typeof LibraryQueryIdEditRoute
+}
+
+const LibraryRouteChildren: LibraryRouteChildren = {
+  LibraryNewRoute: LibraryNewRoute,
+  LibraryQueryIdEditRoute: LibraryQueryIdEditRoute,
+}
+
+const LibraryRouteWithChildren =
+  LibraryRoute._addFileChildren(LibraryRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -282,8 +393,8 @@ const rootRouteChildren: RootRouteChildren = {
   DiscoverRoute: DiscoverRoute,
   FavoritesRoute: FavoritesRoute,
   FollowingRoute: FollowingRoute,
-  ForksRoute: ForksRoute,
-  LibraryRoute: LibraryRoute,
+  ForksRoute: ForksRouteWithChildren,
+  LibraryRoute: LibraryRouteWithChildren,
   LoginRoute: LoginRoute,
   NotificationsRoute: NotificationsRoute,
   QueriesQueryIdRoute: QueriesQueryIdRoute,

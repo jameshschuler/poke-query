@@ -54,8 +54,9 @@
 - Ensure owasp top 10 is followed
 - E2E tests with playwright
 - Revisit login page design
-- Themes
-- Fix dark mode styles
+- Allow uploading trainer profile screen and parse out info
+- PWA support
+- Add contributing guide
 
 ## P0 - Security, Trust, and Data Safety
 
@@ -80,6 +81,7 @@
 - [ ] Add accessible labels, keyboard flows, and focus states to all critical UI
 - [ ] Add responsive QA pass for mobile discover/profile/settings pages
 - [ ] Add theme / colors
+- [ ] Fix dark mode styles
 
 ## P1 - Launch Operations
 

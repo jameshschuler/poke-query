@@ -1,5 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import {
+  createFileRoute,
+  Link,
+  Outlet,
+  useNavigate,
+  useRouterState,
+} from '@tanstack/react-router'
 import {
   EyeIcon,
   Edit3Icon,
@@ -13,7 +19,6 @@ import {
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
-import { QueryCreateDrawer } from '#/components/query-create-drawer'
 import { QueryCardActions } from '#/components/query-card-actions'
 import { QueryCardHeader } from '#/components/query-card-header'
 import { TimestampTooltip } from '#/components/timestamp-tooltip'
@@ -45,10 +50,6 @@ import type { ManagedQuery } from '#/lib/poke-query-api'
 import { requireAuthenticated } from '#/lib/route-auth'
 import { QueryTagBadges } from '../components/query-tag-badges'
 
-type LibrarySearch = {
-  create?: string
-}
-
 type StatusFilter = 'all' | 'draft' | 'public'
 type LayoutMode = 'list' | 'grid-2' | 'grid-3'
 
@@ -60,9 +61,6 @@ function isLayoutMode(value: string | null): value is LayoutMode {
 
 export const Route = createFileRoute('/library')({
   ssr: false,
-  validateSearch: (search): LibrarySearch => ({
-    create: typeof search.create === 'string' ? search.create : undefined,
-  }),
   beforeLoad: async () => {
     await requireAuthenticated('/library')
   },
@@ -70,11 +68,16 @@ export const Route = createFileRoute('/library')({
 })
 
 function LibraryPage() {
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  })
+
+  if (pathname !== '/library') {
+    return <Outlet />
+  }
+
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const search = Route.useSearch()
-  const isCreateOpen = search.create === '1'
-  const [editingQuery, setEditingQuery] = useState<ManagedQuery | null>(null)
   const [queryToDelete, setQueryToDelete] = useState<ManagedQuery | null>(null)
   const [searchText, setSearchText] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
@@ -356,13 +359,7 @@ function LibraryPage() {
           <Button
             type="button"
             className="rounded-xl"
-            onClick={() =>
-              navigate({
-                to: '/library',
-                search: { create: '1' },
-                replace: true,
-              })
-            }
+            render={<Link to="/library/new" />}
           >
             <PlusIcon className="size-4" />
             New String
@@ -441,13 +438,7 @@ function LibraryPage() {
             <Button
               type="button"
               className="mt-4 rounded-xl"
-              onClick={() =>
-                navigate({
-                  to: '/library',
-                  search: { create: '1' },
-                  replace: true,
-                })
-              }
+              render={<Link to="/library/new" />}
             >
               <PlusIcon className="size-4" />
               Create your first string
@@ -468,7 +459,12 @@ function LibraryPage() {
                   <div className="min-w-0 flex-1 space-y-2">
                     <QueryCardHeader
                       title={query.title}
-                      onTitleClick={() => setEditingQuery(query)}
+                      onTitleClick={() =>
+                        void navigate({
+                          to: '/library/$queryId/edit',
+                          params: { queryId: query.id },
+                        })
+                      }
                       action={
                         query.isPublic ? (
                           <Tooltip>
@@ -568,7 +564,12 @@ function LibraryPage() {
                               size="icon-sm"
                               className="rounded-lg"
                               aria-label="Edit"
-                              onClick={() => setEditingQuery(query)}
+                              render={
+                                <Link
+                                  to="/library/$queryId/edit"
+                                  params={{ queryId: query.id }}
+                                />
+                              }
                             >
                               <Edit3Icon className="size-4" />
                             </Button>
@@ -601,32 +602,6 @@ function LibraryPage() {
           </div>
         )}
       </PageShell>
-      <QueryCreateDrawer
-        open={isCreateOpen || editingQuery !== null}
-        mode={editingQuery ? 'edit' : 'create'}
-        queryId={editingQuery?.id}
-        initialQuery={
-          editingQuery
-            ? {
-                title: editingQuery.title,
-                query: editingQuery.query,
-                description: editingQuery.description,
-                isPublic: editingQuery.isPublic,
-              }
-            : undefined
-        }
-        onSuccess={() => {
-          void queryClient.invalidateQueries({ queryKey: ['my-queries'] })
-        }}
-        onOpenChange={(nextOpen) => {
-          if (!nextOpen) {
-            setEditingQuery(null)
-            if (isCreateOpen) {
-              void navigate({ to: '/library', replace: true })
-            }
-          }
-        }}
-      />
 
       <Dialog
         open={queryToDelete !== null}
