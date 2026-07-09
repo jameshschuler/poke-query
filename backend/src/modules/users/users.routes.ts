@@ -18,11 +18,13 @@ import {
   UnfollowTrainerSchema,
   GetTrainerFollowersSchema,
   GetMeFollowersSchema,
+  GetMeFollowingSchema,
 } from "./users.schema.js";
 import { getSupabaseAdmin } from "../../lib/supabase.js";
 import { trainers, searchQueries, favorites, followers } from "../../db/schema.js";
 import { alias } from "drizzle-orm/pg-core";
 import { and, count, desc, eq, isNull, or, sql } from "drizzle-orm";
+import { emitNotification } from "../notifications/notifications.service.js";
 
 export async function userRoutes(fastify: FastifyTypebox) {
   const server = fastify.withTypeProvider<TypeBoxTypeProvider>();
@@ -95,6 +97,25 @@ export async function userRoutes(fastify: FastifyTypebox) {
       .from(followers)
       .innerJoin(trainers, eq(trainers.id, followers.followerId))
       .where(eq(followers.followedId, trainerId))
+      .orderBy(desc(followers.createdAt));
+
+  const selectFollowing = (trainerId: string) =>
+    fastify.db
+      .select({
+        id: trainers.id,
+        username: trainers.username,
+        pogoUsername: trainers.pogoUsername,
+        visibleUsername: trainers.visibleUsername,
+        team: trainers.team,
+        level: trainers.level,
+        trainerCode: trainers.trainerCode,
+        isProfilePublic: trainers.isProfilePublic,
+        avatarUrl: trainers.avatarUrl,
+        followedAt: followers.createdAt,
+      })
+      .from(followers)
+      .innerJoin(trainers, eq(trainers.id, followers.followedId))
+      .where(eq(followers.followerId, trainerId))
       .orderBy(desc(followers.createdAt));
 
   const publicQuerySelect = {
@@ -570,6 +591,43 @@ export async function userRoutes(fastify: FastifyTypebox) {
     },
   );
 
+  server.get(
+    "/me/following",
+    { preHandler: [fastify.authenticate], schema: GetMeFollowingSchema },
+    async (request, reply) => {
+      const userId = request.user.id;
+
+      const [trainer] = await fastify.db
+        .select({ id: trainers.id })
+        .from(trainers)
+        .where(eq(trainers.userId, userId));
+
+      if (!trainer) {
+        return reply.code(404).send({ error: "Trainer not found" });
+      }
+
+      const rows = await selectFollowing(trainer.id);
+
+      return {
+        total: rows.length,
+        following: rows.map((row) => {
+          const publicProfile = toPublicTrainerProfile(row);
+
+          return {
+            id: row.id,
+            username: row.username,
+            displayName: resolveDisplayName(row),
+            team: publicProfile.team,
+            level: publicProfile.level,
+            trainerCode: publicProfile.trainerCode,
+            avatarUrl: row.avatarUrl,
+            followedAt: row.followedAt.toISOString(),
+          };
+        }),
+      };
+    },
+  );
+
   // ── /by-username/:username ────────────────────────────────────────────────
 
   server.get(
@@ -837,6 +895,21 @@ export async function userRoutes(fastify: FastifyTypebox) {
         return reply.code(403).send({ error: "You cannot follow a private account" });
       }
 
+      const [existingFollow] = await fastify.db
+        .select({ followedId: followers.followedId })
+        .from(followers)
+        .where(
+          and(
+            eq(followers.followerId, currentTrainerId),
+            eq(followers.followedId, targetTrainerId),
+          ),
+        )
+        .limit(1);
+
+      if (existingFollow) {
+        return reply.code(204).send(null);
+      }
+
       await fastify.db
         .insert(followers)
         .values({
@@ -844,6 +917,39 @@ export async function userRoutes(fastify: FastifyTypebox) {
           followedId: targetTrainerId,
         })
         .onConflictDoNothing();
+
+      try {
+        const [actor] = await fastify.db
+          .select({
+            username: trainers.username,
+            pogoUsername: trainers.pogoUsername,
+            visibleUsername: trainers.visibleUsername,
+          })
+          .from(trainers)
+          .where(eq(trainers.id, currentTrainerId))
+          .limit(1);
+
+        await emitNotification(fastify, {
+          recipientTrainerId: targetTrainerId,
+          actorTrainerId: currentTrainerId,
+          eventType: "new_follower",
+          entityType: "trainer",
+          entityId: currentTrainerId,
+          title: "You have a new follower",
+          message: `${
+            actor
+              ? resolveDisplayName({
+                  username: actor.username,
+                  pogoUsername: actor.pogoUsername,
+                  visibleUsername: actor.visibleUsername,
+                })
+              : "A trainer"
+          } started following you.`,
+          isHighPriority: true,
+        });
+      } catch {
+        // Best effort: failure to emit a notification should not fail the follow action.
+      }
 
       return reply.code(204).send(null);
     },

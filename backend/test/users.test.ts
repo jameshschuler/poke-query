@@ -62,6 +62,16 @@ const buildOrderByLimitChain = (result: object[]) => ({
   }),
 });
 
+const buildJoinOrderByChain = (result: object[]) => ({
+  from: vi.fn(() => ({
+    innerJoin: vi.fn(() => ({
+      where: vi.fn(() => ({
+        orderBy: vi.fn().mockResolvedValue(result),
+      })),
+    })),
+  })),
+});
+
 vi.mock("../src/db/index.js", () => ({
   queryClient: { end: vi.fn() },
   db: {
@@ -275,6 +285,61 @@ describe("GET /api/v1/users/me/forks", () => {
               level: 44,
             },
           },
+        },
+      ],
+    });
+  });
+});
+
+describe("GET /api/v1/users/me/following", () => {
+  let app: Awaited<ReturnType<typeof buildApp>>;
+
+  beforeAll(async () => {
+    app = await buildApp();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it("returns trainers followed by the authenticated trainer", async () => {
+    mockSelect.mockReturnValueOnce(buildWhereChain([{ id: "uuid-123" }]));
+    mockSelect.mockReturnValueOnce(
+      buildJoinOrderByChain([
+        {
+          id: "trainer-2",
+          username: "Misty",
+          pogoUsername: null,
+          visibleUsername: "pokequery",
+          team: "mystic",
+          level: 42,
+          trainerCode: "1111 2222 3333",
+          isProfilePublic: true,
+          avatarUrl: null,
+          followedAt: new Date("2026-07-01T08:30:00.000Z"),
+        },
+      ]),
+    );
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/users/me/following",
+      cookies: { "sb-access-token": "mock-token" },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({
+      total: 1,
+      following: [
+        {
+          id: "trainer-2",
+          username: "Misty",
+          displayName: "Misty",
+          team: "mystic",
+          level: 42,
+          trainerCode: "1111 2222 3333",
+          avatarUrl: null,
+          followedAt: "2026-07-01T08:30:00.000Z",
         },
       ],
     });

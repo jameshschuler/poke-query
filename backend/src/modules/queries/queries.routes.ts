@@ -16,6 +16,10 @@ import {
 } from "./queries.schemas.js";
 import { and, eq, or, sql } from "drizzle-orm";
 import { favorites } from "../../db/schema.js";
+import {
+  emitNotification,
+  resolveDisplayNameForTrainer,
+} from "../notifications/notifications.service.js";
 
 function hasRowsArray(value: unknown): value is { rows: unknown[] } {
   return (
@@ -304,6 +308,25 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
           .returning();
 
         if (forked) {
+          if (original.creatorId && original.creatorId !== userId) {
+            try {
+              const actorDisplayName = await resolveDisplayNameForTrainer(fastify, userId);
+
+              await emitNotification(fastify, {
+                recipientTrainerId: original.creatorId,
+                actorTrainerId: userId,
+                eventType: "query_forked",
+                entityType: "query",
+                entityId: original.id,
+                title: "Your query was forked",
+                message: `${actorDisplayName ?? "A trainer"} forked "${original.title}".`,
+                isHighPriority: true,
+              });
+            } catch {
+              // Best effort: failure to emit a notification should not fail the fork action.
+            }
+          }
+
           return reply.code(201).send({ id: forked.id });
         } else {
           return reply.code(400).send({ error: "Failed to fork query" });
@@ -485,6 +508,25 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
           .insert(favorites)
           .values({ trainerId: userId, queryId: id })
           .onConflictDoNothing();
+
+        if (query.creatorId && query.creatorId !== userId) {
+          try {
+            const actorDisplayName = await resolveDisplayNameForTrainer(fastify, userId);
+
+            await emitNotification(fastify, {
+              recipientTrainerId: query.creatorId,
+              actorTrainerId: userId,
+              eventType: "query_favorited",
+              entityType: "query",
+              entityId: query.id,
+              title: "Your query was favorited",
+              message: `${actorDisplayName ?? "A trainer"} favorited "${query.title}".`,
+              isHighPriority: false,
+            });
+          } catch {
+            // Best effort: failure to emit a notification should not fail the favorite action.
+          }
+        }
 
         return reply.code(204).send(null);
       } catch (_error) {

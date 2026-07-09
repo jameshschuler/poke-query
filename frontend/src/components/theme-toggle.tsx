@@ -60,11 +60,14 @@ export function ThemeToggle({ placement = 'floating' }: ThemeToggleProps) {
     <Button
       variant="outline"
       size="icon"
-      className={
+      className={[
         isFloating
           ? 'fixed z-100 rounded-full shadow-md'
-          : 'shrink-0 rounded-full'
-      }
+          : 'shrink-0 rounded-full',
+        isDark ? 'border-border bg-card text-foreground hover:bg-muted' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
       style={
         isFloating
           ? {

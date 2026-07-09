@@ -9,9 +9,11 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as ForksRouteImport } from './routes/forks'
+import { Route as FollowingRouteImport } from './routes/following'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as DiscoverRouteImport } from './routes/discover'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -20,6 +22,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as TrainersUsernameRouteImport } from './routes/trainers.$username'
 import { Route as QueriesQueryIdRouteImport } from './routes/queries.$queryId'
 
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -33,6 +40,11 @@ const LibraryRoute = LibraryRouteImport.update({
 const ForksRoute = ForksRouteImport.update({
   id: '/forks',
   path: '/forks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FollowingRoute = FollowingRouteImport.update({
+  id: '/following',
+  path: '/following',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FavoritesRoute = FavoritesRouteImport.update({
@@ -77,9 +89,11 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/discover': typeof DiscoverRoute
   '/favorites': typeof FavoritesRoute
+  '/following': typeof FollowingRoute
   '/forks': typeof ForksRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
   '/queries/$queryId': typeof QueriesQueryIdRoute
   '/trainers/$username': typeof TrainersUsernameRoute
 }
@@ -89,9 +103,11 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/discover': typeof DiscoverRoute
   '/favorites': typeof FavoritesRoute
+  '/following': typeof FollowingRoute
   '/forks': typeof ForksRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
   '/queries/$queryId': typeof QueriesQueryIdRoute
   '/trainers/$username': typeof TrainersUsernameRoute
 }
@@ -102,9 +118,11 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/discover': typeof DiscoverRoute
   '/favorites': typeof FavoritesRoute
+  '/following': typeof FollowingRoute
   '/forks': typeof ForksRoute
   '/library': typeof LibraryRoute
   '/login': typeof LoginRoute
+  '/notifications': typeof NotificationsRoute
   '/queries/$queryId': typeof QueriesQueryIdRoute
   '/trainers/$username': typeof TrainersUsernameRoute
 }
@@ -116,9 +134,11 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/discover'
     | '/favorites'
+    | '/following'
     | '/forks'
     | '/library'
     | '/login'
+    | '/notifications'
     | '/queries/$queryId'
     | '/trainers/$username'
   fileRoutesByTo: FileRoutesByTo
@@ -128,9 +148,11 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/discover'
     | '/favorites'
+    | '/following'
     | '/forks'
     | '/library'
     | '/login'
+    | '/notifications'
     | '/queries/$queryId'
     | '/trainers/$username'
   id:
@@ -140,9 +162,11 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/discover'
     | '/favorites'
+    | '/following'
     | '/forks'
     | '/library'
     | '/login'
+    | '/notifications'
     | '/queries/$queryId'
     | '/trainers/$username'
   fileRoutesById: FileRoutesById
@@ -153,15 +177,24 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   DiscoverRoute: typeof DiscoverRoute
   FavoritesRoute: typeof FavoritesRoute
+  FollowingRoute: typeof FollowingRoute
   ForksRoute: typeof ForksRoute
   LibraryRoute: typeof LibraryRoute
   LoginRoute: typeof LoginRoute
+  NotificationsRoute: typeof NotificationsRoute
   QueriesQueryIdRoute: typeof QueriesQueryIdRoute
   TrainersUsernameRoute: typeof TrainersUsernameRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -181,6 +214,13 @@ declare module '@tanstack/react-router' {
       path: '/forks'
       fullPath: '/forks'
       preLoaderRoute: typeof ForksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/following': {
+      id: '/following'
+      path: '/following'
+      fullPath: '/following'
+      preLoaderRoute: typeof FollowingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/favorites': {
@@ -241,9 +281,11 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   DiscoverRoute: DiscoverRoute,
   FavoritesRoute: FavoritesRoute,
+  FollowingRoute: FollowingRoute,
   ForksRoute: ForksRoute,
   LibraryRoute: LibraryRoute,
   LoginRoute: LoginRoute,
+  NotificationsRoute: NotificationsRoute,
   QueriesQueryIdRoute: QueriesQueryIdRoute,
   TrainersUsernameRoute: TrainersUsernameRoute,
 }

@@ -22,6 +22,13 @@ export function getMeFollowers(): Promise<{
 }> {
   return apiRequest('/api/v1/users/me/followers')
 }
+
+export function getMeFollowing(): Promise<{
+  total: number
+  following: TrainerFollower[]
+}> {
+  return apiRequest('/api/v1/users/me/following')
+}
 export type Team = 'mystic' | 'valor' | 'instinct'
 export type VisibleUsername = 'pokequery' | 'pogo'
 
@@ -691,4 +698,123 @@ export async function getCommunityQueries(
 
 export async function fetchCommunityQueries(): Promise<CommunityQuery[]> {
   return getCommunityQueries({ filter: 'popular' })
+}
+
+export type NotificationEventType =
+  | 'new_follower'
+  | 'query_forked'
+  | 'query_favorited'
+
+export type AppNotification = {
+  id: string
+  eventType: NotificationEventType
+  entityType: 'trainer' | 'query' | null
+  entityId: string | null
+  title: string
+  message: string
+  isHighPriority: boolean
+  isRead: boolean
+  readAt: string | null
+  createdAt: string
+  actor: {
+    id: string
+    username: string
+    displayName: string
+    avatarUrl: string | null
+  } | null
+}
+
+export type NotificationPreferences = {
+  notifyNewFollower: boolean
+  notifyQueryFork: boolean
+  notifyQueryFavorite: boolean
+  inAppToasts: boolean
+}
+
+export type GetNotificationsParams = {
+  limit?: number
+  offset?: number
+  unreadOnly?: boolean
+  highPriorityOnly?: boolean
+}
+
+export type NotificationsPage = {
+  notifications: AppNotification[]
+  pagination: {
+    limit: number
+    offset: number
+    nextOffset: number | null
+    hasMore: boolean
+    total: number
+  }
+}
+
+export function getNotifications(
+  params: GetNotificationsParams = {},
+): Promise<NotificationsPage> {
+  const search = new URLSearchParams()
+
+  if (typeof params.limit === 'number') {
+    search.set('limit', String(params.limit))
+  }
+
+  if (typeof params.offset === 'number') {
+    search.set('offset', String(params.offset))
+  }
+
+  if (typeof params.unreadOnly === 'boolean') {
+    search.set('unreadOnly', String(params.unreadOnly))
+  }
+
+  if (typeof params.highPriorityOnly === 'boolean') {
+    search.set('highPriorityOnly', String(params.highPriorityOnly))
+  }
+
+  const queryString = search.toString()
+  const path = queryString
+    ? `/api/v1/notifications?${queryString}`
+    : '/api/v1/notifications'
+
+  return apiRequest<NotificationsPage>(path)
+}
+
+export function getUnreadNotificationCount(): Promise<{ unreadCount: number }> {
+  return apiRequest<{ unreadCount: number }>(
+    '/api/v1/notifications/unread-count',
+  )
+}
+
+export function markNotificationRead(id: string): Promise<void> {
+  return apiRequest<void>(
+    `/api/v1/notifications/${encodeURIComponent(id)}/read`,
+    {
+      method: 'PATCH',
+      parseAs: 'void',
+    },
+  )
+}
+
+export function markAllNotificationsRead(): Promise<void> {
+  return apiRequest<void>('/api/v1/notifications/read-all', {
+    method: 'PATCH',
+    parseAs: 'void',
+  })
+}
+
+export function getNotificationPreferences(): Promise<NotificationPreferences> {
+  return apiRequest<NotificationPreferences>(
+    '/api/v1/notifications/preferences',
+  )
+}
+
+export function updateNotificationPreferences(
+  body: Partial<NotificationPreferences>,
+): Promise<NotificationPreferences> {
+  return apiRequest<NotificationPreferences>(
+    '/api/v1/notifications/preferences',
+    {
+      method: 'PATCH',
+      body,
+    },
+  )
 }

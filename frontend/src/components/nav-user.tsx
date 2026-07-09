@@ -20,6 +20,7 @@ import {
   BadgeCheckIcon,
   BellIcon,
   LogOutIcon,
+  UsersIcon,
 } from 'lucide-react'
 import { useNavigate } from '@tanstack/react-router'
 
@@ -32,6 +33,7 @@ interface NavUserProps {
   onLogout?: () => void | Promise<void>
   isLoggingOut?: boolean
   showAccountAlert?: boolean
+  unreadCount?: number
 }
 
 export function NavUser({
@@ -39,9 +41,11 @@ export function NavUser({
   onLogout,
   isLoggingOut = false,
   showAccountAlert = false,
+  unreadCount = 0,
 }: NavUserProps) {
   const navigate = useNavigate()
   const { isMobile } = useSidebar()
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -59,7 +63,16 @@ export function NavUser({
               <span className="truncate font-medium">{user.name}</span>
               <span className="truncate text-xs">{user.email}</span>
             </div>
-            <ChevronsUpDownIcon className="ml-auto size-4" />
+            <div className="ml-auto flex items-center gap-2">
+              {unreadCount > 0 ? (
+                <span
+                  className="size-2 rounded-full bg-destructive"
+                  aria-label="You have unread notifications"
+                  title="Unread notifications"
+                />
+              ) : null}
+              <ChevronsUpDownIcon className="size-4" />
+            </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="min-w-56 rounded-lg"
@@ -94,9 +107,26 @@ export function NavUser({
                   <CircleAlertIcon className="ml-auto size-4 text-amber-500" />
                 ) : null}
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  void navigate({ to: '/notifications' })
+                }}
+              >
                 <BellIcon />
                 Notifications
+                {unreadCount > 0 ? (
+                  <span className="ml-auto rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">
+                    {unreadCount}
+                  </span>
+                ) : null}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  void navigate({ to: '/following' })
+                }}
+              >
+                <UsersIcon />
+                Following
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

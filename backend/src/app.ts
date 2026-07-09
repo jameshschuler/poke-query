@@ -12,6 +12,7 @@ import rateLimit from "@fastify/rate-limit";
 import { queriesRoutes } from "./modules/queries/queries.routes.js";
 import { guestRoutes } from "./modules/guests/guest.routes.js";
 import { communityRoutes } from "./modules/community/community.routes.js";
+import { notificationsRoutes } from "./modules/notifications/notifications.routes.js";
 import { readFile } from "fs/promises";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
@@ -106,6 +107,7 @@ export async function buildApp() {
   await fastify.register(guestRoutes, { prefix: "/api/v1/queries/guest" });
   await fastify.register(queriesRoutes, { prefix: "/api/v1/queries" });
   await fastify.register(communityRoutes, { prefix: "/api/v1/community" });
+  await fastify.register(notificationsRoutes, { prefix: "/api/v1/notifications" });
 
   return fastify;
 }

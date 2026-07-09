@@ -153,3 +153,39 @@ export const followers = pokeSchema.table(
     pk: primaryKey({ columns: [t.followerId, t.followedId] }),
   }),
 );
+
+// --- NOTIFICATIONS ---
+export const notifications = pokeSchema.table("notifications", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  recipientTrainerId: uuid("recipient_trainer_id")
+    .references(() => trainers.id, { onDelete: "cascade" })
+    .notNull(),
+  actorTrainerId: uuid("actor_trainer_id").references(() => trainers.id, {
+    onDelete: "set null",
+  }),
+  eventType: text("event_type").notNull(),
+  entityType: text("entity_type"),
+  entityId: uuid("entity_id"),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  isHighPriority: boolean("is_high_priority").default(false).notNull(),
+  isRead: boolean("is_read").default(false).notNull(),
+  readAt: timestamp("read_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// --- NOTIFICATION PREFERENCES ---
+export const notificationPreferences = pokeSchema.table("notification_preferences", {
+  trainerId: uuid("trainer_id")
+    .references(() => trainers.id, { onDelete: "cascade" })
+    .primaryKey(),
+  notifyNewFollower: boolean("notify_new_follower").default(true).notNull(),
+  notifyQueryFork: boolean("notify_query_fork").default(true).notNull(),
+  notifyQueryFavorite: boolean("notify_query_favorite").default(true).notNull(),
+  inAppToasts: boolean("in_app_toasts").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+});

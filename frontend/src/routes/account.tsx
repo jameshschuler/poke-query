@@ -32,10 +32,15 @@ import {
   deactivateMe,
   deleteMe,
   getMe,
+  getNotificationPreferences,
   reactivateMe,
   updateMe,
+  updateNotificationPreferences,
 } from '#/lib/poke-query-api'
-import type { VisibleUsername } from '#/lib/poke-query-api'
+import type {
+  NotificationPreferences,
+  VisibleUsername,
+} from '#/lib/poke-query-api'
 import { requireAuthenticated, setCachedUser } from '#/lib/route-auth'
 
 type AccountSearch = {
@@ -96,6 +101,13 @@ function AccountPage() {
   const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleteConfirmation, setDeleteConfirmation] = useState('')
+  const [notificationForm, setNotificationForm] =
+    useState<NotificationPreferences>({
+      notifyNewFollower: true,
+      notifyQueryFork: true,
+      notifyQueryFavorite: true,
+      inAppToasts: true,
+    })
 
   const avatarPreviewUrl = formState.avatarUrl.trim()
 
@@ -106,6 +118,11 @@ function AccountPage() {
   } = useQuery({
     queryKey: ['me'],
     queryFn: getMe,
+  })
+
+  const { data: notificationPreferences } = useQuery({
+    queryKey: ['notification-preferences'],
+    queryFn: getNotificationPreferences,
   })
 
   useEffect(() => {
@@ -126,6 +143,14 @@ function AccountPage() {
     setAvatarPreviewFailed(false)
     setFormErrors({})
   }, [me])
+
+  useEffect(() => {
+    if (!notificationPreferences) {
+      return
+    }
+
+    setNotificationForm(notificationPreferences)
+  }, [notificationPreferences])
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -241,10 +266,26 @@ function AccountPage() {
     },
   })
 
+  const saveNotificationPreferencesMutation = useMutation({
+    mutationFn: () => updateNotificationPreferences(notificationForm),
+    onSuccess: async (updatedPreferences) => {
+      setNotificationForm(updatedPreferences)
+      await queryClient.invalidateQueries({
+        queryKey: ['notification-preferences'],
+      })
+      toast.success('Notification preferences saved.')
+    },
+    onError: () => {
+      toast.error('Could not save notification preferences.')
+    },
+  })
+
   const isSaving = saveMutation.isPending
   const isDeactivatePending = deactivateMutation.isPending
   const isReactivatePending = reactivateMutation.isPending
   const isDeletePending = deleteMutation.isPending
+  const isSavingNotificationPreferences =
+    saveNotificationPreferencesMutation.isPending
 
   const completionHint = useMemo(() => {
     if (!me) {
@@ -698,6 +739,112 @@ function AccountPage() {
                   <Loader2Icon className="size-4 animate-spin" />
                 ) : null}
                 Save profile
+              </Button>
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-border/70 bg-card/95 p-5">
+            <h3 className="text-base font-semibold">
+              Notification Preferences
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Choose which activity should notify you and whether high-priority
+              events should appear as in-app toasts.
+            </p>
+
+            <div className="mt-4 grid gap-3">
+              <label className="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-background/60 p-3">
+                <div>
+                  <p className="text-sm font-medium">New Followers</p>
+                  <p className="text-xs text-muted-foreground">
+                    Notify me when another trainer follows my profile.
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={notificationForm.notifyNewFollower}
+                  onChange={(event) =>
+                    setNotificationForm((current) => ({
+                      ...current,
+                      notifyNewFollower: event.target.checked,
+                    }))
+                  }
+                  className="mt-0.5 size-4 accent-primary"
+                />
+              </label>
+
+              <label className="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-background/60 p-3">
+                <div>
+                  <p className="text-sm font-medium">Forked Queries</p>
+                  <p className="text-xs text-muted-foreground">
+                    Notify me when someone forks one of my public queries.
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={notificationForm.notifyQueryFork}
+                  onChange={(event) =>
+                    setNotificationForm((current) => ({
+                      ...current,
+                      notifyQueryFork: event.target.checked,
+                    }))
+                  }
+                  className="mt-0.5 size-4 accent-primary"
+                />
+              </label>
+
+              <label className="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-background/60 p-3">
+                <div>
+                  <p className="text-sm font-medium">Favorited Queries</p>
+                  <p className="text-xs text-muted-foreground">
+                    Notify me when someone favorites one of my public queries.
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={notificationForm.notifyQueryFavorite}
+                  onChange={(event) =>
+                    setNotificationForm((current) => ({
+                      ...current,
+                      notifyQueryFavorite: event.target.checked,
+                    }))
+                  }
+                  className="mt-0.5 size-4 accent-primary"
+                />
+              </label>
+
+              <label className="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-background/60 p-3">
+                <div>
+                  <p className="text-sm font-medium">In-app Toast Alerts</p>
+                  <p className="text-xs text-muted-foreground">
+                    Show toast alerts for high-priority events.
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={notificationForm.inAppToasts}
+                  onChange={(event) =>
+                    setNotificationForm((current) => ({
+                      ...current,
+                      inAppToasts: event.target.checked,
+                    }))
+                  }
+                  className="mt-0.5 size-4 accent-primary"
+                />
+              </label>
+            </div>
+
+            <div className="mt-5 flex justify-end">
+              <Button
+                type="button"
+                className="rounded-xl"
+                disabled={isSavingNotificationPreferences}
+                onClick={() => saveNotificationPreferencesMutation.mutate()}
+              >
+                {isSavingNotificationPreferences ? (
+                  <Loader2Icon className="size-4 animate-spin" />
+                ) : null}
+                Save notification preferences
               </Button>
             </div>
           </section>

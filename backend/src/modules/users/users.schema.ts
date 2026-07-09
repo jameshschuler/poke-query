@@ -207,6 +207,18 @@ export const GetMeFollowersSchema = {
   },
 };
 
+export const GetMeFollowingSchema = {
+  security: cookieAuthSecurity,
+  response: {
+    200: Type.Object({
+      total: Type.Integer(),
+      following: Type.Array(followerResponseItem),
+    }),
+    401: Type.Object({ error: Type.String() }),
+    404: Type.Object({ error: Type.String() }),
+  },
+};
+
 const publicQueryItem = Type.Object({
   id: Type.String(),
   title: Type.String(),

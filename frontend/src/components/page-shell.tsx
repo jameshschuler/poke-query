@@ -41,9 +41,11 @@ export function PageShell({
 
   const pageContent = (
     <>
-      <header className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border/60 px-5 py-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 sm:flex-nowrap md:px-8 lg:px-10">
+      <header className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border/60 bg-zinc-50 px-5 py-4 text-foreground transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 dark:bg-zinc-900 sm:flex-nowrap md:px-8 lg:px-10">
         <div className="flex items-center gap-2">
-          {shouldShowSidebar ? <SidebarTrigger className="-ml-1" /> : null}
+          {shouldShowSidebar ? (
+            <SidebarTrigger className="-ml-1 text-foreground" />
+          ) : null}
           {shouldShowSidebar ? (
             <Separator orientation="vertical" className="mr-1" />
           ) : null}
@@ -100,7 +102,7 @@ export function PageShell({
         )}
       </header>
 
-      <main className="flex flex-1 flex-col p-5 md:p-8 lg:p-10">
+      <main className="flex flex-1 flex-col bg-zinc-50 p-5 dark:bg-zinc-900 md:p-8 lg:p-10">
         {contentHeaderVariant === 'floating' ? (
           <div className="mb-6 rounded-2xl border border-border/70 bg-card/95 p-4 text-foreground shadow-sm backdrop-blur dark:bg-card">
             <h2 className="text-xl font-semibold tracking-tight">{title}</h2>

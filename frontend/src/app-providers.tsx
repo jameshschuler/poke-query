@@ -8,6 +8,7 @@ import { Toaster } from 'sonner'
 import { ApiRequestError, getMe } from '#/lib/poke-query-api'
 import { setCachedUser } from '#/lib/route-auth'
 import { TooltipProvider } from '#/components/ui/tooltip'
+import { NotificationToastListener } from '#/components/notification-toast-listener'
 
 export function AppProviders({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -64,6 +65,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       <AuthProvider config={authConfig}>
         <QueryClientProvider client={queryClient}>
           {children}
+          <NotificationToastListener />
           <Toaster richColors position="bottom-right" />
           <ReactQueryDevtools initialIsOpen={false} />
         </QueryClientProvider>

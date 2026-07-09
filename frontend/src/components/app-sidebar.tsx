@@ -19,8 +19,14 @@ import {
   BookOpenIcon,
   GitForkIcon,
   HeartIcon,
+  UsersIcon,
 } from 'lucide-react'
-import { ApiRequestError, getMe, logout } from '#/lib/poke-query-api'
+import {
+  ApiRequestError,
+  getMe,
+  getUnreadNotificationCount,
+  logout,
+} from '#/lib/poke-query-api'
 import { setCachedUser } from '#/lib/route-auth'
 import { useMemo, useState } from 'react'
 
@@ -58,6 +64,11 @@ const data = {
       url: '/favorites',
       icon: <HeartIcon />,
     },
+    {
+      title: 'Following',
+      url: '/following',
+      icon: <UsersIcon />,
+    },
   ],
 }
 
@@ -77,20 +88,36 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     retry: false,
   })
 
+  const { data: unreadCountData } = useQuery({
+    queryKey: ['notifications', 'unread-count'],
+    queryFn: getUnreadNotificationCount,
+    enabled: Boolean(user),
+    staleTime: 15_000,
+    refetchInterval: 15_000,
+  })
+
   const sidebarUser = useMemo(
     () => ({
       name:
-        typeof user?.user_metadata?.username === 'string' &&
+        (typeof me?.displayName === 'string' && me.displayName.length > 0
+          ? me.displayName
+          : null) ??
+        (typeof me?.username === 'string' && me.username.length > 0
+          ? me.username
+          : null) ??
+        (typeof user?.user_metadata?.username === 'string' &&
         user.user_metadata.username.length > 0
           ? user.user_metadata.username
-          : (user?.email?.split('@')[0] ?? 'trainer'),
-      email: user?.email ?? 'Signed in',
+          : (user?.email?.split('@')[0] ?? 'trainer')),
+      email: me?.email ?? user?.email ?? 'Signed in',
       avatar:
-        typeof user?.user_metadata?.avatarUrl === 'string'
-          ? user.user_metadata.avatarUrl
-          : '',
+        typeof me?.avatarUrl === 'string' && me.avatarUrl.length > 0
+          ? me.avatarUrl
+          : typeof user?.user_metadata?.avatarUrl === 'string'
+            ? user.user_metadata.avatarUrl
+            : '',
     }),
-    [user],
+    [me, user],
   )
 
   async function handleLogout() {
@@ -137,6 +164,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           user={sidebarUser}
           isLoggingOut={isLoggingOut}
           showAccountAlert={Boolean(user) && me ? !me.profileCompleted : false}
+          unreadCount={unreadCountData?.unreadCount ?? 0}
           onLogout={handleLogout}
         />
       </SidebarFooter>

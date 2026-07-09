@@ -37,11 +37,11 @@
 
 ### 5) Manage Notifications
 
-- [ ] Define notification events (new follower, forked query, favorited query, etc.)
-- [ ] Add backend notification model + read/unread endpoints
-- [ ] Add notification center UI (list, unread badge, mark read/all)
-- [ ] Add in-app toasts for high-priority events
-- [ ] Add notification preferences in account settings
+- [x] Define notification events (new follower, forked query, favorited query, etc.)
+- [x] Add backend notification model + read/unread endpoints
+- [x] Add notification center UI (list, unread badge, mark read/all)
+- [x] Add in-app toasts for high-priority events
+- [x] Add notification preferences in account settings
 
 ### 6) Dashboard
 
@@ -54,6 +54,8 @@
 - Ensure owasp top 10 is followed
 - E2E tests with playwright
 - Revisit login page design
+- Themes
+- Fix dark mode styles
 
 ## P0 - Security, Trust, and Data Safety
 

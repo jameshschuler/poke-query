@@ -1,6 +1,6 @@
 import { config } from "dotenv";
 import { resolve } from "node:path";
-import { sql, eq } from "drizzle-orm";
+import { sql, eq, like } from "drizzle-orm";
 
 import { generateMetadata } from "../src/utils/pogo-parser.js";
 
@@ -201,13 +201,21 @@ async function run() {
   try {
     await db.delete(searchQueries).where(sql`${searchQueries.description} like '[seed] %'`);
 
-    const creatorRows = await db
+    const seededCreatorRows = await db
+      .select({ id: trainers.id })
+      .from(trainers)
+      .where(like(trainers.username, "seed_%"))
+      .orderBy(trainers.createdAt);
+
+    const additionalCreatorRows = await db
       .select({ id: trainers.id })
       .from(trainers)
       .orderBy(trainers.createdAt)
       .limit(50);
 
-    const creatorIds = creatorRows.map((row) => row.id);
+    const creatorIds = Array.from(
+      new Set([...seededCreatorRows, ...additionalCreatorRows].map((row) => row.id)),
+    );
 
     const baseRows = seedInputs.map((seed, index) => ({
       title: seed.title,
