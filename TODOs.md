@@ -46,6 +46,14 @@
 ### 6) Dashboard
 
 - [ ] Recent Activity
+- Deploy FE, BE, and docs site
+- Scalability and logging
+- Ensure guest access works well
+- Mobile first is key
+- Create a MCP server
+- Ensure owasp top 10 is followed
+- E2E tests with playwright
+- Revisit login page design
 
 ## P0 - Security, Trust, and Data Safety
 
