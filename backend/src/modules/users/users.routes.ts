@@ -288,31 +288,30 @@ export async function userRoutes(fastify: FastifyTypebox) {
           isProfilePublic: trainers.isProfilePublic,
           deactivatedAt: trainers.deactivatedAt,
           avatarUrl: trainers.avatarUrl,
-          queryCount: count(searchQueries.id).as("queryCount"),
-          favoriteCount: count(favorites.queryId).as("favoriteCount"),
-          followerCount: count(followers.followerId).as("followerCount"),
-          forkCount:
-            sql<number>`count(case when ${searchQueries.parentQueryId} is not null then 1 end)`.as(
-              "forkCount",
-            ),
+          queryCount: sql<number>`(
+            SELECT COUNT(*)::int
+            FROM pokequery.search_queries sq
+            WHERE sq.creator_id = ${trainers.id}
+          )`.as("queryCount"),
+          favoriteCount: sql<number>`(
+            SELECT COUNT(*)::int
+            FROM pokequery.favorites f
+            WHERE f.trainer_id = ${trainers.id}
+          )`.as("favoriteCount"),
+          followerCount: sql<number>`(
+            SELECT COUNT(*)::int
+            FROM pokequery.followers fr
+            WHERE fr.followed_id = ${trainers.id}
+          )`.as("followerCount"),
+          forkCount: sql<number>`(
+            SELECT COUNT(*)::int
+            FROM pokequery.search_queries sq
+            WHERE sq.creator_id = ${trainers.id}
+              AND sq.parent_query_id IS NOT NULL
+          )`.as("forkCount"),
         })
         .from(trainers)
-        .leftJoin(searchQueries, eq(searchQueries.creatorId, trainers.id))
-        .leftJoin(favorites, eq(favorites.trainerId, trainers.id))
-        .leftJoin(followers, eq(followers.followedId, trainers.id))
-        .where(eq(trainers.userId, userId))
-        .groupBy(
-          trainers.id,
-          trainers.username,
-          trainers.pogoUsername,
-          trainers.visibleUsername,
-          trainers.team,
-          trainers.level,
-          trainers.trainerCode,
-          trainers.isProfilePublic,
-          trainers.deactivatedAt,
-          trainers.avatarUrl,
-        );
+        .where(eq(trainers.userId, userId));
 
       if (!row) {
         return reply.code(200).send({

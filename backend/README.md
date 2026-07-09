@@ -4,6 +4,7 @@ A REST API for sharing and discovering Pokemon GO search queries. Trainers can c
 
 Recent backend changes added normalized user tags, richer parser-generated `autoTags`, community search and pagination controls, follower endpoints, privacy-aware public profile fields, and seed data covering common tag filters.
 Recent account/profile updates added authenticated favorites management endpoints, profile completion metadata for onboarding UX, and explicit account deletion behavior that preserves only public strings.
+Supabase migrations now enable row-level security on multi-tenant tables. The Fastify backend still uses a privileged Postgres connection for server-side data access, while RLS hardens any direct client-side or third-party access through Supabase roles.
 
 ## Tech Stack
 
@@ -54,9 +55,12 @@ Create a `.env` file in the `backend/` directory:
 DATABASE_URL=postgresql://...
 SUPABASE_URL=https://<project>.supabase.co
 SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
 COOKIE_SECRET=a-long-random-string
 NODE_ENV=development
 ```
+
+Apply the Supabase migrations before testing any direct client access patterns so the RLS policies are active.
 
 ### Install & Run
 

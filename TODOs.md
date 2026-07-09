@@ -45,7 +45,7 @@
 
 ### 6) Dashboard
 
-- [ ] Recent Activity
+- [x] Recent Activity
 - Deploy FE, BE, and docs site
 - Scalability and logging
 - Ensure guest access works well
