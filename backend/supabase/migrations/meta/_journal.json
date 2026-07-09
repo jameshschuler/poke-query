@@ -64,6 +64,13 @@
       "when": 1780880400000,
       "tag": "0008_notifications",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1783555200000,
+      "tag": "0009_rls_policies",
+      "breakpoints": true
     }
   ]
 }

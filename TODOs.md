@@ -62,7 +62,7 @@
 
 ## P0 - Security, Trust, and Data Safety
 
-- [ ] Add RLS policies for all multi-tenant tables (trainers, queries, favorites, followers, guest_favorites, etc.)
+- [x] Add RLS policies for all multi-tenant tables (trainers, queries, favorites, followers, guest_favorites, etc.)
 - [x] Add profanity/bad-words validation for usernames, titles, descriptions
 - [x] Add rate limiting for auth, follow, favorite, query create/update endpoints
 - [ ] Add abuse protections (basic spam heuristics + report flow)
