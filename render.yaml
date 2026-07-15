@@ -1,52 +1,115 @@
-services:
-  - type: web
-    name: poke-query-backend
-    runtime: node
-    rootDir: backend
-    plan: starter
-    autoDeploy: true
-    buildCommand: npm ci && npm run build
-    preDeployCommand: npm run db:migrate
-    startCommand: npm run start
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: DATABASE_URL
-        sync: false
-      - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_ANON_KEY
-        sync: false
-      - key: SUPABASE_SERVICE_ROLE_KEY
-        sync: false
-      - key: COOKIE_SECRET
-        generateValue: true
-      - key: CORS_ORIGIN
-        sync: false
-      - key: LOG_LEVEL
-        value: info
+projects:
+  - name: PokeQuery
+    environments:
+      - name: production
+        services:
+          - type: web
+            name: poke-query-backend
+            runtime: node
+            rootDir: backend
+            plan: starter
+            autoDeployTrigger: commit
+            buildCommand: npm ci && npm run build
+            preDeployCommand: npm run db:migrate
+            startCommand: npm run start
+            envVars:
+              - key: NODE_ENV
+                value: production
+              - key: DATABASE_URL
+                sync: false
+              - key: SUPABASE_URL
+                sync: false
+              - key: SUPABASE_ANON_KEY
+                sync: false
+              - key: SUPABASE_SERVICE_ROLE_KEY
+                sync: false
+              - key: COOKIE_SECRET
+                generateValue: true
+              - key: CORS_ORIGIN
+                sync: false
+              - key: LOG_LEVEL
+                value: info
 
-  - type: web
-    name: poke-query-frontend
-    runtime: static
-    rootDir: frontend
-    buildCommand: npm ci && npm run build
-    staticPublishPath: dist
-    pullRequestPreviewsEnabled: true
-    envVars:
-      - key: VITE_API_BASE_URL
-        sync: false
-      - key: VITE_SUPABASE_URL
-        sync: false
-      - key: VITE_SUPABASE_ANON_KEY
-        sync: false
-      - key: VITE_AUTH_REDIRECT_URL
-        sync: false
+          - type: web
+            name: poke-query-frontend
+            runtime: static
+            rootDir: frontend
+            buildCommand: npm ci && npm run build
+            staticPublishPath: dist
+            pullRequestPreviewsEnabled: true
+            envVars:
+              - key: VITE_API_BASE_URL
+                sync: false
+              - key: VITE_SUPABASE_URL
+                sync: false
+              - key: VITE_SUPABASE_ANON_KEY
+                sync: false
+              - key: VITE_AUTH_REDIRECT_URL
+                sync: false
 
-  - type: web
-    name: poke-query-docs-site
-    runtime: static
-    rootDir: docs-site
-    buildCommand: npm ci --prefix ../backend && npm ci && npm run docs:generate
-    staticPublishPath: .
-    pullRequestPreviewsEnabled: true
+          - type: web
+            name: poke-query-docs-site
+            runtime: static
+            rootDir: docs-site
+            buildCommand: npm ci --prefix ../backend && npm ci && npm run docs:generate
+            staticPublishPath: .
+            pullRequestPreviewsEnabled: true
+
+      - name: qa
+        services:
+          - type: web
+            name: poke-query-backend-qa
+            runtime: node
+            rootDir: backend
+            plan: starter
+            branch: main
+            autoDeployTrigger: commit
+            buildCommand: npm ci && npm run build
+            preDeployCommand: npm run db:migrate
+            startCommand: npm run start
+            envVars:
+              - key: NODE_ENV
+                value: staging
+              - key: DATABASE_URL
+                sync: false
+              - key: SUPABASE_URL
+                sync: false
+              - key: SUPABASE_ANON_KEY
+                sync: false
+              - key: SUPABASE_SERVICE_ROLE_KEY
+                sync: false
+              - key: COOKIE_SECRET
+                generateValue: true
+              - key: CORS_ORIGIN
+                sync: false
+              - key: LOG_LEVEL
+                value: info
+
+          - type: web
+            name: poke-query-frontend-qa
+            runtime: static
+            rootDir: frontend
+            branch: main
+            autoDeployTrigger: commit
+            buildCommand: npm ci && npm run build
+            staticPublishPath: dist
+            pullRequestPreviewsEnabled: true
+            envVars:
+              - key: VITE_API_BASE_URL
+                sync: false
+              - key: VITE_SUPABASE_URL
+                sync: false
+              - key: VITE_SUPABASE_ANON_KEY
+                sync: false
+              - key: VITE_AUTH_REDIRECT_URL
+                sync: false
+
+          - type: web
+            name: poke-query-docs-site-qa
+            runtime: static
+            rootDir: docs-site
+            branch: main
+            autoDeployTrigger: commit
+            buildCommand: npm ci --prefix ../backend && npm ci && npm run docs:generate
+            staticPublishPath: .
+            pullRequestPreviewsEnabled: true
