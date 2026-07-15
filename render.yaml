@@ -100,7 +100,7 @@ projects:
             pullRequestPreviewsEnabled: true
             envVars:
               - key: NODE_ENV
-                value: staging
+                value: production
               - key: VITE_API_BASE_URL
                 sync: false
               - key: VITE_SUPABASE_URL
