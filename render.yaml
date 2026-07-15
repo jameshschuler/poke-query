@@ -31,7 +31,7 @@ projects:
                 value: info
 
           - type: web
-            name: poke-query-frontend
+            name: poke-query-frontend-web
             runtime: node
             rootDir: frontend
             buildCommand: npm ci && npm run build
@@ -88,7 +88,7 @@ projects:
                 value: info
 
           - type: web
-            name: poke-query-frontend-qa
+            name: poke-query-frontend-qa-web
             runtime: node
             rootDir: frontend
             branch: main
