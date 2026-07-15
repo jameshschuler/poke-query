@@ -31,6 +31,15 @@ const queryMutationRateLimit = {
   },
 } as const;
 
+const copyMutationRateLimit = {
+  config: {
+    rateLimit: {
+      max: 30,
+      timeWindow: "1 minute",
+    },
+  },
+} as const;
+
 function hasRowsArray(value: unknown): value is { rows: unknown[] } {
   return (
     typeof value === "object" &&
@@ -494,22 +503,26 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
     },
   );
 
-  server.patch("/:id/copy", { schema: CopyQuerySchema }, async (request, reply) => {
-    try {
-      const { id } = request.params;
+  server.patch(
+    "/:id/copy",
+    { schema: CopyQuerySchema, ...copyMutationRateLimit },
+    async (request, reply) => {
+      try {
+        const { id } = request.params;
 
-      await fastify.db
-        .update(searchQueries)
-        .set({
-          copyCount: sql`${searchQueries.copyCount} + 1`,
-        })
-        .where(eq(searchQueries.id, id));
+        await fastify.db
+          .update(searchQueries)
+          .set({
+            copyCount: sql`${searchQueries.copyCount} + 1`,
+          })
+          .where(eq(searchQueries.id, id));
 
-      return reply.code(204).send(null);
-    } catch (_error) {
-      return reply.code(400).send({ error: "Failed to copy query" });
-    }
-  });
+        return reply.code(204).send(null);
+      } catch (_error) {
+        return reply.code(400).send({ error: "Failed to copy query" });
+      }
+    },
+  );
 
   server.post(
     "/:id/favorite",

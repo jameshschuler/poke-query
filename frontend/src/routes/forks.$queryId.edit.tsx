@@ -44,6 +44,15 @@ function EditForkPage() {
   const currentFork = data?.forks.find((item) => item.id === queryId) ?? null
 
   useEffect(() => {
+    if (isLoading || error || currentFork) {
+      return
+    }
+
+    toast.error('You can only edit forks in your own library.')
+    void navigate({ to: '/forks', replace: true })
+  }, [currentFork, error, isLoading, navigate])
+
+  useEffect(() => {
     if (!currentFork) {
       return
     }
@@ -178,19 +187,7 @@ function EditForkPage() {
           <div className="rounded-2xl border border-border/70 bg-card/95 p-6 text-sm text-muted-foreground">
             Could not load this fork.
           </div>
-        ) : !currentFork ? (
-          <div className="space-y-4 rounded-2xl border border-border/70 bg-card/95 p-6 text-sm text-muted-foreground">
-            <p>This fork was not found in your library.</p>
-            <Button
-              type="button"
-              variant="outline"
-              className="rounded-xl"
-              onClick={() => navigate({ to: '/forks' })}
-            >
-              Back to Forks
-            </Button>
-          </div>
-        ) : (
+        ) : !currentFork ? null : (
           <div className="space-y-5">
             <label className="space-y-2">
               <span className="text-sm font-medium">Name</span>

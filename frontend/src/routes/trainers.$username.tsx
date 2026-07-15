@@ -31,6 +31,7 @@ import { PageHeader } from '#/components/page-header'
 import { AppSidebar } from '#/components/app-sidebar'
 import { SidebarInset, SidebarProvider } from '#/components/ui/sidebar'
 import { getMutationErrorMessage } from '#/lib/mutation-toast'
+import { formatCompactNumber, formatFullNumber } from '#/lib/utils'
 
 export const Route = createFileRoute('/trainers/$username')({
   component: TrainerProfilePage,
@@ -230,6 +231,7 @@ function TrainerProfilePage() {
     !trainer.deactivatedAt &&
     user &&
     trainer.id !== user.id
+  const canForkFromProfile = Boolean(user && trainer && trainer.id !== user.id)
 
   function handleFollowClick() {
     if (!trainer || isFollowPending) {
@@ -398,8 +400,11 @@ function TrainerProfilePage() {
                       key={stat.label}
                       className="flex min-h-20 flex-col items-center rounded-xl border border-border/60 px-3 py-3 sm:min-w-28 sm:px-4"
                     >
-                      <span className="text-xl font-bold sm:text-2xl">
-                        {stat.value}
+                      <span
+                        className="text-xl font-bold sm:text-2xl"
+                        title={formatFullNumber(stat.value)}
+                      >
+                        {formatCompactNumber(stat.value)}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {stat.label}
@@ -457,7 +462,12 @@ function TrainerProfilePage() {
                         aria-controls={`trainer-tab-panel-${tab.key}`}
                       >
                         {tab.label}{' '}
-                        <span className="ml-0.5">({tab.count})</span>
+                        <span
+                          className="ml-0.5"
+                          title={formatFullNumber(tab.count)}
+                        >
+                          ({formatCompactNumber(tab.count)})
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -481,7 +491,9 @@ function TrainerProfilePage() {
                               isFavorited={favoriteIdSet.has(card.id)}
                               isFavoritePending={isFavoritePending}
                               onToggleFavorite={handleToggleFavorite}
-                              onFork={handleFork}
+                              onFork={
+                                canForkFromProfile ? handleFork : undefined
+                              }
                               isForkPending={forkMutation.isPending}
                             />
                           ))
@@ -501,7 +513,9 @@ function TrainerProfilePage() {
                               isFavorited={favoriteIdSet.has(card.id)}
                               isFavoritePending={isFavoritePending}
                               onToggleFavorite={handleToggleFavorite}
-                              onFork={handleFork}
+                              onFork={
+                                canForkFromProfile ? handleFork : undefined
+                              }
                               isForkPending={forkMutation.isPending}
                             />
                           ))
@@ -520,7 +534,7 @@ function TrainerProfilePage() {
                             isFavorited={favoriteIdSet.has(card.id)}
                             isFavoritePending={isFavoritePending}
                             onToggleFavorite={handleToggleFavorite}
-                            onFork={handleFork}
+                            onFork={canForkFromProfile ? handleFork : undefined}
                             isForkPending={forkMutation.isPending}
                           />
                         ))

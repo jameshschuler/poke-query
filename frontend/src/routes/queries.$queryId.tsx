@@ -8,6 +8,7 @@ import {
   Loader2Icon,
   ShareIcon,
 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import { Avatar, AvatarFallback, AvatarImage } from '#/components/ui/avatar'
@@ -32,6 +33,7 @@ import {
   unfavoriteQuery,
 } from '#/lib/poke-query-api'
 import { getMutationErrorMessage } from '#/lib/mutation-toast'
+import { formatCompactNumber, formatFullNumber } from '#/lib/utils'
 
 export const Route = createFileRoute('/queries/$queryId')({
   ssr: false,
@@ -82,6 +84,17 @@ function QueryDetailPage() {
   })
 
   const isFavorited = myFavoriteIds?.favoriteQueryIds.includes(queryId) ?? false
+  const canForkQuery =
+    Boolean(user) && (!query?.creator || query.creator.id !== user?.id)
+  const [copyCountDelta, setCopyCountDelta] = useState(0)
+  const [isCopyPending, setIsCopyPending] = useState(false)
+
+  useEffect(() => {
+    setCopyCountDelta(0)
+    setIsCopyPending(false)
+  }, [query?.id, query?.copyCount])
+
+  const displayCopyCount = query ? query.copyCount + copyCountDelta : 0
 
   const favoriteMutation = useMutation({
     mutationFn: favoriteQuery,
@@ -150,11 +163,41 @@ function QueryDetailPage() {
   })
 
   function handleCopy() {
-    if (!query) return
-    void navigator.clipboard.writeText(query.query).then(() => {
-      void copyQuery(query.id)
-      toast.success('Copied to clipboard!')
-    })
+    if (!query || isCopyPending) return
+
+    const previousCopyCount = query.copyCount + copyCountDelta
+    const optimisticCopyCount = previousCopyCount + 1
+
+    setIsCopyPending(true)
+
+    void navigator.clipboard
+      .writeText(query.query)
+      .then(async () => {
+        setCopyCountDelta((current) => current + 1)
+        queryClient.setQueryData(['query', query.id], {
+          ...query,
+          copyCount: optimisticCopyCount,
+        })
+
+        toast.success('Copied to clipboard!')
+
+        try {
+          await copyQuery(query.id)
+          await queryClient.invalidateQueries({ queryKey: ['query', query.id] })
+        } catch {
+          setCopyCountDelta((current) => Math.max(0, current - 1))
+          queryClient.setQueryData(['query', query.id], {
+            ...query,
+            copyCount: previousCopyCount,
+          })
+        }
+      })
+      .catch(() => {
+        toast.error('Could not copy string.')
+      })
+      .finally(() => {
+        setIsCopyPending(false)
+      })
   }
 
   const pageContent = (
@@ -191,15 +234,20 @@ function QueryDetailPage() {
                       size="icon-sm"
                       className="rounded-lg"
                       aria-label="Copy"
+                      disabled={isCopyPending}
                       onClick={handleCopy}
                     >
-                      <CopyIcon className="size-4" />
+                      {isCopyPending ? (
+                        <Loader2Icon className="size-4 animate-spin" />
+                      ) : (
+                        <CopyIcon className="size-4" />
+                      )}
                     </Button>
                   }
                 />
                 <TooltipContent>Copy</TooltipContent>
               </Tooltip>
-              {user ? (
+              {canForkQuery ? (
                 <Tooltip>
                   <TooltipTrigger
                     render={
@@ -266,8 +314,8 @@ function QueryDetailPage() {
         }
       />
 
-      <main className="mx-auto w-full max-w-7xl flex-1 px-5 py-8 md:px-8 lg:px-10">
-        <div className="space-y-6">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-5 py-10 md:px-8 lg:px-10">
+        <div className="space-y-8">
           <nav className="flex items-center gap-2 text-sm text-muted-foreground">
             <Link
               to="/discover"
@@ -299,7 +347,7 @@ function QueryDetailPage() {
               </Link>
             </div>
           ) : query ? (
-            <div className="space-y-6">
+            <div className="space-y-7">
               {/* Meta row */}
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-2">
@@ -335,28 +383,37 @@ function QueryDetailPage() {
               </div>
 
               {/* Stats cards */}
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-5">
                 <div className="flex flex-col items-center gap-1.5 rounded-xl border border-border/60 bg-card px-4 py-5">
                   <span className="text-xs text-muted-foreground">
                     Favorited
                   </span>
-                  <span className="flex items-center gap-2 text-2xl font-bold sm:text-3xl">
+                  <span
+                    className="flex items-center gap-2 text-2xl font-bold sm:text-3xl"
+                    title={formatFullNumber(query.favoriteCount)}
+                  >
                     <HeartIcon className="size-5 text-muted-foreground" />
-                    {query.favoriteCount}
+                    {formatCompactNumber(query.favoriteCount)}
                   </span>
                 </div>
                 <div className="flex flex-col items-center gap-1.5 rounded-xl border border-border/60 bg-card px-4 py-5">
                   <span className="text-xs text-muted-foreground">Copies</span>
-                  <span className="flex items-center gap-2 text-2xl font-bold sm:text-3xl">
+                  <span
+                    className="flex items-center gap-2 text-2xl font-bold sm:text-3xl"
+                    title={formatFullNumber(displayCopyCount)}
+                  >
                     <CopyIcon className="size-5 text-muted-foreground" />
-                    {query.copyCount}
+                    {formatCompactNumber(displayCopyCount)}
                   </span>
                 </div>
                 <div className="flex flex-col items-center gap-1.5 rounded-xl border border-border/60 bg-card px-4 py-5">
                   <span className="text-xs text-muted-foreground">Forks</span>
-                  <span className="flex items-center gap-2 text-2xl font-bold sm:text-3xl">
+                  <span
+                    className="flex items-center gap-2 text-2xl font-bold sm:text-3xl"
+                    title={formatFullNumber(query.forkCount)}
+                  >
                     <GitForkIcon className="size-5 text-muted-foreground" />
-                    {query.forkCount}
+                    {formatCompactNumber(query.forkCount)}
                   </span>
                 </div>
                 <div className="flex flex-col items-center gap-1.5 rounded-xl border border-border/60 bg-card px-4 py-5">
@@ -381,11 +438,16 @@ function QueryDetailPage() {
                       <Button
                         variant="outline"
                         size="icon-sm"
-                        className="mt-4 rounded-lg"
+                        className="mt-5 rounded-lg"
                         aria-label="Copy string"
+                        disabled={isCopyPending}
                         onClick={handleCopy}
                       >
-                        <CopyIcon className="size-4" />
+                        {isCopyPending ? (
+                          <Loader2Icon className="size-4 animate-spin" />
+                        ) : (
+                          <CopyIcon className="size-4" />
+                        )}
                       </Button>
                     }
                   />
@@ -406,8 +468,11 @@ function QueryDetailPage() {
               {/* Forks */}
               {query.forkCount > 0 ? (
                 <div className="rounded-xl border border-border/60 bg-card p-5">
-                  <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                    Forks ({query.forkCount})
+                  <p
+                    className="mb-5 text-xs font-semibold uppercase tracking-widest text-muted-foreground"
+                    title={formatFullNumber(query.forkCount)}
+                  >
+                    Forks ({formatCompactNumber(query.forkCount)})
                   </p>
                   <div className="space-y-0">
                     {query.forks.map((fork, index) => (

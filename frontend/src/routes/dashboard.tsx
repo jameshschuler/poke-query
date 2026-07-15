@@ -30,6 +30,7 @@ import {
 } from '#/lib/poke-query-api'
 import type { AppNotification } from '#/lib/poke-query-api'
 import { requireAuthenticated, setCachedUser } from '#/lib/route-auth'
+import { formatCompactNumber, formatFullNumber } from '#/lib/utils'
 
 export const Route = createFileRoute('/dashboard')({
   ssr: false,
@@ -206,8 +207,11 @@ function DashboardRoute() {
               className="rounded-2xl border border-border/70 bg-card/95 p-4 shadow-sm"
             >
               <p className="text-sm text-muted-foreground">{stat.label}</p>
-              <p className="mt-2 text-2xl font-semibold tracking-tight">
-                {stat.value}
+              <p
+                className="mt-2 text-2xl font-semibold tracking-tight"
+                title={formatFullNumber(stat.value)}
+              >
+                {formatCompactNumber(stat.value)}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">{stat.hint}</p>
             </div>

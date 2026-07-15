@@ -67,6 +67,8 @@ From `backend/`:
 - Backend details: [backend/README.md](backend/README.md)
 - One-page API docs site: [docs-site/README.md](docs-site/README.md)
 - Contributing guide: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Testing strategy: [TESTING.md](TESTING.md)
+- Release and deployment guide: [RELEASE.md](RELEASE.md)
 - License: [LICENSE](LICENSE)
 
 ## Deploy On Render

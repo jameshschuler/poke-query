@@ -294,20 +294,19 @@ integrationDescribe("Queries CRUD Integration", () => {
     const createdIds: string[] = [];
 
     for (let i = 0; i < 11; i += 1) {
-      const createRes = await app.inject({
-        method: "POST",
-        url: "/api/v1/queries",
-        cookies: { "sb-access-token": "owner-token" },
-        payload: {
+      const [row] = await app.db
+        .insert(searchQueries)
+        .values({
+          creatorId: TEST_USER_ID,
           title: `Guest Favorite ${i}`,
           query: `cp-${100 + i}`,
           description: "guest favorites cap test",
           isPublic: true,
-        },
-      });
+        })
+        .returning({ id: searchQueries.id });
 
-      expect(createRes.statusCode).toBe(201);
-      createdIds.push(createRes.json().id as string);
+      expect(row?.id).toBeTypeOf("string");
+      createdIds.push(row.id);
     }
 
     for (let i = 0; i < 10; i += 1) {

@@ -1,66 +1,63 @@
 # Community Launch TODOs
 
-## P0 - Must Have Before Sharing
+## MVP Release Priority (Ranked)
 
-### 1) Manage/CRUD Queries
+1. Launch infrastructure readiness: see Dashboard and Launch Operations sections.
+2. Community abuse controls: see Security, Trust, and Data Safety.
+3. Guest onboarding path quality: see Dashboard section.
+4. Core reliability regression protection: see Reliability and Quality section.
+5. Critical accessibility compliance: see Product Polish section.
+6. Security posture verification: see Dashboard (OWASP item) and Security section.
 
-- [x] Build full "My Queries" page backed by API (replace placeholder cards)
-- [x] Edit query flow (owner-only) with optimistic UI + error handling
-- [x] Delete query flow (owner-only) with confirm dialog + undo toast
-- [x] Validate query input and title limits consistently (frontend + backend)
-- [ ] Add query ownership checks in UI states (disable/hide actions for non-owners)
-  - [ ] Hide edit/delete/fork-owner actions when the current user is not the owner.
-  - [ ] Disable or redirect from owner-only entry points when permissions fail.
-  - [ ] Keep the UI state aligned with backend ownership checks.
+## MVP Execution Plan
 
-### 2) Manage/CRUD Forked Queries
+### Week 1 - Launch Blockers
 
-- [x] Build "Forks" page with real data from `/api/v1/users/:id/forks` and own fork list
-- [x] Add fork details view (original source, fork timestamp, sync status)
-- [x] Enable editing/deleting forked queries as first-class queries
-- [x] Add "fork from discover/query detail" flow with success navigation
-- [x] Prevent invalid fork actions (private/orphaned originals) with clear messaging
+- Workstream: Deployment and rollback readiness.
+  - Source of truth: Dashboard and Launch Operations sections below.
+- Workstream: Guest journey quality.
+  - Source of truth: Dashboard section.
 
-### 3) Manage Favorites
+### Week 2 - Stability and Trust Hardening
 
-- [x] Build authenticated "Favorites" page from API (replace placeholders)
-- [x] Add favorite/unfavorite persistence across discover, detail, and profile views
-- [x] Ensure favorite state is hydrated on page load (no stale button states)
-- [x] Add empty/loading/error states for favorites list
-- [x] Add pagination or infinite loading for large favorites lists
+- Workstream: Abuse protections and moderation flows.
+  - Source of truth: Security, Trust, and Data Safety section.
+- Workstream: Automated regression coverage.
+  - Source of truth: Reliability and Quality section and Dashboard E2E item.
+- Workstream: Accessibility and security hardening.
+  - Source of truth: Product Polish and Dashboard OWASP item.
 
-### 4) Manage Account/Profile
+## Launch Week Focus (Ranked Open Items)
 
-- [x] Build account settings page (username, team, level, trainer code, avatar, visibility)
-- [x] Add profile privacy toggle UX and explain public/private implications
-- [x] Add account deactivation/reactivation flow in frontend
-- [x] Add account delete flow with explicit confirmation + final sign-out
-- [x] Add client-side validation for username/trainer code before submit
-- [x] Handle profile conflicts (duplicate username) with actionable errors
+1. Verify deployment environment variables and domains for frontend, backend, and docs.
+2. Complete mobile QA pass on discover/account/library/forks/favorites and ship fixes.
+3. Run OWASP top-10 review for auth/session handling, access control, validation, and data exposure.
+4. Fix user details flash between page loads (auth/profile hydration timing).
+5. Add privacy policy/terms/community guideline links in app footer.
+6. Publish launch announcement draft and feedback issue template.
+7. Identify top scalability bottlenecks for query/favorite/notification traffic.
+8. Add minimal Playwright smoke coverage for login and core discover/library flows.
 
-### 5) Manage Notifications
+## Post-Launch Backlog (Open Items)
 
-- [x] Define notification events (new follower, forked query, favorited query, etc.)
-- [x] Add backend notification model + read/unread endpoints
-- [x] Add notification center UI (list, unread badge, mark read/all)
-- [x] Add in-app toasts for high-priority events
-- [x] Add notification preferences in account settings
+- Collections feature: CRUD collections, manage included strings, and public sharing/social actions.
+- Abuse protections and moderation flow (reporting, queue, telemetry, reviewer actions).
+- Full E2E suite expansion across all major flows.
+- MCP server implementation and documentation.
+- Trainer profile screenshot upload + parsing flow.
+- PWA install/offline support.
+- Analytics for activation/retention funnels.
+- Broader frontend/backend regression test expansion.
+- Seed strategy formalization for local/staging refresh workflows.
 
-### 6) Dashboard
+## Open Detailed Backlog
 
-- [x] Recent Activity
+### 1) Dashboard
+
 - [ ] Deploy FE, BE, and docs site
-  - [ ] Add production build/deploy config for frontend, backend, and docs site.
   - [ ] Verify environment variables and domains for each deployment target.
-  - [ ] Document the rollout order and rollback steps.
 - [ ] Scalability and logging
-  - [x] Add structured request logging for API and auth flows.
-  - [x] Add trace/request ids across frontend and backend logs.
   - [ ] Identify the main bottlenecks for query/favorite/notification traffic.
-- [ ] Ensure guest access works well
-  - [ ] Verify discover browsing works without auth.
-  - [ ] Verify guest favorites persist and recover correctly.
-  - [ ] Make guest-to-auth transition predictable when users log in.
 - [ ] Mobile first is key
   - [ ] Review critical pages on small screens: discover, account, library, forks, favorites.
   - [ ] Fix any overflow, tap-target, or spacing issues found during QA.
@@ -85,24 +82,36 @@
   - [ ] Add installable manifest and icons.
   - [ ] Add service worker/caching strategy for core pages.
   - [ ] Verify offline/poor-network behavior for read-only screens.
-- [ ] Add contributing guide
-  - [ ] Write setup, dev, test, and PR instructions.
-  - [ ] Include branching and code review expectations.
-  - [ ] Link the guide from the repo and docs.
 - [ ] User details flash between page loads
   - [ ] Avoid showing stale cached identity/profile data during route transitions.
   - [ ] Keep placeholders/skeletons visible until fresh data is ready.
   - [ ] Audit auth/user cache hydration for remount timing issues.
-- [ ] Add more vertical spacing between UI components
-  - [ ] Review the account, discover, library, and detail layouts.
-  - [ ] Increase section gaps where cards and forms feel cramped.
-  - [ ] Keep spacing changes consistent with the shared card components.
+
+### 2) Collections
+
+- [ ] Add collection CRUD for authenticated users
+  - [ ] Create collection flow (title, optional description, visibility).
+  - [ ] Edit collection metadata and visibility.
+  - [ ] Delete collection with confirmation and safe fallback navigation.
+- [ ] Add/remove strings inside collections
+  - [ ] Add existing query strings to one or more collections.
+  - [ ] Remove strings from collections from both collection and string surfaces.
+  - [ ] Keep collection item counts and ordering in sync after mutations.
+- [ ] Support public/published collections for sharing and discovery
+  - [ ] Add public collection detail page and shareable link behavior.
+  - [ ] Restrict private collections to owners and authorized views.
+  - [ ] Show clear public/private states in collection cards and detail pages.
+- [ ] Add social actions on public collections
+  - [ ] Allow other users to favorite public collections.
+  - [ ] Allow other users to fork public collections.
+  - [ ] Prevent owner-only edge cases (self-fork behavior, private source constraints).
+- [ ] Add collection integration coverage
+  - [ ] Backend tests for permissions, visibility, and favorite/fork behavior.
+  - [ ] Frontend tests for CRUD, add/remove string flows, and optimistic states.
+  - [ ] E2E smoke path for creating, sharing, and interacting with a public collection.
 
 ## P0 - Security, Trust, and Data Safety
 
-- [x] Add RLS policies for all multi-tenant tables (trainers, queries, favorites, followers, guest_favorites, etc.)
-- [x] Add profanity/bad-words validation for usernames, titles, descriptions
-- [x] Add rate limiting for auth, follow, favorite, query create/update endpoints
 - [ ] Add abuse protections (basic spam heuristics + report flow)
   - [ ] Add backend spam heuristics for query create/update, follow, and favorite actions.
     - [ ] Rate-limit repeated submissions by user and IP.
@@ -121,10 +130,6 @@
     - [ ] Track repeated abuse reports per user and target.
     - [ ] Store moderation actions and reviewer notes.
     - [ ] Surface obvious abuse trends in logs or admin tooling.
-- [ ] Verify private profile and private query access controls with integration tests
-  - [ ] Cover private trainer profile visibility for logged-out and unauthorized users.
-  - [ ] Cover private query access from discover, detail, and direct-link routes.
-  - [ ] Assert that unauthorized users get clear fallback states instead of partial data.
 
 ## P1 - Reliability and Quality
 
@@ -144,32 +149,16 @@
   - [ ] Define a repeatable local seed set for core user, query, and notification data.
   - [ ] Define a smaller staging/demo seed that is safe for public environments.
   - [ ] Document how to refresh or reset seeds during development.
-- [ ] Add structured error logging and request tracing for production debugging
-  - [x] Include request ids in API responses and logs.
-  - [x] Log route, user context, and failure category for server errors.
-  - [x] Make sure sensitive payloads are redacted from logs.
 
 ## P1 - Product Polish
 
-- [x] Add onboarding empty states for first-time users
-- [x] Add success/error toast consistency across all mutations
 - [ ] Add accessible labels, keyboard flows, and focus states to all critical UI
   - [ ] Audit all primary actions for visible labels and aria attributes.
   - [ ] Verify keyboard navigation for menus, dialogs, drawers, and forms.
   - [ ] Add or tighten focus states on interactive controls and page sections.
-- [x] Add responsive QA pass for mobile discover/profile/settings pages
-- [x] Add theme / colors / allow user to select theme
 
 ## P1 - Launch Operations
 
-- [ ] Finalize environment configuration docs (frontend + backend)
-  - [ ] Document required environment variables for frontend and backend.
-  - [ ] Add sample `.env` files or templates for local setup.
-  - [ ] Note which values are required in staging and production.
-- [ ] Add deployment checklist and rollback instructions
-  - [ ] Write a step-by-step release checklist for frontend and backend deploys.
-  - [ ] Include verification steps after deploy.
-  - [ ] Document rollback triggers and the rollback process.
 - [ ] Add privacy policy/terms/community guidelines links in app footer
   - [ ] Decide the link destinations and hosting location.
   - [ ] Add the links to the shared footer component.
@@ -182,3 +171,37 @@
   - [ ] Draft the launch announcement copy.
   - [ ] Create a feedback/bug issue template with structured prompts.
   - [ ] Link both from the repo/docs so they are easy to find.
+
+## Completed Archive
+
+### Shipped Platform Features
+
+- [x] Manage/CRUD Queries
+- [x] Manage/CRUD Forked Queries
+- [x] Manage Favorites
+- [x] Manage Account/Profile
+- [x] Manage Notifications
+- [x] Dashboard recent activity
+
+### Security and Policy Completed
+
+- [x] Add RLS policies for all multi-tenant tables (trainers, queries, favorites, followers, guest_favorites, etc.)
+- [x] Add profanity/bad-words validation for usernames, titles, descriptions
+- [x] Add rate limiting for auth, follow, favorite, query create/update endpoints
+- [x] Verify private profile and private query access controls with integration tests
+
+### Reliability and Ops Completed
+
+- [x] Add structured request/error logging with request ids and redaction
+- [x] Finalize environment configuration docs (frontend + backend)
+- [x] Add deployment checklist and rollback instructions
+
+### Product and UX Completed
+
+- [x] Add onboarding empty states for first-time users
+- [x] Add success/error toast consistency across all mutations
+- [x] Add responsive QA pass for mobile discover/profile/settings pages
+- [x] Add theme / colors / allow user to select theme
+- [x] Add contributing guide
+- [x] Add more vertical spacing between UI components
+- [x] Ensure guest access works well (discover, guest favorites, guest-to-auth transition)

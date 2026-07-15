@@ -121,7 +121,7 @@ function ForkDetailPage() {
       showSidebar
       showHeaderSearch={false}
     >
-      <div className="space-y-5">
+      <div className="space-y-7">
         <nav className="flex items-center gap-2 text-sm text-muted-foreground">
           <Link to="/forks" className="hover:text-foreground hover:underline">
             Forks
@@ -141,7 +141,7 @@ function ForkDetailPage() {
             Could not load this fork right now.
           </div>
         ) : !fork ? (
-          <div className="space-y-4 rounded-2xl border border-border/70 bg-card/95 p-6 text-sm text-muted-foreground">
+          <div className="space-y-5 rounded-2xl border border-border/70 bg-card/95 p-6 text-sm text-muted-foreground">
             <p>This fork was not found in your library.</p>
             <Button
               type="button"
@@ -153,7 +153,7 @@ function ForkDetailPage() {
             </Button>
           </div>
         ) : (
-          <div className="space-y-5">
+          <div className="space-y-7">
             <div className="flex flex-wrap gap-2">
               <Badge
                 variant="outline"
@@ -170,7 +170,7 @@ function ForkDetailPage() {
               </Badge>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-5 md:grid-cols-2">
               <div className="rounded-2xl border border-border/70 bg-card/95 p-4 dark:bg-card">
                 <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                   Your fork
@@ -190,12 +190,12 @@ function ForkDetailPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-border/70 bg-card/95 p-4 dark:bg-card">
+            <div className="rounded-2xl border border-border/70 bg-card/95 p-5 dark:bg-card">
               <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                 Source details
               </p>
               {fork.sourceQuery ? (
-                <div className="mt-3 space-y-3">
+                <div className="mt-4 space-y-4">
                   <div>
                     <p className="text-sm font-medium text-foreground">
                       {fork.sourceQuery.title}
@@ -243,7 +243,7 @@ function ForkDetailPage() {
               )}
             </div>
 
-            <div className="flex gap-2 border-t border-border/60 pt-4 max-sm:flex-col sm:flex-wrap">
+            <div className="flex gap-3 border-t border-border/60 pt-5 max-sm:flex-col sm:flex-wrap">
               <Button
                 type="button"
                 variant="outline"

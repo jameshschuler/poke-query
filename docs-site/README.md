@@ -21,3 +21,8 @@ Run `npm run docs:generate` after backend route schema changes or edits to `back
 - `data/openapi.json` — generated OpenAPI spec (do not edit manually)
 
 After starting the site, open the local URL printed by `serve`.
+
+## Contributor Docs
+
+- Contributing guide: [../CONTRIBUTING.md](../CONTRIBUTING.md)
+- Testing strategy: [../TESTING.md](../TESTING.md)

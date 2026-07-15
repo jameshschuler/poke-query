@@ -30,8 +30,8 @@ export function ManagedStringCard({
   footer,
 }: ManagedStringCardProps) {
   return (
-    <article className="flex h-full flex-col rounded-2xl border border-border/70 bg-card/95 px-4 py-4 text-foreground dark:bg-card">
-      <div className="flex h-full flex-col gap-4">
+    <article className="flex h-full flex-col rounded-2xl border border-border/70 bg-card/95 px-4 py-5 text-foreground dark:bg-card">
+      <div className="flex h-full flex-col gap-5">
         <div className="min-w-0 flex-1">
           <QueryCardHeader
             title={title}
@@ -42,7 +42,7 @@ export function ManagedStringCard({
             {statusBadges}
           </QueryCardHeader>
 
-          <div className="mt-3 space-y-3 border-t border-border/60 pt-3">
+          <div className="mt-4 space-y-4 border-t border-border/60 pt-4">
             <p className="line-clamp-2 text-sm text-muted-foreground">
               {description ?? 'No description yet.'}
             </p>
@@ -52,18 +52,18 @@ export function ManagedStringCard({
             </div>
 
             {details ? (
-              <div className="space-y-1 border-t border-border/60 pt-2 text-xs text-muted-foreground">
+              <div className="space-y-1 border-t border-border/60 pt-3 text-xs text-muted-foreground">
                 {details}
               </div>
             ) : null}
 
-            <div className="border-t border-border/60 pt-2">
+            <div className="border-t border-border/60 pt-3">
               <QueryTagBadges tags={tags} />
             </div>
           </div>
         </div>
 
-        <div className="flex h-14 w-full items-end justify-center border-t border-border/60 pb-1">
+        <div className="flex h-16 w-full items-end justify-center border-t border-border/60 pb-1">
           <QueryCardActions>{footer}</QueryCardActions>
         </div>
       </div>

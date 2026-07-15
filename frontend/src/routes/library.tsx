@@ -187,10 +187,10 @@ function LibraryPage() {
   })
   const resultsLayoutClass =
     layoutMode === 'list'
-      ? 'mt-4 space-y-3'
+      ? 'mt-5 space-y-4'
       : layoutMode === 'grid-2'
-        ? 'mt-4 grid gap-3 md:grid-cols-2'
-        : 'mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3'
+        ? 'mt-5 grid gap-4 md:grid-cols-2'
+        : 'mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3'
   const loadingCardClass =
     layoutMode === 'list'
       ? 'h-24 animate-pulse rounded-2xl border border-border/70 bg-card/95 dark:bg-card'
@@ -339,7 +339,7 @@ function LibraryPage() {
         showSidebar
         showHeaderSearch={false}
       >
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {[
             { label: 'Strings', value: String(queries.length) },
             { label: 'Drafts', value: String(draftCount) },
@@ -367,7 +367,7 @@ function LibraryPage() {
           ))}
         </div>
 
-        <div className="mt-5 flex gap-3 max-sm:flex-col sm:items-center sm:justify-between">
+        <div className="mt-6 flex gap-4 max-sm:flex-col sm:items-center sm:justify-between">
           <div className="min-w-0">
             <h3 className="text-base font-semibold">Your strings</h3>
             <p className="text-sm text-muted-foreground">
@@ -385,7 +385,7 @@ function LibraryPage() {
           </Button>
         </div>
 
-        <div className="mt-4 mb-6 flex gap-3 max-sm:flex-col sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="mt-5 mb-7 flex gap-4 max-sm:flex-col sm:flex-wrap sm:items-center sm:justify-between">
           <Input
             value={searchText}
             onChange={(event) => setSearchText(event.target.value)}
@@ -413,7 +413,7 @@ function LibraryPage() {
           </div>
         </div>
 
-        <div className="mt-3 flex max-sm:justify-start sm:justify-end">
+        <div className="mt-4 flex max-sm:justify-start sm:justify-end">
           <div className="flex flex-wrap items-center gap-2">
             {[
               { value: 'list', label: 'List', Icon: ListIcon },
@@ -444,11 +444,11 @@ function LibraryPage() {
             ))}
           </div>
         ) : error ? (
-          <div className="mt-4 rounded-2xl border border-border/70 bg-card/95 p-6 text-sm text-muted-foreground dark:bg-card">
+          <div className="mt-5 rounded-2xl border border-border/70 bg-card/95 p-6 text-sm text-muted-foreground dark:bg-card">
             Your library could not be loaded right now.
           </div>
         ) : queries.length === 0 ? (
-          <div className="mt-4 rounded-2xl border border-dashed border-border/70 bg-card/95 p-8 text-center dark:bg-card">
+          <div className="mt-5 rounded-2xl border border-dashed border-border/70 bg-card/95 p-8 text-center dark:bg-card">
             <h3 className="text-base font-semibold">Welcome to your library</h3>
             <p className="mt-1 text-sm text-muted-foreground">
               Start with a draft, then publish once you are happy with your
@@ -474,7 +474,7 @@ function LibraryPage() {
             </div>
           </div>
         ) : filteredQueries.length === 0 ? (
-          <div className="mt-4 rounded-2xl border border-border/70 bg-card/95 p-6 text-center text-sm text-muted-foreground dark:bg-card">
+          <div className="mt-5 rounded-2xl border border-border/70 bg-card/95 p-6 text-center text-sm text-muted-foreground dark:bg-card">
             No strings match this search and status filter.
           </div>
         ) : (

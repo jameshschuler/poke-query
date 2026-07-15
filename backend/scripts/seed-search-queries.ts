@@ -85,7 +85,7 @@ const seedInputs: SeedInput[] = [
     title: "High IV Shadows",
     query: "shadow&3*,4*&cp1000+",
     category: "IV Hunt",
-    copyCount: 31,
+    copyCount: 1500,
     tags: ["high iv", "shadow", "hunt"],
   },
   {

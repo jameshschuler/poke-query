@@ -43,6 +43,15 @@ function EditLibraryQueryPage() {
   const currentQuery = data?.queries.find((item) => item.id === queryId) ?? null
 
   useEffect(() => {
+    if (isLoading || error || currentQuery) {
+      return
+    }
+
+    toast.error('You can only edit strings in your own library.')
+    void navigate({ to: '/library', replace: true })
+  }, [currentQuery, error, isLoading, navigate])
+
+  useEffect(() => {
     if (!currentQuery) {
       return
     }
@@ -144,19 +153,7 @@ function EditLibraryQueryPage() {
           <div className="rounded-2xl border border-border/70 bg-card/95 p-6 text-sm text-muted-foreground">
             Could not load this string.
           </div>
-        ) : !currentQuery ? (
-          <div className="space-y-4 rounded-2xl border border-border/70 bg-card/95 p-6 text-sm text-muted-foreground">
-            <p>This string was not found in your library.</p>
-            <Button
-              type="button"
-              variant="outline"
-              className="rounded-xl"
-              onClick={() => navigate({ to: '/library' })}
-            >
-              Back to Library
-            </Button>
-          </div>
-        ) : (
+        ) : !currentQuery ? null : (
           <div className="space-y-5">
             <label className="space-y-2">
               <span className="text-sm font-medium">Name</span>

@@ -6,7 +6,7 @@ import {
   HeartIcon,
   Loader2Icon,
 } from 'lucide-react'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 import { Badge } from '#/components/ui/badge'
@@ -19,7 +19,11 @@ import {
 } from '#/components/ui/tooltip'
 import { copyQuery } from '#/lib/poke-query-api'
 import type { CommunityQuery, TrainerPublicQuery } from '#/lib/poke-query-api'
-import { formatTagLabel } from '#/lib/utils'
+import {
+  formatCompactNumber,
+  formatFullNumber,
+  formatTagLabel,
+} from '#/lib/utils'
 
 type SearchStringCardProps = {
   card: CommunityQuery | TrainerPublicQuery
@@ -59,12 +63,39 @@ export function SearchStringCard({
   )
 
   const firstTag = card.autoTags[0]
+  const [displayCopyCount, setDisplayCopyCount] = useState(card.copyCount)
+  const [isCopyPending, setIsCopyPending] = useState(false)
+
+  useEffect(() => {
+    setDisplayCopyCount(card.copyCount)
+    setIsCopyPending(false)
+  }, [card.id, card.copyCount])
 
   const handleCopy = () => {
-    void navigator.clipboard.writeText(card.query).then(() => {
-      void copyQuery(card.id)
-      toast.success('Copied to clipboard!')
-    })
+    if (isCopyPending) {
+      return
+    }
+
+    setIsCopyPending(true)
+
+    void navigator.clipboard
+      .writeText(card.query)
+      .then(async () => {
+        setDisplayCopyCount((current) => current + 1)
+        toast.success('Copied to clipboard!')
+
+        try {
+          await copyQuery(card.id)
+        } catch {
+          setDisplayCopyCount((current) => Math.max(0, current - 1))
+        }
+      })
+      .catch(() => {
+        toast.error('Could not copy string.')
+      })
+      .finally(() => {
+        setIsCopyPending(false)
+      })
   }
 
   const canFork = isAuthenticated && typeof onFork === 'function'
@@ -162,9 +193,14 @@ export function SearchStringCard({
                   size="icon-sm"
                   className="cursor-pointer rounded-xl"
                   aria-label="Copy"
+                  disabled={isCopyPending}
                   onClick={handleCopy}
                 >
-                  <CopyIcon className="size-4" />
+                  {isCopyPending ? (
+                    <Loader2Icon className="size-4 animate-spin" />
+                  ) : (
+                    <CopyIcon className="size-4" />
+                  )}
                 </Button>
               }
             />
@@ -273,18 +309,43 @@ export function SearchStringCard({
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <CopyIcon className="size-4" />
-            {card.copyCount}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <HeartIcon className="size-4" />
-            {card.favoriteCount}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <GitForkIcon className="size-4" />
-            {card.forkCount}
-          </span>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <span className="flex items-center gap-1.5">
+                  <CopyIcon className="size-4" />
+                  {formatCompactNumber(displayCopyCount)}
+                </span>
+              }
+            />
+            <TooltipContent>
+              {formatFullNumber(displayCopyCount)}
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <span className="flex items-center gap-1.5">
+                  <HeartIcon className="size-4" />
+                  {formatCompactNumber(card.favoriteCount)}
+                </span>
+              }
+            />
+            <TooltipContent>
+              {formatFullNumber(card.favoriteCount)}
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <span className="flex items-center gap-1.5">
+                  <GitForkIcon className="size-4" />
+                  {formatCompactNumber(card.forkCount)}
+                </span>
+              }
+            />
+            <TooltipContent>{formatFullNumber(card.forkCount)}</TooltipContent>
+          </Tooltip>
         </div>
       </div>
     </article>

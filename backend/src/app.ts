@@ -130,7 +130,7 @@ export async function buildApp() {
   await fastify.register(cors, {
     credentials: true,
     methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["content-type", "authorization"],
+    allowedHeaders: ["content-type", "authorization", "x-request-id"],
     origin: (origin, cb) => {
       // Allow non-browser clients (curl, Postman, server-to-server)
       if (!origin) {

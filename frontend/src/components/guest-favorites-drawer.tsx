@@ -20,7 +20,11 @@ import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { getQueryById } from '#/lib/poke-query-api'
 import type { QueryDetail } from '#/lib/poke-query-api'
-import { formatTagLabel } from '#/lib/utils'
+import {
+  formatCompactNumber,
+  formatFullNumber,
+  formatTagLabel,
+} from '#/lib/utils'
 import {
   Tooltip,
   TooltipContent,
@@ -105,8 +109,12 @@ export function GuestFavoritesDrawer({
           ) : (
             <div className="flex flex-1 flex-col gap-4 overflow-y-auto">
               <div className="flex items-center justify-between rounded-xl border border-border/60 bg-background/70 px-3 py-2">
-                <p className="text-xs text-muted-foreground">
-                  {favoritesCount} / {maxFavorites} favorites
+                <p
+                  className="text-xs text-muted-foreground"
+                  title={`${formatFullNumber(favoritesCount)} / ${formatFullNumber(maxFavorites)} favorites`}
+                >
+                  {formatCompactNumber(favoritesCount)} /{' '}
+                  {formatCompactNumber(maxFavorites)} favorites
                 </p>
                 <Tooltip>
                   <TooltipTrigger
@@ -202,17 +210,26 @@ export function GuestFavoritesDrawer({
                   ) : null}
 
                   <div className="flex gap-3 pt-1 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
+                    <span
+                      className="flex items-center gap-1"
+                      title={formatFullNumber(query.copyCount)}
+                    >
                       <CopyIcon className="size-3" />
-                      {query.copyCount}
+                      {formatCompactNumber(query.copyCount)}
                     </span>
-                    <span className="flex items-center gap-1">
+                    <span
+                      className="flex items-center gap-1"
+                      title={formatFullNumber(query.favoriteCount)}
+                    >
                       <HeartIcon className="size-3" />
-                      {query.favoriteCount}
+                      {formatCompactNumber(query.favoriteCount)}
                     </span>
-                    <span className="flex items-center gap-1">
+                    <span
+                      className="flex items-center gap-1"
+                      title={formatFullNumber(query.forkCount)}
+                    >
                       <GitForkIcon className="size-3" />
-                      {query.forkCount}
+                      {formatCompactNumber(query.forkCount)}
                     </span>
                   </div>
                 </article>

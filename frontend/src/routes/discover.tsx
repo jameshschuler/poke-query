@@ -79,12 +79,24 @@ const DEFAULT_TAG_FILTERS: Array<{ tag: string; label: string }> = [
   { tag: 'daily-catch', label: 'Community Day' },
 ]
 
-const sortOptions: Array<{ value: SortMode; label: string }> = [
-  { value: 'created_desc', label: 'Created date (newest first)' },
-  { value: 'created_asc', label: 'Created date (oldest first)' },
-  { value: 'popular', label: 'Most popular' },
-  { value: 'title_asc', label: 'Title (A-Z)' },
-  { value: 'title_desc', label: 'Title (Z-A)' },
+const sortOptions: Array<{
+  value: SortMode
+  label: string
+  triggerLabel: string
+}> = [
+  {
+    value: 'created_desc',
+    label: 'Created date (newest first)',
+    triggerLabel: 'Newest',
+  },
+  {
+    value: 'created_asc',
+    label: 'Created date (oldest first)',
+    triggerLabel: 'Oldest',
+  },
+  { value: 'popular', label: 'Most popular', triggerLabel: 'Popular' },
+  { value: 'title_asc', label: 'Title (A-Z)', triggerLabel: 'Title A-Z' },
+  { value: 'title_desc', label: 'Title (Z-A)', triggerLabel: 'Title Z-A' },
 ]
 
 const sortValues = new Set(sortOptions.map((option) => option.value))
@@ -344,6 +356,7 @@ function DiscoverPage() {
     !visibleFilters.some((option) => option.key === activeFilter.key)
       ? activeFilter
       : undefined)
+  const activeDropdownLabel = activeDropdownFilter?.label
 
   const {
     data,
@@ -396,9 +409,11 @@ function DiscoverPage() {
   const filteredRows = rows
   const resultsCount = filteredRows.length
 
-  const sortLabel =
-    sortOptions.find((option) => option.value === sortMode)?.label ??
-    'Created date (newest first)'
+  const selectedSortOption = sortOptions.find(
+    (option) => option.value === sortMode,
+  )
+  const sortLabel = selectedSortOption?.label ?? 'Created date (newest first)'
+  const sortTriggerLabel = selectedSortOption?.triggerLabel ?? 'Newest'
 
   function handleToggleFavorite(queryId: string, isFavorited: boolean) {
     if (user) {
@@ -534,7 +549,7 @@ function DiscoverPage() {
           </div>
         }
       >
-        <section className="-mx-6 -mt-5 border-b border-border/60 px-6 py-3 md:-mx-6 lg:-mx-6">
+        <section className="-mx-6 -mt-5 border-b border-border/60 px-6 py-4 md:-mx-6 lg:-mx-6">
           <div className="flex flex-wrap items-center gap-2">
             {visibleFilters.map((filter) => (
               <Button
@@ -557,9 +572,17 @@ function DiscoverPage() {
                       variant={activeDropdownFilter ? 'outline' : 'ghost'}
                       size="sm"
                       className="rounded-xl px-4"
-                      aria-label="Open additional tag filters"
+                      aria-label={
+                        activeDropdownLabel
+                          ? `Open additional tag filters. Current: ${activeDropdownLabel}`
+                          : 'Open additional tag filters'
+                      }
                     >
-                      {activeDropdownFilter?.label ?? 'More tags'}
+                      <span className="truncate">
+                        {activeDropdownLabel
+                          ? `Tags: ${activeDropdownLabel}`
+                          : 'More tags'}
+                      </span>
                       <ChevronsUpDownIcon className="ml-1" />
                     </Button>
                   }
@@ -590,8 +613,8 @@ function DiscoverPage() {
           </div>
         </section>
 
-        <div className="pt-5">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 sm:flex-nowrap">
+        <div className="pt-7">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4 sm:flex-nowrap">
             <p
               className="text-sm text-muted-foreground whitespace-nowrap"
               aria-live="polite"
@@ -628,12 +651,9 @@ function DiscoverPage() {
                       variant="outline"
                       size="sm"
                       className="rounded-xl"
-                      aria-label="Open sort options"
+                      aria-label={`Open sort options. Current: ${sortLabel}`}
                     >
-                      <span className="sm:hidden">Sort</span>
-                      <span className="hidden sm:inline">
-                        Sort by: {sortLabel}
-                      </span>
+                      <span className="truncate">Sort: {sortTriggerLabel}</span>
                       <ChevronsUpDownIcon className="ml-1" />
                     </Button>
                   }
@@ -676,7 +696,7 @@ function DiscoverPage() {
             </div>
           ) : null}
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {filteredRows.map((card: CommunityQuery) => (
               <SearchStringCard
                 key={card.id}
@@ -695,20 +715,22 @@ function DiscoverPage() {
                   guestUnfavoriteMutation.isPending
                 }
                 onToggleFavorite={handleToggleFavorite}
-                onFork={handleFork}
+                onFork={
+                  user && card.creator?.id === user.id ? undefined : handleFork
+                }
                 isForkPending={forkMutation.isPending}
               />
             ))}
           </div>
 
           {!isLoading && filteredRows.length === 0 ? (
-            <p className="mt-4 text-sm text-muted-foreground">
+            <p className="mt-6 text-sm text-muted-foreground">
               No community strings matched this filter.
             </p>
           ) : null}
 
           {hasNextPage ? (
-            <div className="mt-6 flex justify-center">
+            <div className="mt-8 flex justify-center">
               <Button
                 variant="outline"
                 className="rounded-xl px-6"

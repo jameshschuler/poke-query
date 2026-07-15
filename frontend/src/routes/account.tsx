@@ -39,7 +39,9 @@ import {
 } from '#/lib/poke-query-api'
 import { getMutationErrorMessage } from '#/lib/mutation-toast'
 import type {
+  GetMeResponse,
   NotificationPreferences,
+  UpdateMeRequest,
   VisibleUsername,
 } from '#/lib/poke-query-api'
 import { findBlockedTerm } from '#/lib/content-policy'
@@ -53,6 +55,7 @@ import type { ThemePreset } from '#/lib/theme-preferences'
 
 type AccountSearch = {
   redirect?: string
+  panel?: AccountPanel
 }
 
 type Team = 'mystic' | 'valor' | 'instinct'
@@ -69,10 +72,35 @@ type FormState = {
 }
 
 type FormErrors = Partial<Record<keyof FormState, string>>
+type AccountPanel = 'profile' | 'theme' | 'notifications' | 'danger'
+
+const ACCOUNT_PANELS: AccountPanel[] = [
+  'profile',
+  'theme',
+  'notifications',
+  'danger',
+]
+
+function isAccountPanel(value: string): value is AccountPanel {
+  return ACCOUNT_PANELS.includes(value as AccountPanel)
+}
 
 const USERNAME_PATTERN = /^[a-zA-Z0-9_]+$/
 const POGO_USERNAME_PATTERN = /^[a-zA-Z0-9._ -]+$/
 const TRAINER_CODE_PATTERN = /^[0-9]{4}[ -]?[0-9]{4}[ -]?[0-9]{4}$/
+const DICEBEAR_STYLES = [
+  'adventurer',
+  'avataaars',
+  'bottts',
+  'fun-emoji',
+  'identicon',
+  'lorelei',
+  'micah',
+  'miniavs',
+  'notionists',
+  'open-peeps',
+  'pixel-art',
+] as const
 
 export const Route = createFileRoute('/account')({
   ssr: false,
@@ -80,6 +108,10 @@ export const Route = createFileRoute('/account')({
     redirect:
       typeof search.redirect === 'string' && search.redirect.trim().length > 0
         ? search.redirect
+        : undefined,
+    panel:
+      typeof search.panel === 'string' && isAccountPanel(search.panel)
+        ? search.panel
         : undefined,
   }),
   beforeLoad: async () => {
@@ -119,6 +151,9 @@ function AccountPage() {
   const [themePreset, setThemePresetState] = useState<ThemePreset>(() =>
     getThemePreset(),
   )
+  const [activePanel, setActivePanel] = useState<AccountPanel>(
+    search.panel ?? 'profile',
+  )
 
   const avatarPreviewUrl = formState.avatarUrl.trim()
 
@@ -141,16 +176,7 @@ function AccountPage() {
       return
     }
 
-    setFormState({
-      username: me.username,
-      pogoUsername: me.pogoUsername ?? '',
-      visibleUsername: me.visibleUsername,
-      team: me.team ?? '',
-      level: me.level !== null ? String(me.level) : '',
-      trainerCode: me.trainerCode ?? '',
-      avatarUrl: me.avatarUrl ?? '',
-      isProfilePublic: me.isProfilePublic,
-    })
+    setFormState(createFormStateFromMe(me))
     setAvatarPreviewFailed(false)
     setFormErrors({})
   }, [me])
@@ -163,9 +189,37 @@ function AccountPage() {
     setNotificationForm(notificationPreferences)
   }, [notificationPreferences])
 
+  useEffect(() => {
+    const nextPanel = search.panel ?? 'profile'
+    setActivePanel((current) => (current === nextPanel ? current : nextPanel))
+  }, [search.panel])
+
+  function handlePanelChange(nextPanel: AccountPanel) {
+    if (nextPanel === activePanel) {
+      return
+    }
+
+    setActivePanel(nextPanel)
+
+    void navigate({
+      to: '/account',
+      search: (current) => ({
+        ...current,
+        panel: nextPanel === 'profile' ? undefined : nextPanel,
+      }),
+      replace: true,
+    })
+  }
+
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const validation = validateForm(formState)
+      if (!me) {
+        throw new Error('missing-profile')
+      }
+
+      const initialFormState = createFormStateFromMe(me)
+      const changedFields = getChangedFormFields(formState, initialFormState)
+      const validation = validateForm(formState, changedFields)
       if (Object.keys(validation).length > 0) {
         setFormErrors(validation)
         throw new Error('validation')
@@ -176,19 +230,52 @@ function AccountPage() {
       const trimmedAvatarUrl = formState.avatarUrl.trim()
       const levelNumber = Number(formState.level)
 
-      return updateMe({
-        username: formState.username.trim(),
-        pogoUsername: trimmedPogoUsername || undefined,
-        visibleUsername: formState.visibleUsername,
-        team: formState.team || undefined,
-        level:
+      const payload: UpdateMeRequest = {}
+
+      if (changedFields.has('username')) {
+        payload.username = formState.username.trim()
+      }
+
+      if (changedFields.has('pogoUsername')) {
+        payload.pogoUsername = trimmedPogoUsername || undefined
+      }
+
+      const shouldFallbackVisibleUsername =
+        formState.visibleUsername === 'pogo' && trimmedPogoUsername.length === 0
+      if (shouldFallbackVisibleUsername) {
+        payload.visibleUsername = 'pokequery'
+      } else if (changedFields.has('visibleUsername')) {
+        payload.visibleUsername = formState.visibleUsername
+      }
+
+      if (changedFields.has('team')) {
+        payload.team = formState.team || undefined
+      }
+
+      if (changedFields.has('level')) {
+        payload.level =
           formState.level.trim().length > 0 && Number.isFinite(levelNumber)
             ? levelNumber
-            : undefined,
-        trainerCode: trimmedTrainerCode || undefined,
-        avatarUrl: trimmedAvatarUrl || undefined,
-        isProfilePublic: formState.isProfilePublic,
-      })
+            : undefined
+      }
+
+      if (changedFields.has('trainerCode')) {
+        payload.trainerCode = trimmedTrainerCode || undefined
+      }
+
+      if (changedFields.has('avatarUrl')) {
+        payload.avatarUrl = trimmedAvatarUrl || undefined
+      }
+
+      if (changedFields.has('isProfilePublic')) {
+        payload.isProfilePublic = formState.isProfilePublic
+      }
+
+      if (Object.keys(payload).length === 0) {
+        return me
+      }
+
+      return updateMe(payload)
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['me'] })
@@ -362,6 +449,15 @@ function AccountPage() {
     toast.success('Theme updated.')
   }
 
+  function handleGenerateAvatar() {
+    const seed = createAvatarSeed(formState.username)
+    const style =
+      DICEBEAR_STYLES[Math.floor(Math.random() * DICEBEAR_STYLES.length)]
+
+    handleChange('avatarUrl', buildDiceBearAvatarUrl(style, seed))
+    toast.success('Generated a random DiceBear avatar URL.')
+  }
+
   if (isLoading) {
     return (
       <PageShell
@@ -404,7 +500,7 @@ function AccountPage() {
         showSidebar
         showHeaderSearch={false}
       >
-        <div className="space-y-6">
+        <div className="space-y-8">
           <div className="rounded-2xl border border-border/70 bg-card/95 p-5">
             <div className="flex flex-wrap items-center gap-2">
               <Badge
@@ -453,221 +549,388 @@ function AccountPage() {
             </p>
           </div>
 
-          <section className="rounded-2xl border border-border/70 bg-card/95 p-5">
-            <h3 className="text-base font-semibold">Profile Details</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Your PokeQuery username is your public app identity and can be
-              different from your Pokemon GO trainer name.
-            </p>
-
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <label className="space-y-1.5">
-                <span className="text-sm font-medium">PokeQuery Username</span>
-                <Input
-                  value={formState.username}
-                  onChange={(event) =>
-                    handleChange('username', event.target.value)
-                  }
-                  autoComplete="off"
-                  data-lpignore="true"
-                  data-1p-ignore="true"
-                  data-bwignore="true"
-                  placeholder="trainer_name"
-                  maxLength={20}
-                />
+          <div
+            role="tablist"
+            aria-label="Account sections"
+            className="grid gap-2 rounded-2xl border border-border/70 bg-card/95 p-2 sm:grid-cols-2 xl:grid-cols-4"
+          >
+            {[
+              {
+                key: 'profile' as const,
+                label: 'Profile',
+                description: 'Identity and privacy',
+              },
+              {
+                key: 'theme' as const,
+                label: 'Theme',
+                description: 'Visual preference',
+              },
+              {
+                key: 'notifications' as const,
+                label: 'Notifications',
+                description: 'Alerts and toasts',
+              },
+              {
+                key: 'danger' as const,
+                label: 'Danger Zone',
+                description: 'Deactivate or delete',
+              },
+            ].map((panel) => (
+              <button
+                key={panel.key}
+                type="button"
+                role="tab"
+                aria-selected={activePanel === panel.key}
+                aria-controls={`account-panel-${panel.key}`}
+                className={`rounded-xl border px-3 py-2.5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 ${
+                  activePanel === panel.key
+                    ? 'border-primary bg-primary/10 text-foreground'
+                    : 'border-border/70 bg-background hover:bg-muted'
+                }`}
+                onClick={() => handlePanelChange(panel.key)}
+              >
+                <p className="text-sm font-semibold">{panel.label}</p>
                 <p className="text-xs text-muted-foreground">
-                  3-20 characters. Use letters, numbers, and underscores only.
+                  {panel.description}
                 </p>
-                {formErrors.username ? (
-                  <p className="text-xs text-destructive">
-                    {formErrors.username}
-                  </p>
-                ) : null}
-              </label>
+              </button>
+            ))}
+          </div>
 
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium" htmlFor="avatar-url">
-                  Avatar URL
+          {activePanel === 'profile' ? (
+            <section
+              id="account-panel-profile"
+              role="tabpanel"
+              className="rounded-2xl border border-border/70 bg-card/95 p-5"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-base font-semibold">Profile Details</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Your PokeQuery username is your public app identity and can
+                    be different from your Pokemon GO trainer name.
+                  </p>
+                </div>
+
+                <div className="ml-auto flex flex-row items-center justify-end gap-2 self-start">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-xl"
+                    onClick={() => {
+                      setFormState(createFormStateFromMe(me))
+                      setAvatarPreviewFailed(false)
+                      setFormErrors({})
+                    }}
+                  >
+                    Reset
+                  </Button>
+                  <Button
+                    type="button"
+                    className="rounded-xl"
+                    disabled={isSaving}
+                    onClick={handleSave}
+                  >
+                    {isSaving ? (
+                      <Loader2Icon className="size-4 animate-spin" />
+                    ) : null}
+                    Save profile
+                  </Button>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-5 md:grid-cols-2">
+                <label className="space-y-1.5">
+                  <span className="text-sm font-medium">
+                    PokeQuery Username
+                  </span>
+                  <Input
+                    value={formState.username}
+                    onChange={(event) =>
+                      handleChange('username', event.target.value)
+                    }
+                    autoComplete="off"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    data-bwignore="true"
+                    placeholder="trainer_name"
+                    maxLength={20}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    3-20 characters. Use letters, numbers, and underscores only.
+                  </p>
+                  {formErrors.username ? (
+                    <p className="text-xs text-destructive">
+                      {formErrors.username}
+                    </p>
+                  ) : null}
                 </label>
-                <Input
-                  id="avatar-url"
-                  value={formState.avatarUrl}
-                  onChange={(event) =>
-                    handleChange('avatarUrl', event.target.value)
-                  }
-                  autoComplete="off"
-                  data-lpignore="true"
-                  data-1p-ignore="true"
-                  data-bwignore="true"
-                  placeholder="https://..."
-                />
-                {formErrors.avatarUrl ? (
-                  <p className="text-xs text-destructive">
-                    {formErrors.avatarUrl}
-                  </p>
-                ) : null}
 
-                <div className="rounded-xl border border-border/70 bg-background/60 p-3">
-                  <p className="text-sm font-medium">Avatar Preview</p>
-                  <div className="mt-2 flex items-center gap-3">
-                    <div className="size-14 overflow-hidden rounded-full border border-border/70 bg-muted">
-                      {avatarPreviewUrl.length > 0 &&
-                      !formErrors.avatarUrl &&
-                      !avatarPreviewFailed ? (
-                        <img
-                          src={avatarPreviewUrl}
-                          alt="Avatar preview"
-                          className="size-full object-cover"
-                          onError={() => setAvatarPreviewFailed(true)}
-                        />
-                      ) : (
-                        <div className="flex size-full items-center justify-center text-xs font-semibold uppercase text-muted-foreground">
-                          {formState.username.trim().slice(0, 2) || 'NA'}
-                        </div>
-                      )}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium" htmlFor="avatar-url">
+                    Avatar URL
+                  </label>
+                  <Input
+                    id="avatar-url"
+                    value={formState.avatarUrl}
+                    onChange={(event) =>
+                      handleChange('avatarUrl', event.target.value)
+                    }
+                    autoComplete="off"
+                    data-lpignore="true"
+                    data-1p-ignore="true"
+                    data-bwignore="true"
+                    placeholder="https://..."
+                  />
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="rounded-xl"
+                      onClick={handleGenerateAvatar}
+                    >
+                      Random DiceBear avatar
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Want a specific look? Pick a style in{' '}
+                    <a
+                      href="https://www.dicebear.com/playground/"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-medium underline underline-offset-2"
+                    >
+                      DiceBear Playground
+                    </a>
+                    .
+                  </p>
+                  {formErrors.avatarUrl ? (
+                    <p className="text-xs text-destructive">
+                      {formErrors.avatarUrl}
+                    </p>
+                  ) : null}
+
+                  <div className="rounded-xl border border-border/70 bg-background/60 p-3">
+                    <p className="text-sm font-medium">Avatar Preview</p>
+                    <div className="mt-2 flex items-center gap-3">
+                      <div className="size-14 overflow-hidden rounded-full border border-border/70 bg-muted">
+                        {avatarPreviewUrl.length > 0 &&
+                        !formErrors.avatarUrl &&
+                        !avatarPreviewFailed ? (
+                          <img
+                            src={avatarPreviewUrl}
+                            alt="Avatar preview"
+                            className="size-full object-cover"
+                            onError={() => setAvatarPreviewFailed(true)}
+                          />
+                        ) : (
+                          <div className="flex size-full items-center justify-center text-xs font-semibold uppercase text-muted-foreground">
+                            {formState.username.trim().slice(0, 2) || 'NA'}
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {avatarPreviewUrl.length === 0
+                          ? 'Enter an image URL to preview your avatar.'
+                          : formErrors.avatarUrl
+                            ? 'Enter a valid URL to preview.'
+                            : avatarPreviewFailed
+                              ? 'Image could not be loaded from this URL.'
+                              : 'This is how your avatar will appear.'}
+                      </div>
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {avatarPreviewUrl.length === 0
-                        ? 'Enter an image URL to preview your avatar.'
-                        : formErrors.avatarUrl
-                          ? 'Enter a valid URL to preview.'
-                          : avatarPreviewFailed
-                            ? 'Image could not be loaded from this URL.'
-                            : 'This is how your avatar will appear.'}
-                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3 rounded-xl border border-border/70 bg-background/60 p-4 md:col-span-2">
+                  <div>
+                    <p className="text-sm font-medium">Pokemon GO Details</p>
+                    <p className="text-xs text-muted-foreground">
+                      Team, level, and trainer code are your in-game trainer
+                      fields.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className="space-y-1.5 md:col-span-2">
+                      <span className="text-sm font-medium">
+                        Pokemon GO Username
+                      </span>
+                      <Input
+                        value={formState.pogoUsername}
+                        onChange={(event) =>
+                          handleChange('pogoUsername', event.target.value)
+                        }
+                        autoComplete="off"
+                        data-lpignore="true"
+                        data-1p-ignore="true"
+                        data-bwignore="true"
+                        placeholder="AshKetchumGO"
+                        maxLength={30}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Optional, but required if you want to show your Pokemon
+                        GO name publicly.
+                      </p>
+                      {formErrors.pogoUsername ? (
+                        <p className="text-xs text-destructive">
+                          {formErrors.pogoUsername}
+                        </p>
+                      ) : null}
+                    </label>
+
+                    <label className="space-y-1.5">
+                      <span className="text-sm font-medium">Level</span>
+                      <Input
+                        type="number"
+                        value={formState.level}
+                        onChange={(event) =>
+                          handleChange('level', event.target.value)
+                        }
+                        autoComplete="off"
+                        data-lpignore="true"
+                        data-1p-ignore="true"
+                        data-bwignore="true"
+                        min={1}
+                        max={50}
+                        placeholder="1-50"
+                      />
+                      {formErrors.level ? (
+                        <p className="text-xs text-destructive">
+                          {formErrors.level}
+                        </p>
+                      ) : null}
+                    </label>
+
+                    <label className="space-y-1.5">
+                      <span className="text-sm font-medium">Team</span>
+                      <select
+                        value={formState.team}
+                        onChange={(event) =>
+                          handleChange(
+                            'team',
+                            event.target.value as FormState['team'],
+                          )
+                        }
+                        className="h-10 w-full rounded-xl border border-border/70 bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
+                      >
+                        <option value="">Select a team</option>
+                        <option value="mystic">Team Mystic</option>
+                        <option value="valor">Team Valor</option>
+                        <option value="instinct">Team Instinct</option>
+                      </select>
+                      {formErrors.team ? (
+                        <p className="text-xs text-destructive">
+                          {formErrors.team}
+                        </p>
+                      ) : null}
+                    </label>
+
+                    <label className="space-y-1.5 md:col-span-2">
+                      <span className="text-sm font-medium">Trainer Code</span>
+                      <Input
+                        value={formState.trainerCode}
+                        onChange={(event) =>
+                          handleChange('trainerCode', event.target.value)
+                        }
+                        autoComplete="off"
+                        data-lpignore="true"
+                        data-1p-ignore="true"
+                        data-bwignore="true"
+                        placeholder="1234 5678 9012"
+                        maxLength={14}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Use 12 digits. Spaces or dashes are accepted.
+                      </p>
+                      {formErrors.trainerCode ? (
+                        <p className="text-xs text-destructive">
+                          {formErrors.trainerCode}
+                        </p>
+                      ) : null}
+                    </label>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-3 rounded-xl border border-border/70 bg-background/60 p-4 md:col-span-2">
-                <div>
-                  <p className="text-sm font-medium">Pokemon GO Details</p>
-                  <p className="text-xs text-muted-foreground">
-                    Team, level, and trainer code are your in-game trainer
-                    fields.
-                  </p>
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <label className="space-y-1.5 md:col-span-2">
-                    <span className="text-sm font-medium">
-                      Pokemon GO Username
-                    </span>
-                    <Input
-                      value={formState.pogoUsername}
-                      onChange={(event) =>
-                        handleChange('pogoUsername', event.target.value)
+              <div
+                className={
+                  formState.isProfilePublic
+                    ? 'mt-6 rounded-xl border border-sky-300/80 bg-sky-500/10 p-4 dark:border-sky-500/40 dark:bg-sky-500/20'
+                    : 'mt-6 rounded-xl border border-slate-300/80 bg-slate-500/10 p-4 dark:border-slate-500/40 dark:bg-slate-500/20'
+                }
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p
+                      className={
+                        formState.isProfilePublic
+                          ? 'text-sm font-medium text-sky-700 dark:text-sky-300'
+                          : 'text-sm font-medium text-slate-700 dark:text-slate-200'
                       }
-                      autoComplete="off"
-                      data-lpignore="true"
-                      data-1p-ignore="true"
-                      data-bwignore="true"
-                      placeholder="AshKetchumGO"
-                      maxLength={30}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Optional, but required if you want to show your Pokemon GO
-                      name publicly.
-                    </p>
-                    {formErrors.pogoUsername ? (
-                      <p className="text-xs text-destructive">
-                        {formErrors.pogoUsername}
-                      </p>
-                    ) : null}
-                  </label>
-
-                  <label className="space-y-1.5">
-                    <span className="text-sm font-medium">Level</span>
-                    <Input
-                      type="number"
-                      value={formState.level}
-                      onChange={(event) =>
-                        handleChange('level', event.target.value)
-                      }
-                      autoComplete="off"
-                      data-lpignore="true"
-                      data-1p-ignore="true"
-                      data-bwignore="true"
-                      min={1}
-                      max={50}
-                      placeholder="1-50"
-                    />
-                    {formErrors.level ? (
-                      <p className="text-xs text-destructive">
-                        {formErrors.level}
-                      </p>
-                    ) : null}
-                  </label>
-
-                  <label className="space-y-1.5">
-                    <span className="text-sm font-medium">Team</span>
-                    <select
-                      value={formState.team}
-                      onChange={(event) =>
-                        handleChange(
-                          'team',
-                          event.target.value as FormState['team'],
-                        )
-                      }
-                      className="h-10 w-full rounded-xl border border-border/70 bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
                     >
-                      <option value="">Select a team</option>
-                      <option value="mystic">Team Mystic</option>
-                      <option value="valor">Team Valor</option>
-                      <option value="instinct">Team Instinct</option>
-                    </select>
-                    {formErrors.team ? (
-                      <p className="text-xs text-destructive">
-                        {formErrors.team}
-                      </p>
-                    ) : null}
-                  </label>
-
-                  <label className="space-y-1.5 md:col-span-2">
-                    <span className="text-sm font-medium">Trainer Code</span>
-                    <Input
-                      value={formState.trainerCode}
-                      onChange={(event) =>
-                        handleChange('trainerCode', event.target.value)
-                      }
-                      autoComplete="off"
-                      data-lpignore="true"
-                      data-1p-ignore="true"
-                      data-bwignore="true"
-                      placeholder="1234 5678 9012"
-                      maxLength={14}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Use 12 digits. Spaces or dashes are accepted.
+                      Profile Visibility
                     </p>
-                    {formErrors.trainerCode ? (
-                      <p className="text-xs text-destructive">
-                        {formErrors.trainerCode}
-                      </p>
-                    ) : null}
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div
-              className={
-                formState.isProfilePublic
-                  ? 'mt-5 rounded-xl border border-sky-300/80 bg-sky-500/10 p-4 dark:border-sky-500/40 dark:bg-sky-500/20'
-                  : 'mt-5 rounded-xl border border-slate-300/80 bg-slate-500/10 p-4 dark:border-slate-500/40 dark:bg-slate-500/20'
-              }
-            >
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p
-                    className={
+                    <p
+                      className={
+                        formState.isProfilePublic
+                          ? 'text-xs text-sky-700/85 dark:text-sky-200/85'
+                          : 'text-xs text-slate-700/85 dark:text-slate-300/85'
+                      }
+                    >
+                      Public profiles show your trainer details to other users.
+                      Private profiles hide team, level, and trainer code.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    aria-pressed={formState.isProfilePublic}
+                    className={[
+                      'max-sm:w-full',
                       formState.isProfilePublic
-                        ? 'text-sm font-medium text-sky-700 dark:text-sky-300'
-                        : 'text-sm font-medium text-slate-700 dark:text-slate-200'
+                        ? 'rounded-xl border-sky-300/80 bg-sky-500/10 text-sky-700 hover:bg-sky-500/20 hover:text-sky-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50 dark:border-sky-500/50 dark:bg-sky-500/20 dark:text-sky-200 dark:hover:bg-sky-500/30'
+                        : 'rounded-xl border-slate-300/80 bg-slate-500/10 text-slate-700 hover:bg-slate-500/20 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50 dark:border-slate-500/50 dark:bg-slate-500/20 dark:text-slate-200 dark:hover:bg-slate-500/30',
+                    ].join(' ')}
+                    onClick={() =>
+                      handleChange(
+                        'isProfilePublic',
+                        !formState.isProfilePublic,
+                      )
                     }
                   >
-                    Profile Visibility
-                  </p>
+                    {formState.isProfilePublic ? (
+                      <ShieldCheckIcon className="size-4" />
+                    ) : (
+                      <ShieldAlertIcon className="size-4" />
+                    )}
+                    {formState.isProfilePublic ? 'Public' : 'Private'}
+                  </Button>
+                </div>
+
+                <div className="mt-3 grid gap-1.5 md:max-w-sm">
+                  <label className="text-sm font-medium" htmlFor="visible-name">
+                    Public Name
+                  </label>
+                  <select
+                    id="visible-name"
+                    value={formState.visibleUsername}
+                    onChange={(event) =>
+                      handleChange(
+                        'visibleUsername',
+                        event.target.value as VisibleUsername,
+                      )
+                    }
+                    className="h-10 w-full rounded-xl border border-border/70 bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
+                  >
+                    <option value="pokequery">PokeQuery username</option>
+                    <option
+                      value="pogo"
+                      disabled={formState.pogoUsername.trim().length === 0}
+                    >
+                      Pokemon GO username
+                    </option>
+                  </select>
                   <p
                     className={
                       formState.isProfilePublic
@@ -675,297 +938,224 @@ function AccountPage() {
                         : 'text-xs text-slate-700/85 dark:text-slate-300/85'
                     }
                   >
-                    Public profiles show your trainer details to other users.
-                    Private profiles hide team, level, and trainer code.
+                    Choose which name other trainers will see on public profile
+                    and query cards.
                   </p>
+                  {formErrors.visibleUsername ? (
+                    <p className="text-xs text-destructive">
+                      {formErrors.visibleUsername}
+                    </p>
+                  ) : null}
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  aria-pressed={formState.isProfilePublic}
-                  className={[
-                    'max-sm:w-full',
-                    formState.isProfilePublic
-                      ? 'rounded-xl border-sky-300/80 bg-sky-500/10 text-sky-700 hover:bg-sky-500/20 hover:text-sky-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50 dark:border-sky-500/50 dark:bg-sky-500/20 dark:text-sky-200 dark:hover:bg-sky-500/30'
-                      : 'rounded-xl border-slate-300/80 bg-slate-500/10 text-slate-700 hover:bg-slate-500/20 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50 dark:border-slate-500/50 dark:bg-slate-500/20 dark:text-slate-200 dark:hover:bg-slate-500/30',
-                  ].join(' ')}
-                  onClick={() =>
-                    handleChange('isProfilePublic', !formState.isProfilePublic)
-                  }
-                >
-                  {formState.isProfilePublic ? (
-                    <ShieldCheckIcon className="size-4" />
-                  ) : (
-                    <ShieldAlertIcon className="size-4" />
-                  )}
-                  {formState.isProfilePublic ? 'Public' : 'Private'}
-                </Button>
               </div>
+            </section>
+          ) : null}
 
-              <div className="mt-3 grid gap-1.5 md:max-w-sm">
-                <label className="text-sm font-medium" htmlFor="visible-name">
-                  Public Name
-                </label>
-                <select
-                  id="visible-name"
-                  value={formState.visibleUsername}
-                  onChange={(event) =>
-                    handleChange(
-                      'visibleUsername',
-                      event.target.value as VisibleUsername,
-                    )
-                  }
-                  className="h-10 w-full rounded-xl border border-border/70 bg-background px-3 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
-                >
-                  <option value="pokequery">PokeQuery username</option>
-                  <option
-                    value="pogo"
-                    disabled={formState.pogoUsername.trim().length === 0}
-                  >
-                    Pokemon GO username
-                  </option>
-                </select>
-                <p
-                  className={
-                    formState.isProfilePublic
-                      ? 'text-xs text-sky-700/85 dark:text-sky-200/85'
-                      : 'text-xs text-slate-700/85 dark:text-slate-300/85'
-                  }
-                >
-                  Choose which name other trainers will see on public profile
-                  and query cards.
-                </p>
-                {formErrors.visibleUsername ? (
-                  <p className="text-xs text-destructive">
-                    {formErrors.visibleUsername}
-                  </p>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="mt-5 flex flex-col-reverse items-stretch gap-2 sm:flex-row sm:justify-end">
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-xl"
-                onClick={() => {
-                  setFormState({
-                    username: me.username,
-                    pogoUsername: me.pogoUsername ?? '',
-                    visibleUsername: me.visibleUsername,
-                    team: me.team ?? '',
-                    level: me.level !== null ? String(me.level) : '',
-                    trainerCode: me.trainerCode ?? '',
-                    avatarUrl: me.avatarUrl ?? '',
-                    isProfilePublic: me.isProfilePublic,
-                  })
-                  setAvatarPreviewFailed(false)
-                  setFormErrors({})
-                }}
-              >
-                Reset
-              </Button>
-              <Button
-                type="button"
-                className="rounded-xl"
-                disabled={isSaving}
-                onClick={handleSave}
-              >
-                {isSaving ? (
-                  <Loader2Icon className="size-4 animate-spin" />
-                ) : null}
-                Save profile
-              </Button>
-            </div>
-          </section>
-
-          <section className="rounded-2xl border border-border/70 bg-card/95 p-5">
-            <h3 className="text-base font-semibold">Theme</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Choose a color preset for your app experience. This preference is
-              saved in your browser.
-            </p>
-
-            <div
-              className="mt-4 grid gap-2 sm:grid-cols-3"
-              role="radiogroup"
-              aria-label="Theme preset"
+          {activePanel === 'theme' ? (
+            <section
+              id="account-panel-theme"
+              role="tabpanel"
+              className="rounded-2xl border border-border/70 bg-card/95 p-5"
             >
-              {THEME_PRESET_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={themePreset === option.value}
-                  className={`rounded-xl border px-3 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 max-sm:w-full max-sm:text-left sm:text-center ${
-                    themePreset === option.value
-                      ? 'border-primary bg-primary text-primary-foreground'
-                      : 'border-border/70 bg-background hover:bg-muted'
-                  }`}
-                  onClick={() => handleThemePresetChange(option.value)}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </section>
+              <h3 className="text-base font-semibold">Theme</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Choose a color preset for your app experience. This preference
+                is saved in your browser.
+              </p>
 
-          <section className="rounded-2xl border border-border/70 bg-card/95 p-5">
-            <h3 className="text-base font-semibold">
-              Notification Preferences
-            </h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Choose which activity should notify you and whether high-priority
-              events should appear as in-app toasts.
-            </p>
-
-            <div className="mt-4 grid gap-3">
-              <label className="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-background/60 p-3 max-sm:flex-col">
-                <div>
-                  <p className="text-sm font-medium">New Followers</p>
-                  <p className="text-xs text-muted-foreground">
-                    Notify me when another trainer follows my profile.
-                  </p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={notificationForm.notifyNewFollower}
-                  onChange={(event) =>
-                    setNotificationForm((current) => ({
-                      ...current,
-                      notifyNewFollower: event.target.checked,
-                    }))
-                  }
-                  className="mt-0.5 size-4 accent-primary max-sm:self-start"
-                />
-              </label>
-
-              <label className="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-background/60 p-3 max-sm:flex-col">
-                <div>
-                  <p className="text-sm font-medium">Forked Queries</p>
-                  <p className="text-xs text-muted-foreground">
-                    Notify me when someone forks one of my public queries.
-                  </p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={notificationForm.notifyQueryFork}
-                  onChange={(event) =>
-                    setNotificationForm((current) => ({
-                      ...current,
-                      notifyQueryFork: event.target.checked,
-                    }))
-                  }
-                  className="mt-0.5 size-4 accent-primary max-sm:self-start"
-                />
-              </label>
-
-              <label className="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-background/60 p-3 max-sm:flex-col">
-                <div>
-                  <p className="text-sm font-medium">Favorited Queries</p>
-                  <p className="text-xs text-muted-foreground">
-                    Notify me when someone favorites one of my public queries.
-                  </p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={notificationForm.notifyQueryFavorite}
-                  onChange={(event) =>
-                    setNotificationForm((current) => ({
-                      ...current,
-                      notifyQueryFavorite: event.target.checked,
-                    }))
-                  }
-                  className="mt-0.5 size-4 accent-primary max-sm:self-start"
-                />
-              </label>
-
-              <label className="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-background/60 p-3 max-sm:flex-col">
-                <div>
-                  <p className="text-sm font-medium">In-app Toast Alerts</p>
-                  <p className="text-xs text-muted-foreground">
-                    Show toast alerts for high-priority events.
-                  </p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={notificationForm.inAppToasts}
-                  onChange={(event) =>
-                    setNotificationForm((current) => ({
-                      ...current,
-                      inAppToasts: event.target.checked,
-                    }))
-                  }
-                  className="mt-0.5 size-4 accent-primary max-sm:self-start"
-                />
-              </label>
-            </div>
-
-            <div className="mt-5 flex justify-end">
-              <Button
-                type="button"
-                className="rounded-xl max-sm:w-full"
-                disabled={isSavingNotificationPreferences}
-                onClick={() => saveNotificationPreferencesMutation.mutate()}
+              <div
+                className="mt-5 grid gap-3 sm:grid-cols-3"
+                role="radiogroup"
+                aria-label="Theme preset"
               >
-                {isSavingNotificationPreferences ? (
-                  <Loader2Icon className="size-4 animate-spin" />
-                ) : null}
-                Save notification preferences
-              </Button>
-            </div>
-          </section>
+                {THEME_PRESET_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={themePreset === option.value}
+                    className={`rounded-xl border px-3 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 max-sm:w-full max-sm:text-left sm:text-center ${
+                      themePreset === option.value
+                        ? 'border-primary bg-primary text-primary-foreground'
+                        : 'border-border/70 bg-background hover:bg-muted'
+                    }`}
+                    onClick={() => handleThemePresetChange(option.value)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
-          <section className="rounded-2xl border border-destructive/30 bg-destructive/5 p-5">
-            <h3 className="text-base font-semibold text-destructive">
-              Danger Zone
-            </h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Deactivation can be reverted. Account deletion is permanent and
-              signs you out.
-            </p>
+          {activePanel === 'notifications' ? (
+            <section
+              id="account-panel-notifications"
+              role="tabpanel"
+              className="rounded-2xl border border-border/70 bg-card/95 p-5"
+            >
+              <h3 className="text-base font-semibold">
+                Notification Preferences
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Choose which activity should notify you and whether
+                high-priority events should appear as in-app toasts.
+              </p>
 
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              {me.deactivatedAt ? (
+              <div className="mt-5 grid gap-4">
+                <label className="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-background/60 p-3 max-sm:flex-col">
+                  <div>
+                    <p className="text-sm font-medium">New Followers</p>
+                    <p className="text-xs text-muted-foreground">
+                      Notify me when another trainer follows my profile.
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={notificationForm.notifyNewFollower}
+                    onChange={(event) =>
+                      setNotificationForm((current) => ({
+                        ...current,
+                        notifyNewFollower: event.target.checked,
+                      }))
+                    }
+                    className="mt-0.5 size-4 accent-primary max-sm:self-start"
+                  />
+                </label>
+
+                <label className="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-background/60 p-3 max-sm:flex-col">
+                  <div>
+                    <p className="text-sm font-medium">Forked Queries</p>
+                    <p className="text-xs text-muted-foreground">
+                      Notify me when someone forks one of my public queries.
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={notificationForm.notifyQueryFork}
+                    onChange={(event) =>
+                      setNotificationForm((current) => ({
+                        ...current,
+                        notifyQueryFork: event.target.checked,
+                      }))
+                    }
+                    className="mt-0.5 size-4 accent-primary max-sm:self-start"
+                  />
+                </label>
+
+                <label className="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-background/60 p-3 max-sm:flex-col">
+                  <div>
+                    <p className="text-sm font-medium">Favorited Queries</p>
+                    <p className="text-xs text-muted-foreground">
+                      Notify me when someone favorites one of my public queries.
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={notificationForm.notifyQueryFavorite}
+                    onChange={(event) =>
+                      setNotificationForm((current) => ({
+                        ...current,
+                        notifyQueryFavorite: event.target.checked,
+                      }))
+                    }
+                    className="mt-0.5 size-4 accent-primary max-sm:self-start"
+                  />
+                </label>
+
+                <label className="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-background/60 p-3 max-sm:flex-col">
+                  <div>
+                    <p className="text-sm font-medium">In-app Toast Alerts</p>
+                    <p className="text-xs text-muted-foreground">
+                      Show toast alerts for high-priority events.
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={notificationForm.inAppToasts}
+                    onChange={(event) =>
+                      setNotificationForm((current) => ({
+                        ...current,
+                        inAppToasts: event.target.checked,
+                      }))
+                    }
+                    className="mt-0.5 size-4 accent-primary max-sm:self-start"
+                  />
+                </label>
+              </div>
+
+              <div className="mt-5 flex justify-end">
                 <Button
                   type="button"
-                  variant="outline"
+                  className="rounded-xl max-sm:w-full"
+                  disabled={isSavingNotificationPreferences}
+                  onClick={() => saveNotificationPreferencesMutation.mutate()}
+                >
+                  {isSavingNotificationPreferences ? (
+                    <Loader2Icon className="size-4 animate-spin" />
+                  ) : null}
+                  Save notification preferences
+                </Button>
+              </div>
+            </section>
+          ) : null}
+
+          {activePanel === 'danger' ? (
+            <section
+              id="account-panel-danger"
+              role="tabpanel"
+              className="rounded-2xl border border-destructive/30 bg-destructive/5 p-5"
+            >
+              <h3 className="text-base font-semibold text-destructive">
+                Danger Zone
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Deactivation can be reverted. Account deletion is permanent and
+                signs you out.
+              </p>
+
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                {me.deactivatedAt ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-xl"
+                    disabled={isReactivatePending}
+                    onClick={() => reactivateMutation.mutate()}
+                  >
+                    {isReactivatePending ? (
+                      <Loader2Icon className="size-4 animate-spin" />
+                    ) : null}
+                    Reactivate account
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-xl text-destructive hover:text-destructive"
+                    disabled={isDeactivatePending}
+                    onClick={() => setDeactivateDialogOpen(true)}
+                  >
+                    {isDeactivatePending ? (
+                      <Loader2Icon className="size-4 animate-spin" />
+                    ) : null}
+                    Deactivate account
+                  </Button>
+                )}
+
+                <Button
+                  type="button"
+                  variant="destructive"
                   className="rounded-xl"
-                  disabled={isReactivatePending}
-                  onClick={() => reactivateMutation.mutate()}
+                  disabled={isDeletePending}
+                  onClick={() => setDeleteDialogOpen(true)}
                 >
-                  {isReactivatePending ? (
-                    <Loader2Icon className="size-4 animate-spin" />
-                  ) : null}
-                  Reactivate account
+                  <Trash2Icon className="size-4" />
+                  Delete account
                 </Button>
-              ) : (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="rounded-xl text-destructive hover:text-destructive"
-                  disabled={isDeactivatePending}
-                  onClick={() => setDeactivateDialogOpen(true)}
-                >
-                  {isDeactivatePending ? (
-                    <Loader2Icon className="size-4 animate-spin" />
-                  ) : null}
-                  Deactivate account
-                </Button>
-              )}
-
-              <Button
-                type="button"
-                variant="destructive"
-                className="rounded-xl"
-                disabled={isDeletePending}
-                onClick={() => setDeleteDialogOpen(true)}
-              >
-                <Trash2Icon className="size-4" />
-                Delete account
-              </Button>
-            </div>
-          </section>
+              </div>
+            </section>
+          ) : null}
         </div>
       </PageShell>
 
@@ -1058,19 +1248,55 @@ function AccountPage() {
   )
 }
 
-function validateForm(state: FormState): FormErrors {
+function createFormStateFromMe(me: GetMeResponse): FormState {
+  return {
+    username: me.username,
+    pogoUsername: me.pogoUsername ?? '',
+    visibleUsername: me.visibleUsername,
+    team: me.team ?? '',
+    level: me.level !== null ? String(me.level) : '',
+    trainerCode: me.trainerCode ?? '',
+    avatarUrl: me.avatarUrl ?? '',
+    isProfilePublic: me.isProfilePublic,
+  }
+}
+
+function getChangedFormFields(
+  current: FormState,
+  baseline: FormState,
+): Set<keyof FormState> {
+  const changed = new Set<keyof FormState>()
+
+  ;(Object.keys(current) as (keyof FormState)[]).forEach((key) => {
+    if (current[key] !== baseline[key]) {
+      changed.add(key)
+    }
+  })
+
+  return changed
+}
+
+function validateForm(
+  state: FormState,
+  fieldsToValidate?: Set<keyof FormState>,
+): FormErrors {
   const errors: FormErrors = {}
+  const shouldValidate = (field: keyof FormState) =>
+    !fieldsToValidate || fieldsToValidate.has(field)
 
   const username = state.username.trim()
-  if (username.length < 3 || username.length > 20) {
+  if (
+    shouldValidate('username') &&
+    (username.length < 3 || username.length > 20)
+  ) {
     errors.username = 'Username must be 3-20 characters.'
-  } else if (!USERNAME_PATTERN.test(username)) {
+  } else if (shouldValidate('username') && !USERNAME_PATTERN.test(username)) {
     errors.username = 'Use letters, numbers, and underscores only.'
-  } else if (findBlockedTerm(username)) {
+  } else if (shouldValidate('username') && findBlockedTerm(username)) {
     errors.username = 'Username contains blocked language.'
   }
 
-  if (state.level.trim().length > 0) {
+  if (shouldValidate('level') && state.level.trim().length > 0) {
     const levelValue = Number(state.level)
     if (!Number.isInteger(levelValue) || levelValue < 1 || levelValue > 50) {
       errors.level = 'Level must be an integer between 1 and 50.'
@@ -1078,12 +1304,16 @@ function validateForm(state: FormState): FormErrors {
   }
 
   const trainerCode = state.trainerCode.trim()
-  if (trainerCode.length > 0 && !TRAINER_CODE_PATTERN.test(trainerCode)) {
+  if (
+    shouldValidate('trainerCode') &&
+    trainerCode.length > 0 &&
+    !TRAINER_CODE_PATTERN.test(trainerCode)
+  ) {
     errors.trainerCode = 'Enter a valid 12-digit trainer code.'
   }
 
   const avatarUrl = state.avatarUrl.trim()
-  if (avatarUrl.length > 0) {
+  if (shouldValidate('avatarUrl') && avatarUrl.length > 0) {
     try {
       new URL(avatarUrl)
     } catch {
@@ -1092,7 +1322,7 @@ function validateForm(state: FormState): FormErrors {
   }
 
   const pogoUsername = state.pogoUsername.trim()
-  if (pogoUsername.length > 0) {
+  if (shouldValidate('pogoUsername') && pogoUsername.length > 0) {
     if (pogoUsername.length < 3 || pogoUsername.length > 30) {
       errors.pogoUsername = 'Pokemon GO username must be 3-30 characters.'
     } else if (!POGO_USERNAME_PATTERN.test(pogoUsername)) {
@@ -1103,10 +1333,18 @@ function validateForm(state: FormState): FormErrors {
     }
   }
 
-  if (state.visibleUsername === 'pogo' && pogoUsername.length === 0) {
-    errors.visibleUsername =
-      'Add a Pokemon GO username before showing it publicly.'
-  }
-
   return errors
+}
+
+function createAvatarSeed(username: string): string {
+  const normalizedUsername = username.trim().toLowerCase() || 'trainer'
+  const entropy = Math.random().toString(36).slice(2, 10)
+  return `${normalizedUsername}-${Date.now().toString(36)}-${entropy}`
+}
+
+function buildDiceBearAvatarUrl(
+  style: (typeof DICEBEAR_STYLES)[number],
+  seed: string,
+): string {
+  return `https://api.dicebear.com/9.x/${style}/svg?seed=${encodeURIComponent(seed)}`
 }
