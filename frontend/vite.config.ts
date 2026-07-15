@@ -1,5 +1,4 @@
 import { defineConfig } from 'vite'
-import { devtools } from '@tanstack/devtools-vite'
 import { fileURLToPath, URL } from 'node:url'
 
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
@@ -25,7 +24,6 @@ const config = defineConfig(({ mode }) => {
     plugins: isTest
       ? [viteReact()]
       : [
-          devtools(),
           nitro({ rollupConfig: { external: [/^@sentry\//] } }),
           tailwindcss(),
           tanstackStart(),
