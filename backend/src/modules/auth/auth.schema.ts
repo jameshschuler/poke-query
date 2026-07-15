@@ -51,6 +51,9 @@ export const VerifyRouteSchema = {
     401: Type.Object({
       error: Type.String(),
     }),
+    500: Type.Object({
+      error: Type.String(),
+    }),
   },
 };
 

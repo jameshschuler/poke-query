@@ -20,6 +20,7 @@ import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { PageShell } from '#/components/page-shell'
 import {
+  ApiRequestError,
   getMe,
   getMyForks,
   getMyQueries,
@@ -39,7 +40,7 @@ export const Route = createFileRoute('/dashboard')({
 })
 
 function DashboardRoute() {
-  const { user, isLoading, refreshSession } = useAuth()
+  const { user, isLoading, signOut } = useAuth()
   const navigate = useNavigate()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
@@ -144,10 +145,17 @@ function DashboardRoute() {
     setIsLoggingOut(true)
 
     try {
-      await logout()
+      try {
+        await logout()
+      } catch (error) {
+        if (!(error instanceof ApiRequestError && error.status === 401)) {
+          // Best effort: continue clearing client auth session.
+        }
+      }
+
       setCachedUser(null)
-      await refreshSession()
-      void navigate({ to: '/', replace: true })
+      await signOut()
+      void navigate({ to: '/login', replace: true })
     } finally {
       setIsLoggingOut(false)
     }

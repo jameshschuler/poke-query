@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { BellIcon, CheckCheckIcon, Loader2Icon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
@@ -13,6 +13,7 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from '#/lib/poke-query-api'
+import { getMutationErrorMessage } from '#/lib/mutation-toast'
 import { requireAuthenticated } from '#/lib/route-auth'
 
 type NotificationFilter = 'all' | 'unread' | 'high-priority'
@@ -62,8 +63,13 @@ function NotificationsPage() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['notifications'] })
     },
-    onError: () => {
-      toast.error('Could not mark notification as read.')
+    onError: (mutationError: unknown) => {
+      toast.error(
+        getMutationErrorMessage(
+          mutationError,
+          'Could not mark notification as read.',
+        ),
+      )
     },
   })
 
@@ -73,8 +79,13 @@ function NotificationsPage() {
       await queryClient.invalidateQueries({ queryKey: ['notifications'] })
       toast.success('All notifications marked as read.')
     },
-    onError: () => {
-      toast.error('Could not mark all notifications as read.')
+    onError: (mutationError: unknown) => {
+      toast.error(
+        getMutationErrorMessage(
+          mutationError,
+          'Could not mark all notifications as read.',
+        ),
+      )
     },
   })
 
@@ -160,8 +171,19 @@ function NotificationsPage() {
           <div className="rounded-2xl border border-dashed border-border/70 bg-card/95 p-8 text-center">
             <h3 className="text-base font-semibold">No notifications</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              You're all caught up for this filter.
+              Follow trainers, favorite strings, and fork community builds to
+              start seeing activity here.
             </p>
+            <div className="mt-4 flex justify-center">
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl"
+                render={<Link to="/discover" />}
+              >
+                Explore discover
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="space-y-3">

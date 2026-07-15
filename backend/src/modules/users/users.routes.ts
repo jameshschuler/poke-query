@@ -371,7 +371,8 @@ export async function userRoutes(fastify: FastifyTypebox) {
         .where(eq(trainers.userId, userId));
 
       if (!trainer) {
-        return reply.code(404).send({ error: "Trainer not found" });
+        // First-login users can be authenticated before they complete trainer profile setup.
+        return reply.send({ queries: [] });
       }
 
       const rows = await fastify.db
@@ -411,7 +412,16 @@ export async function userRoutes(fastify: FastifyTypebox) {
         .where(eq(trainers.userId, userId));
 
       if (!trainer) {
-        return reply.code(404).send({ error: "Trainer not found" });
+        return reply.send({
+          favorites: [],
+          pagination: {
+            limit,
+            offset,
+            nextOffset: null,
+            hasMore: false,
+            total: 0,
+          },
+        });
       }
 
       const visibilityWhere = and(
@@ -475,7 +485,10 @@ export async function userRoutes(fastify: FastifyTypebox) {
         .where(eq(trainers.userId, userId));
 
       if (!trainer) {
-        return reply.code(404).send({ error: "Trainer not found" });
+        return reply.send({
+          favoriteQueryIds: [],
+          favoritesCount: 0,
+        });
       }
 
       const rows = await fastify.db
@@ -508,7 +521,7 @@ export async function userRoutes(fastify: FastifyTypebox) {
         .where(eq(trainers.userId, userId));
 
       if (!trainer) {
-        return reply.code(404).send({ error: "Trainer not found" });
+        return reply.send({ forks: [] });
       }
 
       const rows = await fastify.db
@@ -566,7 +579,7 @@ export async function userRoutes(fastify: FastifyTypebox) {
   server.get(
     "/me/followers",
     { preHandler: [fastify.authenticate], schema: GetMeFollowersSchema },
-    async (request, reply) => {
+    async (request) => {
       const userId = request.user.id;
 
       const [trainer] = await fastify.db
@@ -575,7 +588,10 @@ export async function userRoutes(fastify: FastifyTypebox) {
         .where(eq(trainers.userId, userId));
 
       if (!trainer) {
-        return reply.code(404).send({ error: "Trainer not found" });
+        return {
+          total: 0,
+          followers: [],
+        };
       }
 
       const rows = await selectFollowers(trainer.id);
@@ -603,7 +619,7 @@ export async function userRoutes(fastify: FastifyTypebox) {
   server.get(
     "/me/following",
     { preHandler: [fastify.authenticate], schema: GetMeFollowingSchema },
-    async (request, reply) => {
+    async (request) => {
       const userId = request.user.id;
 
       const [trainer] = await fastify.db
@@ -612,7 +628,10 @@ export async function userRoutes(fastify: FastifyTypebox) {
         .where(eq(trainers.userId, userId));
 
       if (!trainer) {
-        return reply.code(404).send({ error: "Trainer not found" });
+        return {
+          total: 0,
+          following: [],
+        };
       }
 
       const rows = await selectFollowing(trainer.id);

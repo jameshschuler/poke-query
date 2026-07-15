@@ -8,6 +8,7 @@ import { PageShell } from '#/components/page-shell'
 import { Button } from '#/components/ui/button'
 import { findBlockedTerm } from '#/lib/content-policy'
 import { createQuery } from '#/lib/poke-query-api'
+import { getMutationErrorMessage } from '#/lib/mutation-toast'
 import { requireAuthenticated } from '#/lib/route-auth'
 
 type VisibilityMode = 'public' | 'private'
@@ -60,8 +61,8 @@ function NewLibraryQueryPage() {
 
       await navigate({ to: '/library', replace: true })
     },
-    onError: () => {
-      toast.error('Could not save string.')
+    onError: (error: unknown) => {
+      toast.error(getMutationErrorMessage(error, 'Could not save string.'))
     },
   })
 

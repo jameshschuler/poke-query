@@ -1,5 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import {
+  createFileRoute,
+  Link,
+  Outlet,
+  useNavigate,
+  useRouterState,
+} from '@tanstack/react-router'
 import { Edit3Icon } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -11,6 +17,7 @@ import {
   getMyForks,
   syncForkQuery,
 } from '#/lib/poke-query-api'
+import { getMutationErrorMessage } from '#/lib/mutation-toast'
 import { requireAuthenticated } from '#/lib/route-auth'
 
 export const Route = createFileRoute('/forks/$queryId')({
@@ -55,6 +62,14 @@ function formatSyncLabel(syncStatus: 'up-to-date' | 'behind' | 'orphaned') {
 
 function ForkDetailPage() {
   const { queryId } = Route.useParams()
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  })
+
+  if (pathname !== `/forks/${queryId}`) {
+    return <Outlet />
+  }
+
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
@@ -92,7 +107,9 @@ function ForkDetailPage() {
         return
       }
 
-      toast.error('Could not sync fork.')
+      toast.error(
+        getMutationErrorMessage(mutationError, 'Could not sync fork.'),
+      )
     },
   })
 
@@ -226,11 +243,11 @@ function ForkDetailPage() {
               )}
             </div>
 
-            <div className="flex flex-wrap gap-2 border-t border-border/60 pt-4">
+            <div className="flex gap-2 border-t border-border/60 pt-4 max-sm:flex-col sm:flex-wrap">
               <Button
                 type="button"
                 variant="outline"
-                className="rounded-lg"
+                className="rounded-lg max-sm:w-full"
                 onClick={() => navigate({ to: '/forks' })}
               >
                 Back to Forks
@@ -238,6 +255,7 @@ function ForkDetailPage() {
               {fork.syncStatus === 'behind' ? (
                 <Button
                   type="button"
+                  className="max-sm:w-full"
                   disabled={syncMutation.isPending}
                   onClick={() => syncMutation.mutate(fork.id)}
                 >
@@ -247,12 +265,12 @@ function ForkDetailPage() {
               <Button
                 type="button"
                 variant="outline"
-                className="rounded-lg"
-                render={
-                  <Link
-                    to="/forks/$queryId/edit"
-                    params={{ queryId: fork.id }}
-                  />
+                className="rounded-lg max-sm:w-full"
+                onClick={() =>
+                  navigate({
+                    to: '/forks/$queryId/edit',
+                    params: { queryId: fork.id },
+                  })
                 }
               >
                 <Edit3Icon className="size-4" />

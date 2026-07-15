@@ -8,6 +8,7 @@ import { PageShell } from '#/components/page-shell'
 import { Button } from '#/components/ui/button'
 import { findBlockedTerm } from '#/lib/content-policy'
 import { getMyQueries, updateQuery } from '#/lib/poke-query-api'
+import { getMutationErrorMessage } from '#/lib/mutation-toast'
 import { requireAuthenticated } from '#/lib/route-auth'
 
 type VisibilityMode = 'public' | 'private'
@@ -68,8 +69,10 @@ function EditLibraryQueryPage() {
       ])
       await navigate({ to: '/library', replace: true })
     },
-    onError: () => {
-      toast.error('Could not update string.')
+    onError: (mutationError: unknown) => {
+      toast.error(
+        getMutationErrorMessage(mutationError, 'Could not update string.'),
+      )
     },
   })
 

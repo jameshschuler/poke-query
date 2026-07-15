@@ -7,6 +7,7 @@ import {
   useRouterState,
 } from '@tanstack/react-router'
 import {
+  CopyIcon,
   CircleEllipsisIcon,
   Edit3Icon,
   Grid2x2Icon,
@@ -18,9 +19,8 @@ import {
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
+import { ManagedStringCard } from '#/components/managed-string-card'
 import { PageShell } from '#/components/page-shell'
-import { QueryCardActions } from '#/components/query-card-actions'
-import { QueryCardHeader } from '#/components/query-card-header'
 import { TimestampTooltip } from '#/components/timestamp-tooltip'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
@@ -39,14 +39,15 @@ import {
   TooltipTrigger,
 } from '#/components/ui/tooltip'
 import {
+  copyQuery,
   deleteQuery,
   getMyForks,
   ApiRequestError,
   syncForkQuery,
 } from '#/lib/poke-query-api'
+import { getMutationErrorMessage } from '#/lib/mutation-toast'
 import type { ManagedForkQuery } from '#/lib/poke-query-api'
 import { requireAuthenticated } from '#/lib/route-auth'
-import { QueryTagBadges } from '../components/query-tag-badges'
 
 type VisibilityFilter = 'all' | 'draft' | 'public'
 type SyncFilter = 'all' | 'up-to-date' | 'behind' | 'orphaned'
@@ -172,7 +173,9 @@ export function ForksPage() {
         return
       }
 
-      toast.error('Could not sync fork.')
+      toast.error(
+        getMutationErrorMessage(mutationError, 'Could not sync fork.'),
+      )
     },
   })
 
@@ -248,6 +251,18 @@ export function ForksPage() {
     syncMutation.mutate(fork.id)
   }
 
+  function handleCopySearchString(queryId: string, value: string) {
+    void navigator.clipboard
+      .writeText(value)
+      .then(() => {
+        void copyQuery(queryId)
+        toast.success('Copied to clipboard!')
+      })
+      .catch(() => {
+        toast.error('Could not copy string.')
+      })
+  }
+
   function updateCachedForks(
     updater: (items: ManagedForkQuery[]) => ManagedForkQuery[],
   ) {
@@ -286,7 +301,7 @@ export function ForksPage() {
           queryClient.invalidateQueries({ queryKey: ['my-forks'] }),
           queryClient.invalidateQueries({ queryKey: ['my-queries'] }),
         ])
-      } catch {
+      } catch (rollbackError) {
         updateCachedForks((items) => {
           if (items.some((item) => item.id === deletedFork.id)) {
             return items
@@ -298,7 +313,9 @@ export function ForksPage() {
           )
         })
 
-        toast.error('Could not delete fork.')
+        toast.error(
+          getMutationErrorMessage(rollbackError, 'Could not delete fork.'),
+        )
       }
     }, 5000)
 
@@ -474,15 +491,25 @@ export function ForksPage() {
           <div className="mt-4 rounded-2xl border border-dashed border-border/70 bg-card/95 p-8 text-center dark:bg-card">
             <h3 className="text-base font-semibold">No forks yet</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Fork a public community string from Discover or a query detail
-              page to start building your own variants.
+              Fork a public community string from Discover to create your own
+              variant, then keep it synced with the original source.
             </p>
-            <Link to="/discover" className="inline-flex">
-              <Button type="button" className="mt-4 rounded-xl">
-                <GitForkIcon className="size-4" />
-                Browse discover
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+              <Link to="/discover" className="inline-flex">
+                <Button type="button" className="rounded-xl">
+                  <GitForkIcon className="size-4" />
+                  Browse discover
+                </Button>
+              </Link>
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl"
+                render={<Link to="/library/new" />}
+              >
+                Create from scratch
               </Button>
-            </Link>
+            </div>
           </div>
         ) : filteredForks.length === 0 ? (
           <div className="mt-4 rounded-2xl border border-border/70 bg-card/95 p-6 text-center text-sm text-muted-foreground dark:bg-card">
@@ -491,162 +518,169 @@ export function ForksPage() {
         ) : (
           <div className={resultsLayoutClass}>
             {filteredForks.map((fork) => (
-              <article
+              <ManagedStringCard
                 key={fork.id}
-                className="rounded-2xl border border-border/70 bg-card/95 px-4 py-4 text-foreground dark:bg-card"
-              >
-                <div className="flex flex-col gap-4">
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <QueryCardHeader
-                      title={fork.title}
-                      onTitleClick={() => openDetails(fork.id)}
-                      titleClassName="block w-full text-left text-sm font-semibold leading-snug hover:underline"
-                      action={
-                        fork.isPublic ? (
+                title={fork.title}
+                titleClassName="block w-full text-left text-sm font-semibold leading-snug hover:underline"
+                onTitleClick={() => openDetails(fork.id)}
+                headerAction={
+                  fork.isPublic ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="rounded-lg"
+                      onClick={() =>
+                        void navigate({
+                          to: '/queries/$queryId',
+                          params: { queryId: fork.id },
+                        })
+                      }
+                    >
+                      View
+                    </Button>
+                  ) : null
+                }
+                statusBadges={
+                  <>
+                    {fork.isPublic ? (
+                      <Badge variant="outline" size="sm">
+                        Public
+                      </Badge>
+                    ) : (
+                      <>
+                        <Badge variant="outline" size="sm">
+                          Draft
+                        </Badge>
+                        <Badge variant="outline" size="sm">
+                          Private
+                        </Badge>
+                      </>
+                    )}
+                    <Badge
+                      variant="outline"
+                      size="sm"
+                      className={getSyncBadgeClasses(fork.syncStatus)}
+                    >
+                      {formatSyncLabel(fork.syncStatus)}
+                    </Badge>
+                  </>
+                }
+                description={fork.description}
+                query={fork.query}
+                details={
+                  <>
+                    <p>Forked {renderRelativeTime(fork.createdAt)}</p>
+                    <p>Updated {renderRelativeTime(fork.updatedAt)}</p>
+                    <p>
+                      Source:{' '}
+                      {fork.sourceQuery ? (
+                        <>
+                          {fork.sourceQuery.title}
+                          {fork.sourceQuery.creator?.displayName
+                            ? ` by ${fork.sourceQuery.creator.displayName}`
+                            : ''}
+                        </>
+                      ) : (
+                        'Original source no longer available.'
+                      )}
+                    </p>
+                  </>
+                }
+                tags={fork.autoTags}
+                footer={
+                  <>
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
                           <Button
                             type="button"
                             variant="outline"
-                            size="sm"
+                            size="icon-sm"
                             className="rounded-lg"
+                            aria-label="Copy"
                             onClick={() =>
-                              void navigate({
-                                to: '/queries/$queryId',
-                                params: { queryId: fork.id },
-                              })
+                              handleCopySearchString(fork.id, fork.query)
                             }
                           >
-                            View
+                            <CopyIcon className="size-4" />
                           </Button>
-                        ) : null
-                      }
-                    >
-                      {fork.isPublic ? (
-                        <Badge variant="outline" size="sm">
-                          Public
-                        </Badge>
-                      ) : (
-                        <>
-                          <Badge variant="outline" size="sm">
-                            Draft
-                          </Badge>
-                          <Badge variant="outline" size="sm">
-                            Private
-                          </Badge>
-                        </>
-                      )}
-                      <Badge
-                        variant="outline"
+                        }
+                      />
+                      <TooltipContent>Copy</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon-sm"
+                            className="rounded-lg"
+                            aria-label="Details"
+                            onClick={() => openDetails(fork.id)}
+                          >
+                            <CircleEllipsisIcon className="size-4" />
+                          </Button>
+                        }
+                      />
+                      <TooltipContent>Details</TooltipContent>
+                    </Tooltip>
+                    {fork.syncStatus === 'behind' ? (
+                      <Button
+                        type="button"
                         size="sm"
-                        className={getSyncBadgeClasses(fork.syncStatus)}
+                        className="rounded-lg"
+                        disabled={syncMutation.isPending}
+                        onClick={() => handleSync(fork)}
                       >
-                        {formatSyncLabel(fork.syncStatus)}
-                      </Badge>
-                    </QueryCardHeader>
-
-                    <p className="line-clamp-2 text-sm text-muted-foreground">
-                      {fork.description ?? 'No description yet.'}
-                    </p>
-
-                    <p className="font-mono text-xs text-muted-foreground">
-                      {fork.query}
-                    </p>
-
-                    <div className="space-y-1 text-xs text-muted-foreground">
-                      <p>Forked {renderRelativeTime(fork.createdAt)}</p>
-                      <p>Updated {renderRelativeTime(fork.updatedAt)}</p>
-                      <p>
-                        Source:{' '}
-                        {fork.sourceQuery ? (
-                          <>
-                            {fork.sourceQuery.title}
-                            {fork.sourceQuery.creator?.displayName
-                              ? ` by ${fork.sourceQuery.creator.displayName}`
-                              : ''}
-                          </>
-                        ) : (
-                          'Original source no longer available.'
-                        )}
-                      </p>
-                    </div>
-
-                    <QueryTagBadges tags={fork.autoTags} />
-                  </div>
-
-                  <div className="flex flex-col items-start gap-3">
-                    <QueryCardActions>
-                      <Tooltip>
-                        <TooltipTrigger
-                          render={
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon-sm"
-                              className="rounded-lg"
-                              aria-label="Details"
-                              onClick={() => openDetails(fork.id)}
-                            >
-                              <CircleEllipsisIcon className="size-4" />
-                            </Button>
-                          }
-                        />
-                        <TooltipContent>Details</TooltipContent>
-                      </Tooltip>
-                      {fork.syncStatus === 'behind' ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          className="rounded-lg"
-                          disabled={syncMutation.isPending}
-                          onClick={() => handleSync(fork)}
-                        >
-                          {syncMutation.isPending
-                            ? 'Syncing...'
-                            : 'Sync from source'}
-                        </Button>
-                      ) : null}
-                      <Tooltip>
-                        <TooltipTrigger
-                          render={
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon-sm"
-                              className="rounded-lg"
-                              aria-label="Edit"
-                              render={
-                                <Link
-                                  to="/forks/$queryId/edit"
-                                  params={{ queryId: fork.id }}
-                                />
-                              }
-                            >
-                              <Edit3Icon className="size-4" />
-                            </Button>
-                          }
-                        />
-                        <TooltipContent>Edit</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger
-                          render={
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon-sm"
-                              className="rounded-lg text-destructive hover:text-destructive"
-                              aria-label="Delete"
-                              onClick={() => handleDelete(fork)}
-                            >
-                              <Trash2Icon className="size-4" />
-                            </Button>
-                          }
-                        />
-                        <TooltipContent>Delete</TooltipContent>
-                      </Tooltip>
-                    </QueryCardActions>
-                  </div>
-                </div>
-              </article>
+                        {syncMutation.isPending
+                          ? 'Syncing...'
+                          : 'Sync from source'}
+                      </Button>
+                    ) : null}
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon-sm"
+                            className="rounded-lg"
+                            aria-label="Edit"
+                            render={
+                              <Link
+                                to="/forks/$queryId/edit"
+                                params={{ queryId: fork.id }}
+                              />
+                            }
+                          >
+                            <Edit3Icon className="size-4" />
+                          </Button>
+                        }
+                      />
+                      <TooltipContent>Edit</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon-sm"
+                            className="rounded-lg text-destructive hover:text-destructive"
+                            aria-label="Delete"
+                            onClick={() => handleDelete(fork)}
+                          >
+                            <Trash2Icon className="size-4" />
+                          </Button>
+                        }
+                      />
+                      <TooltipContent>Delete</TooltipContent>
+                    </Tooltip>
+                  </>
+                }
+              />
             ))}
           </div>
         )}

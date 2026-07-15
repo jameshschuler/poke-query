@@ -37,12 +37,19 @@ import {
   updateMe,
   updateNotificationPreferences,
 } from '#/lib/poke-query-api'
+import { getMutationErrorMessage } from '#/lib/mutation-toast'
 import type {
   NotificationPreferences,
   VisibleUsername,
 } from '#/lib/poke-query-api'
 import { findBlockedTerm } from '#/lib/content-policy'
 import { requireAuthenticated, setCachedUser } from '#/lib/route-auth'
+import {
+  getThemePreset,
+  setThemePreset,
+  THEME_PRESET_OPTIONS,
+} from '#/lib/theme-preferences'
+import type { ThemePreset } from '#/lib/theme-preferences'
 
 type AccountSearch = {
   redirect?: string
@@ -109,6 +116,9 @@ function AccountPage() {
       notifyQueryFavorite: true,
       inAppToasts: true,
     })
+  const [themePreset, setThemePresetState] = useState<ThemePreset>(() =>
+    getThemePreset(),
+  )
 
   const avatarPreviewUrl = formState.avatarUrl.trim()
 
@@ -226,7 +236,9 @@ function AccountPage() {
         return
       }
 
-      toast.error('Could not save profile.')
+      toast.error(
+        getMutationErrorMessage(mutationError, 'Could not save profile.'),
+      )
     },
   })
 
@@ -237,8 +249,10 @@ function AccountPage() {
       setDeactivateDialogOpen(false)
       await queryClient.invalidateQueries({ queryKey: ['me'] })
     },
-    onError: () => {
-      toast.error('Could not deactivate account.')
+    onError: (mutationError: unknown) => {
+      toast.error(
+        getMutationErrorMessage(mutationError, 'Could not deactivate account.'),
+      )
     },
   })
 
@@ -248,8 +262,10 @@ function AccountPage() {
       toast.success('Account reactivated.')
       await queryClient.invalidateQueries({ queryKey: ['me'] })
     },
-    onError: () => {
-      toast.error('Could not reactivate account.')
+    onError: (mutationError: unknown) => {
+      toast.error(
+        getMutationErrorMessage(mutationError, 'Could not reactivate account.'),
+      )
     },
   })
 
@@ -262,8 +278,10 @@ function AccountPage() {
       toast.success('Account deleted.')
       void navigate({ to: '/login', replace: true })
     },
-    onError: () => {
-      toast.error('Could not delete account.')
+    onError: (mutationError: unknown) => {
+      toast.error(
+        getMutationErrorMessage(mutationError, 'Could not delete account.'),
+      )
     },
   })
 
@@ -276,8 +294,13 @@ function AccountPage() {
       })
       toast.success('Notification preferences saved.')
     },
-    onError: () => {
-      toast.error('Could not save notification preferences.')
+    onError: (mutationError: unknown) => {
+      toast.error(
+        getMutationErrorMessage(
+          mutationError,
+          'Could not save notification preferences.',
+        ),
+      )
     },
   })
 
@@ -327,6 +350,16 @@ function AccountPage() {
     }
 
     saveMutation.mutate()
+  }
+
+  function handleThemePresetChange(nextPreset: ThemePreset) {
+    if (nextPreset === themePreset) {
+      return
+    }
+
+    setThemePresetState(nextPreset)
+    setThemePreset(nextPreset)
+    toast.success('Theme updated.')
   }
 
   if (isLoading) {
@@ -649,11 +682,13 @@ function AccountPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  className={
+                  aria-pressed={formState.isProfilePublic}
+                  className={[
+                    'max-sm:w-full',
                     formState.isProfilePublic
-                      ? 'rounded-xl border-sky-300/80 bg-sky-500/10 text-sky-700 hover:bg-sky-500/20 hover:text-sky-800 dark:border-sky-500/50 dark:bg-sky-500/20 dark:text-sky-200 dark:hover:bg-sky-500/30'
-                      : 'rounded-xl border-slate-300/80 bg-slate-500/10 text-slate-700 hover:bg-slate-500/20 hover:text-slate-800 dark:border-slate-500/50 dark:bg-slate-500/20 dark:text-slate-200 dark:hover:bg-slate-500/30'
-                  }
+                      ? 'rounded-xl border-sky-300/80 bg-sky-500/10 text-sky-700 hover:bg-sky-500/20 hover:text-sky-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50 dark:border-sky-500/50 dark:bg-sky-500/20 dark:text-sky-200 dark:hover:bg-sky-500/30'
+                      : 'rounded-xl border-slate-300/80 bg-slate-500/10 text-slate-700 hover:bg-slate-500/20 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50 dark:border-slate-500/50 dark:bg-slate-500/20 dark:text-slate-200 dark:hover:bg-slate-500/30',
+                  ].join(' ')}
                   onClick={() =>
                     handleChange('isProfilePublic', !formState.isProfilePublic)
                   }
@@ -708,7 +743,7 @@ function AccountPage() {
               </div>
             </div>
 
-            <div className="mt-5 flex items-center justify-end gap-2">
+            <div className="mt-5 flex flex-col-reverse items-stretch gap-2 sm:flex-row sm:justify-end">
               <Button
                 type="button"
                 variant="outline"
@@ -745,6 +780,37 @@ function AccountPage() {
           </section>
 
           <section className="rounded-2xl border border-border/70 bg-card/95 p-5">
+            <h3 className="text-base font-semibold">Theme</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Choose a color preset for your app experience. This preference is
+              saved in your browser.
+            </p>
+
+            <div
+              className="mt-4 grid gap-2 sm:grid-cols-3"
+              role="radiogroup"
+              aria-label="Theme preset"
+            >
+              {THEME_PRESET_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={themePreset === option.value}
+                  className={`rounded-xl border px-3 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 max-sm:w-full max-sm:text-left sm:text-center ${
+                    themePreset === option.value
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-border/70 bg-background hover:bg-muted'
+                  }`}
+                  onClick={() => handleThemePresetChange(option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-2xl border border-border/70 bg-card/95 p-5">
             <h3 className="text-base font-semibold">
               Notification Preferences
             </h3>
@@ -754,7 +820,7 @@ function AccountPage() {
             </p>
 
             <div className="mt-4 grid gap-3">
-              <label className="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-background/60 p-3">
+              <label className="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-background/60 p-3 max-sm:flex-col">
                 <div>
                   <p className="text-sm font-medium">New Followers</p>
                   <p className="text-xs text-muted-foreground">
@@ -770,11 +836,11 @@ function AccountPage() {
                       notifyNewFollower: event.target.checked,
                     }))
                   }
-                  className="mt-0.5 size-4 accent-primary"
+                  className="mt-0.5 size-4 accent-primary max-sm:self-start"
                 />
               </label>
 
-              <label className="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-background/60 p-3">
+              <label className="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-background/60 p-3 max-sm:flex-col">
                 <div>
                   <p className="text-sm font-medium">Forked Queries</p>
                   <p className="text-xs text-muted-foreground">
@@ -790,11 +856,11 @@ function AccountPage() {
                       notifyQueryFork: event.target.checked,
                     }))
                   }
-                  className="mt-0.5 size-4 accent-primary"
+                  className="mt-0.5 size-4 accent-primary max-sm:self-start"
                 />
               </label>
 
-              <label className="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-background/60 p-3">
+              <label className="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-background/60 p-3 max-sm:flex-col">
                 <div>
                   <p className="text-sm font-medium">Favorited Queries</p>
                   <p className="text-xs text-muted-foreground">
@@ -810,11 +876,11 @@ function AccountPage() {
                       notifyQueryFavorite: event.target.checked,
                     }))
                   }
-                  className="mt-0.5 size-4 accent-primary"
+                  className="mt-0.5 size-4 accent-primary max-sm:self-start"
                 />
               </label>
 
-              <label className="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-background/60 p-3">
+              <label className="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-background/60 p-3 max-sm:flex-col">
                 <div>
                   <p className="text-sm font-medium">In-app Toast Alerts</p>
                   <p className="text-xs text-muted-foreground">
@@ -830,7 +896,7 @@ function AccountPage() {
                       inAppToasts: event.target.checked,
                     }))
                   }
-                  className="mt-0.5 size-4 accent-primary"
+                  className="mt-0.5 size-4 accent-primary max-sm:self-start"
                 />
               </label>
             </div>
@@ -838,7 +904,7 @@ function AccountPage() {
             <div className="mt-5 flex justify-end">
               <Button
                 type="button"
-                className="rounded-xl"
+                className="rounded-xl max-sm:w-full"
                 disabled={isSavingNotificationPreferences}
                 onClick={() => saveNotificationPreferencesMutation.mutate()}
               >

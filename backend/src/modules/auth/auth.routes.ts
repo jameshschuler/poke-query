@@ -1,5 +1,7 @@
 import { LoginSchema, LogoutSchema, VerifyRouteSchema } from "./auth.schema.js";
+import type { VerifyRequest } from "./auth.schema.js";
 import { supabase } from "../../lib/supabase.js";
+import { trainers } from "../../db/schema.js";
 import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import type { FastifyTypebox } from "../../types/fastify.js";
 
@@ -29,7 +31,15 @@ export async function authRoutes(fastify: FastifyTypebox) {
     return { message: "Check your email for the magic link!" };
   });
 
-  server.post(
+  server.post<{
+    Body: VerifyRequest;
+    Reply: {
+      200: { message: string };
+      400: { error: string };
+      401: { error: string };
+      500: { error: string };
+    };
+  }>(
     "/verify",
     {
       schema: VerifyRouteSchema,
@@ -59,6 +69,27 @@ export async function authRoutes(fastify: FastifyTypebox) {
 
       if (error || !data.session) {
         return reply.code(401).send({ error: error?.message || "Verification failed" });
+      }
+
+      const authUser = data.user;
+      const authUserId = authUser?.id;
+
+      if (!authUserId) {
+        return reply.code(500).send({ error: "Authenticated user is missing an ID" });
+      }
+
+      try {
+        await fastify.db
+          .insert(trainers)
+          .values({
+            id: authUserId,
+            userId: authUserId,
+            username: `trainer_${authUserId.replace(/-/g, "")}`,
+          })
+          .onConflictDoNothing({ target: trainers.userId });
+      } catch (trainerError) {
+        request.log.error({ trainerError, authUserId }, "Failed to initialize trainer profile");
+        return reply.code(500).send({ error: "Failed to initialize trainer profile" });
       }
 
       // Set the JWT in a secure, HttpOnly cookie

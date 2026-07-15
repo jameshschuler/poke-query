@@ -5,7 +5,11 @@ type QueryCardActionsProps = {
 }
 
 function QueryCardActions({ children }: QueryCardActionsProps) {
-  return <div className="flex flex-wrap gap-2">{children}</div>
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-2 rounded-xl bg-background/70 p-1.5">
+      {children}
+    </div>
+  )
 }
 
 export { QueryCardActions }

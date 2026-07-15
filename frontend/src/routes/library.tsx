@@ -7,6 +7,7 @@ import {
   useRouterState,
 } from '@tanstack/react-router'
 import {
+  CopyIcon,
   EyeIcon,
   Edit3Icon,
   Grid2x2Icon,
@@ -19,8 +20,7 @@ import {
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
-import { QueryCardActions } from '#/components/query-card-actions'
-import { QueryCardHeader } from '#/components/query-card-header'
+import { ManagedStringCard } from '#/components/managed-string-card'
 import { TimestampTooltip } from '#/components/timestamp-tooltip'
 import { PageShell } from '#/components/page-shell'
 import { Badge } from '#/components/ui/badge'
@@ -41,14 +41,15 @@ import {
 } from '#/components/ui/tooltip'
 import {
   deleteQuery,
+  copyQuery,
   favoriteQuery,
   getMyFavoriteIds,
   getMyQueries,
   unfavoriteQuery,
 } from '#/lib/poke-query-api'
 import type { ManagedQuery } from '#/lib/poke-query-api'
+import { getMutationErrorMessage } from '#/lib/mutation-toast'
 import { requireAuthenticated } from '#/lib/route-auth'
-import { QueryTagBadges } from '../components/query-tag-badges'
 
 type StatusFilter = 'all' | 'draft' | 'public'
 type LayoutMode = 'list' | 'grid-2' | 'grid-3'
@@ -119,7 +120,7 @@ function LibraryPage() {
   const favoriteMutation = useMutation({
     mutationFn: favoriteQuery,
     onSuccess: async () => {
-      toast.success('Saved to favorites!')
+      toast.success('Saved to favorites.')
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['my-favorite-ids'] }),
         queryClient.invalidateQueries({ queryKey: ['my-favorites-page'] }),
@@ -127,8 +128,10 @@ function LibraryPage() {
         queryClient.invalidateQueries({ queryKey: ['my-queries'] }),
       ])
     },
-    onError: () => {
-      toast.error('Could not save favorite.')
+    onError: (mutationError: unknown) => {
+      toast.error(
+        getMutationErrorMessage(mutationError, 'Could not save favorite.'),
+      )
     },
   })
 
@@ -143,8 +146,10 @@ function LibraryPage() {
         queryClient.invalidateQueries({ queryKey: ['my-queries'] }),
       ])
     },
-    onError: () => {
-      toast.error('Could not remove favorite.')
+    onError: (mutationError: unknown) => {
+      toast.error(
+        getMutationErrorMessage(mutationError, 'Could not remove favorite.'),
+      )
     },
   })
 
@@ -208,6 +213,18 @@ function LibraryPage() {
     favoriteMutation.mutate(queryId)
   }
 
+  function handleCopySearchString(queryId: string, value: string) {
+    void navigator.clipboard
+      .writeText(value)
+      .then(() => {
+        void copyQuery(queryId)
+        toast.success('Copied to clipboard!')
+      })
+      .catch(() => {
+        toast.error('Could not copy string.')
+      })
+  }
+
   function handleDeleteConfirm() {
     if (!queryToDelete) {
       return
@@ -235,7 +252,7 @@ function LibraryPage() {
       try {
         await deleteQuery(deletedItem.id)
         await queryClient.invalidateQueries({ queryKey: ['my-queries'] })
-      } catch {
+      } catch (rollbackError) {
         queryClient.setQueryData<{ queries: ManagedQuery[] }>(
           ['my-queries'],
           (current) => {
@@ -255,7 +272,9 @@ function LibraryPage() {
           },
         )
 
-        toast.error('Could not delete string.')
+        toast.error(
+          getMutationErrorMessage(rollbackError, 'Could not delete string.'),
+        )
       }
     }, 5000)
 
@@ -348,8 +367,8 @@ function LibraryPage() {
           ))}
         </div>
 
-        <div className="mt-5 flex items-center justify-between gap-3">
-          <div>
+        <div className="mt-5 flex gap-3 max-sm:flex-col sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <h3 className="text-base font-semibold">Your strings</h3>
             <p className="text-sm text-muted-foreground">
               Drafts and published strings live here.
@@ -358,7 +377,7 @@ function LibraryPage() {
 
           <Button
             type="button"
-            className="rounded-xl"
+            className="rounded-xl max-sm:w-full"
             render={<Link to="/library/new" />}
           >
             <PlusIcon className="size-4" />
@@ -366,15 +385,15 @@ function LibraryPage() {
           </Button>
         </div>
 
-        <div className="mt-4 mb-6 flex flex-row flex-wrap items-center justify-between gap-3">
+        <div className="mt-4 mb-6 flex gap-3 max-sm:flex-col sm:flex-wrap sm:items-center sm:justify-between">
           <Input
             value={searchText}
             onChange={(event) => setSearchText(event.target.value)}
             placeholder="Search by title, string, description, or tag"
-            className="h-10 min-w-64 flex-1 rounded-xl border border-border/70 bg-card/95 dark:bg-card"
+            className="h-10 min-w-0 flex-1 rounded-xl border border-border/70 bg-card/95 max-sm:w-full dark:bg-card"
           />
 
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
             {[
               { value: 'all', label: 'All' },
               { value: 'draft', label: 'Draft' },
@@ -394,7 +413,7 @@ function LibraryPage() {
           </div>
         </div>
 
-        <div className="mt-3 flex justify-end">
+        <div className="mt-3 flex max-sm:justify-start sm:justify-end">
           <div className="flex flex-wrap items-center gap-2">
             {[
               { value: 'list', label: 'List', Icon: ListIcon },
@@ -430,19 +449,29 @@ function LibraryPage() {
           </div>
         ) : queries.length === 0 ? (
           <div className="mt-4 rounded-2xl border border-dashed border-border/70 bg-card/95 p-8 text-center dark:bg-card">
-            <h3 className="text-base font-semibold">No strings yet</h3>
+            <h3 className="text-base font-semibold">Welcome to your library</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Start a private draft or publish a new search string to build your
-              library.
+              Start with a draft, then publish once you are happy with your
+              search string. You can always edit later.
             </p>
-            <Button
-              type="button"
-              className="mt-4 rounded-xl"
-              render={<Link to="/library/new" />}
-            >
-              <PlusIcon className="size-4" />
-              Create your first string
-            </Button>
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+              <Button
+                type="button"
+                className="rounded-xl max-sm:w-full"
+                render={<Link to="/library/new" />}
+              >
+                <PlusIcon className="size-4" />
+                Create first string
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl max-sm:w-full"
+                render={<Link to="/discover" />}
+              >
+                Explore examples
+              </Button>
+            </div>
           </div>
         ) : filteredQueries.length === 0 ? (
           <div className="mt-4 rounded-2xl border border-border/70 bg-card/95 p-6 text-center text-sm text-muted-foreground dark:bg-card">
@@ -451,153 +480,152 @@ function LibraryPage() {
         ) : (
           <div className={resultsLayoutClass}>
             {filteredQueries.map((query) => (
-              <article
+              <ManagedStringCard
                 key={query.id}
-                className="rounded-2xl border border-border/70 bg-card/95 px-4 py-4 text-foreground dark:bg-card"
-              >
-                <div className="flex flex-col gap-4">
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <QueryCardHeader
-                      title={query.title}
-                      onTitleClick={() =>
-                        void navigate({
-                          to: '/library/$queryId/edit',
-                          params: { queryId: query.id },
-                        })
-                      }
-                      action={
-                        query.isPublic ? (
-                          <Tooltip>
-                            <TooltipTrigger
-                              render={
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="icon-sm"
-                                  className="rounded-lg"
-                                  aria-label="View"
-                                  onClick={() =>
-                                    void navigate({
-                                      to: '/queries/$queryId',
-                                      params: { queryId: query.id },
-                                    })
-                                  }
-                                >
-                                  <EyeIcon className="size-4" />
-                                </Button>
-                              }
-                            />
-                            <TooltipContent>View</TooltipContent>
-                          </Tooltip>
-                        ) : null
-                      }
-                    >
-                      {query.isPublic ? (
-                        <Badge variant="outline">Public</Badge>
-                      ) : (
-                        <>
-                          <Badge variant="outline">Draft</Badge>
-                          <Badge variant="outline">Private</Badge>
-                        </>
-                      )}
-                    </QueryCardHeader>
-
-                    <p className="line-clamp-2 text-sm text-muted-foreground">
-                      {query.description ?? 'No description yet.'}
-                    </p>
-
-                    <p className="font-mono text-xs text-muted-foreground">
-                      {query.query}
-                    </p>
-
-                    <p className="text-xs text-muted-foreground">
-                      Updated {renderRelativeTime(query.updatedAt)}
-                    </p>
-
-                    <QueryTagBadges tags={query.autoTags} />
-                  </div>
-
-                  <div className="flex flex-col items-start gap-3">
-                    <QueryCardActions>
-                      <Tooltip>
-                        <TooltipTrigger
-                          render={
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon-sm"
-                              className={`rounded-lg ${
+                title={query.title}
+                onTitleClick={() =>
+                  void navigate({
+                    to: '/library/$queryId/edit',
+                    params: { queryId: query.id },
+                  })
+                }
+                headerAction={
+                  query.isPublic ? (
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon-sm"
+                            className="rounded-lg"
+                            aria-label="View"
+                            onClick={() =>
+                              void navigate({
+                                to: '/queries/$queryId',
+                                params: { queryId: query.id },
+                              })
+                            }
+                          >
+                            <EyeIcon className="size-4" />
+                          </Button>
+                        }
+                      />
+                      <TooltipContent>View</TooltipContent>
+                    </Tooltip>
+                  ) : null
+                }
+                statusBadges={
+                  query.isPublic ? (
+                    <Badge variant="outline">Public</Badge>
+                  ) : (
+                    <>
+                      <Badge variant="outline">Draft</Badge>
+                      <Badge variant="outline">Private</Badge>
+                    </>
+                  )
+                }
+                description={query.description}
+                query={query.query}
+                details={<p>Updated {renderRelativeTime(query.updatedAt)}</p>}
+                tags={query.autoTags}
+                footer={
+                  <>
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon-sm"
+                            className="rounded-lg"
+                            aria-label="Copy"
+                            onClick={() =>
+                              handleCopySearchString(query.id, query.query)
+                            }
+                          >
+                            <CopyIcon className="size-4" />
+                          </Button>
+                        }
+                      />
+                      <TooltipContent>Copy</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon-sm"
+                            className={`rounded-lg ${
+                              favoriteIdSet.has(query.id)
+                                ? 'border-rose-300 text-rose-600 hover:bg-rose-50 hover:text-rose-600'
+                                : ''
+                            }`}
+                            aria-label={
+                              favoriteIdSet.has(query.id)
+                                ? 'Favorited'
+                                : 'Favorite'
+                            }
+                            disabled={isFavoritePending}
+                            onClick={() => handleToggleFavorite(query.id)}
+                          >
+                            <HeartIcon
+                              className={`size-4 ${
                                 favoriteIdSet.has(query.id)
-                                  ? 'border-rose-300 text-rose-600 hover:bg-rose-50 hover:text-rose-600'
+                                  ? 'fill-current text-rose-600'
                                   : ''
                               }`}
-                              aria-label={
-                                favoriteIdSet.has(query.id)
-                                  ? 'Favorited'
-                                  : 'Favorite'
-                              }
-                              disabled={isFavoritePending}
-                              onClick={() => handleToggleFavorite(query.id)}
-                            >
-                              <HeartIcon
-                                className={`size-4 ${
-                                  favoriteIdSet.has(query.id)
-                                    ? 'fill-current text-rose-600'
-                                    : ''
-                                }`}
+                            />
+                          </Button>
+                        }
+                      />
+                      <TooltipContent>
+                        {favoriteIdSet.has(query.id) ? 'Favorited' : 'Favorite'}
+                      </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon-sm"
+                            className="rounded-lg"
+                            aria-label="Edit"
+                            render={
+                              <Link
+                                to="/library/$queryId/edit"
+                                params={{ queryId: query.id }}
                               />
-                            </Button>
-                          }
-                        />
-                        <TooltipContent>
-                          {favoriteIdSet.has(query.id)
-                            ? 'Favorited'
-                            : 'Favorite'}
-                        </TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger
-                          render={
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon-sm"
-                              className="rounded-lg"
-                              aria-label="Edit"
-                              render={
-                                <Link
-                                  to="/library/$queryId/edit"
-                                  params={{ queryId: query.id }}
-                                />
-                              }
-                            >
-                              <Edit3Icon className="size-4" />
-                            </Button>
-                          }
-                        />
-                        <TooltipContent>Edit</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger
-                          render={
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon-sm"
-                              className="rounded-lg text-destructive hover:text-destructive"
-                              aria-label="Delete"
-                              onClick={() => handleDelete(query)}
-                            >
-                              <Trash2Icon className="size-4" />
-                            </Button>
-                          }
-                        />
-                        <TooltipContent>Delete</TooltipContent>
-                      </Tooltip>
-                    </QueryCardActions>
-                  </div>
-                </div>
-              </article>
+                            }
+                          >
+                            <Edit3Icon className="size-4" />
+                          </Button>
+                        }
+                      />
+                      <TooltipContent>Edit</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon-sm"
+                            className="rounded-lg text-destructive hover:text-destructive"
+                            aria-label="Delete"
+                            onClick={() => handleDelete(query)}
+                          >
+                            <Trash2Icon className="size-4" />
+                          </Button>
+                        }
+                      />
+                      <TooltipContent>Delete</TooltipContent>
+                    </Tooltip>
+                  </>
+                }
+              />
             ))}
           </div>
         )}

@@ -3,8 +3,9 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import {
+  CopyIcon,
   EyeIcon,
   Grid2x2Icon,
   Grid3x3Icon,
@@ -15,10 +16,8 @@ import {
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
+import { ManagedStringCard } from '#/components/managed-string-card'
 import { PageShell } from '#/components/page-shell'
-import { QueryCardActions } from '#/components/query-card-actions'
-import { QueryCardHeader } from '#/components/query-card-header'
-import { QueryTagBadges } from '#/components/query-tag-badges'
 import { TimestampTooltip } from '#/components/timestamp-tooltip'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
@@ -28,8 +27,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '#/components/ui/tooltip'
-import { getMyFavoritesPage, unfavoriteQuery } from '#/lib/poke-query-api'
+import {
+  copyQuery,
+  getMyFavoritesPage,
+  unfavoriteQuery,
+} from '#/lib/poke-query-api'
 import type { MyFavoriteQuery } from '#/lib/poke-query-api'
+import { getMutationErrorMessage } from '#/lib/mutation-toast'
 import { requireAuthenticated } from '#/lib/route-auth'
 
 type FavoritesSearch = {
@@ -116,8 +120,10 @@ function FavoritesPage() {
         queryClient.invalidateQueries({ queryKey: ['my-favorite-ids'] }),
       ])
     },
-    onError: () => {
-      toast.error('Could not remove favorite.')
+    onError: (mutationError: unknown) => {
+      toast.error(
+        getMutationErrorMessage(mutationError, 'Could not remove favorite.'),
+      )
     },
   })
 
@@ -174,6 +180,18 @@ function FavoritesPage() {
     }
 
     unfavoriteMutation.mutate(query.id)
+  }
+
+  function handleCopySearchString(queryId: string, value: string) {
+    void navigator.clipboard
+      .writeText(value)
+      .then(() => {
+        void copyQuery(queryId)
+        toast.success('Copied to clipboard!')
+      })
+      .catch(() => {
+        toast.error('Could not copy string.')
+      })
   }
 
   return (
@@ -295,9 +313,18 @@ function FavoritesPage() {
         <div className="mt-4 rounded-2xl border border-dashed border-border/70 bg-card/95 p-8 text-center dark:bg-card">
           <h3 className="text-base font-semibold">No favorites yet</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            Favorite a string in Discover, Query Detail, or a Trainer profile to
-            see it here.
+            Save useful strings while browsing Discover, then come back here to
+            quickly reuse them.
           </p>
+          <div className="mt-4 flex justify-center">
+            <Button
+              type="button"
+              className="rounded-xl"
+              render={<Link to="/discover" />}
+            >
+              Start in Discover
+            </Button>
+          </div>
         </div>
       ) : filteredFavorites.length === 0 ? (
         <div className="mt-4 rounded-2xl border border-border/70 bg-card/95 p-6 text-center text-sm text-muted-foreground dark:bg-card">
@@ -306,99 +333,104 @@ function FavoritesPage() {
       ) : (
         <div className={resultsLayoutClass}>
           {filteredFavorites.map((item) => (
-            <article
+            <ManagedStringCard
               key={item.id}
-              className="rounded-2xl border border-border/70 bg-card/95 px-4 py-4 text-foreground dark:bg-card"
-            >
-              <div className="flex flex-col gap-4">
-                <div className="min-w-0 flex-1 space-y-2">
-                  <QueryCardHeader
-                    title={item.title}
-                    onTitleClick={() =>
-                      void navigate({
-                        to: '/queries/$queryId',
-                        params: { queryId: item.id },
-                      })
-                    }
-                    action={
-                      <Tooltip>
-                        <TooltipTrigger
-                          render={
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon-sm"
-                              className="rounded-lg"
-                              aria-label="View"
-                              onClick={() =>
-                                void navigate({
-                                  to: '/queries/$queryId',
-                                  params: { queryId: item.id },
-                                })
-                              }
-                            >
-                              <EyeIcon className="size-4" />
-                            </Button>
-                          }
-                        />
-                        <TooltipContent>View</TooltipContent>
-                      </Tooltip>
-                    }
-                  >
-                    {item.isPublic ? (
-                      <Badge variant="outline">Public</Badge>
-                    ) : (
-                      <>
-                        <Badge variant="outline">Draft</Badge>
-                        <Badge variant="outline">Private</Badge>
-                      </>
-                    )}
-                  </QueryCardHeader>
-
-                  <p className="line-clamp-2 text-sm text-muted-foreground">
-                    {item.description ?? 'No description yet.'}
-                  </p>
-
-                  <p className="font-mono text-xs text-muted-foreground">
-                    {item.query}
-                  </p>
-
-                  <div className="space-y-1 text-xs text-muted-foreground">
-                    <p>Favorited {renderRelativeTime(item.favoritedAt)}</p>
-                    <p>Updated {renderRelativeTime(item.updatedAt)}</p>
-                  </div>
-
-                  <QueryTagBadges tags={item.autoTags} />
-                </div>
-
-                <div className="flex flex-col items-start gap-3">
-                  <QueryCardActions>
-                    <Tooltip>
-                      <TooltipTrigger
-                        render={
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon-sm"
-                            className="rounded-lg text-destructive hover:text-destructive"
-                            aria-label="Remove"
-                            onClick={() => handleUnfavorite(item)}
-                            disabled={unfavoriteMutation.isPending}
-                          >
-                            <Trash2Icon className="size-4" />
-                          </Button>
+              title={item.title}
+              onTitleClick={() =>
+                void navigate({
+                  to: '/queries/$queryId',
+                  params: { queryId: item.id },
+                })
+              }
+              headerAction={
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon-sm"
+                        className="rounded-lg"
+                        aria-label="View"
+                        onClick={() =>
+                          void navigate({
+                            to: '/queries/$queryId',
+                            params: { queryId: item.id },
+                          })
                         }
-                      />
-                      <TooltipContent>Remove</TooltipContent>
-                    </Tooltip>
-                    <div className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-card px-3 py-1.5 text-xs text-muted-foreground">
-                      <HeartIcon className="size-3.5" />
-                      {item.favoriteCount}
-                    </div>
-                  </QueryCardActions>
-                </div>
-              </div>
-            </article>
+                      >
+                        <EyeIcon className="size-4" />
+                      </Button>
+                    }
+                  />
+                  <TooltipContent>View</TooltipContent>
+                </Tooltip>
+              }
+              statusBadges={
+                item.isPublic ? (
+                  <Badge variant="outline">Public</Badge>
+                ) : (
+                  <>
+                    <Badge variant="outline">Draft</Badge>
+                    <Badge variant="outline">Private</Badge>
+                  </>
+                )
+              }
+              description={item.description}
+              query={item.query}
+              details={
+                <>
+                  <p>Favorited {renderRelativeTime(item.favoritedAt)}</p>
+                  <p>Updated {renderRelativeTime(item.updatedAt)}</p>
+                </>
+              }
+              tags={item.autoTags}
+              footer={
+                <>
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon-sm"
+                          className="rounded-lg"
+                          aria-label="Copy"
+                          onClick={() =>
+                            handleCopySearchString(item.id, item.query)
+                          }
+                        >
+                          <CopyIcon className="size-4" />
+                        </Button>
+                      }
+                    />
+                    <TooltipContent>Copy</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon-sm"
+                          className="rounded-lg text-destructive hover:text-destructive"
+                          aria-label="Remove"
+                          onClick={() => handleUnfavorite(item)}
+                          disabled={unfavoriteMutation.isPending}
+                        >
+                          <Trash2Icon className="size-4" />
+                        </Button>
+                      }
+                    />
+                    <TooltipContent>Remove</TooltipContent>
+                  </Tooltip>
+                  <div className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-card px-3 py-1.5 text-xs text-muted-foreground">
+                    <HeartIcon className="size-3.5" />
+                    {item.favoriteCount}
+                  </div>
+                </>
+              }
+            />
           ))}
         </div>
       )}

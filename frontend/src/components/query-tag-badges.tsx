@@ -10,9 +10,9 @@ function QueryTagBadges({ tags }: QueryTagBadgesProps) {
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap items-center gap-1.5 pt-1">
       {tags.map((tag) => (
-        <Badge key={tag} variant="secondary">
+        <Badge key={tag} variant="secondary" className="rounded-md">
           {tag}
         </Badge>
       ))}

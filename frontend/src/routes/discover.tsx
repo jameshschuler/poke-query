@@ -30,6 +30,7 @@ import {
   unfavoriteGuestQuery,
   ApiRequestError,
 } from '#/lib/poke-query-api'
+import { getMutationErrorMessage } from '#/lib/mutation-toast'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -159,14 +160,14 @@ function DiscoverPage() {
   const favoriteMutation = useMutation({
     mutationFn: favoriteQuery,
     onSuccess: async () => {
-      toast.success('Saved to favorites!')
+      toast.success('Saved to favorites.')
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['my-favorite-ids'] }),
         queryClient.invalidateQueries({ queryKey: ['my-favorites-page'] }),
       ])
     },
-    onError: () => {
-      toast.error('Could not save favorite.')
+    onError: (error: unknown) => {
+      toast.error(getMutationErrorMessage(error, 'Could not save favorite.'))
     },
   })
 
@@ -179,8 +180,8 @@ function DiscoverPage() {
         queryClient.invalidateQueries({ queryKey: ['my-favorites-page'] }),
       ])
     },
-    onError: () => {
-      toast.error('Could not remove favorite.')
+    onError: (error: unknown) => {
+      toast.error(getMutationErrorMessage(error, 'Could not remove favorite.'))
     },
   })
 
@@ -205,14 +206,14 @@ function DiscoverPage() {
         return
       }
 
-      toast.error('Could not fork string.')
+      toast.error(getMutationErrorMessage(error, 'Could not fork string.'))
     },
   })
 
   const guestFavoriteMutation = useMutation({
     mutationFn: favoriteGuestQuery,
     onSuccess: () => {
-      toast.success('Saved to favorites!')
+      toast.success('Saved to favorites.')
       void queryClient.invalidateQueries({ queryKey: ['guest-favorites'] })
     },
     onError: (error: unknown) => {
@@ -222,7 +223,7 @@ function DiscoverPage() {
         )
         return
       }
-      toast.error('Could not save favorite.')
+      toast.error(getMutationErrorMessage(error, 'Could not save favorite.'))
     },
   })
 
@@ -232,8 +233,8 @@ function DiscoverPage() {
       toast.success('Removed from favorites.')
       void queryClient.invalidateQueries({ queryKey: ['guest-favorites'] })
     },
-    onError: () => {
-      toast.error('Could not remove favorite.')
+    onError: (error: unknown) => {
+      toast.error(getMutationErrorMessage(error, 'Could not remove favorite.'))
     },
   })
 
@@ -245,8 +246,8 @@ function DiscoverPage() {
       toast.success('Cleared favorites.')
       void queryClient.invalidateQueries({ queryKey: ['guest-favorites'] })
     },
-    onError: () => {
-      toast.error('Could not clear favorites.')
+    onError: (error: unknown) => {
+      toast.error(getMutationErrorMessage(error, 'Could not clear favorites.'))
     },
   })
 
@@ -456,8 +457,8 @@ function DiscoverPage() {
         subtitle="Browse popular and recently updated community search strings."
         contentHeaderVariant="floating"
         headerControls={
-          <div className="flex w-full items-center gap-2 md:ml-auto md:max-w-xl">
-            <div className="relative flex-1">
+          <div className="flex w-full flex-wrap items-center gap-2 max-sm:flex-col max-sm:items-stretch md:ml-auto md:max-w-xl md:flex-nowrap">
+            <div className="relative w-full md:flex-1">
               <SearchIcon className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search strings..."
@@ -480,7 +481,7 @@ function DiscoverPage() {
                   type="button"
                   tabIndex={0}
                   aria-label="Clear search"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-full bg-muted text-base text-muted-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-muted text-base text-muted-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   onClick={() => setSearchTerm('')}
                 >
                   <span
@@ -492,42 +493,44 @@ function DiscoverPage() {
                 </button>
               )}
             </div>
-            {user ? (
-              <Button
-                className="shrink-0 rounded-full px-3 sm:px-4"
-                render={<Link to="/library/new" />}
-              >
-                <PlusIcon />
-                <span>New String</span>
-              </Button>
-            ) : (
-              <>
-                {guestFavoritesCount > 0 ? (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="relative shrink-0 cursor-pointer rounded-xl shadow-sm"
-                    onClick={() => setIsDrawerOpen(true)}
-                  >
-                    <HeartIcon className="size-4" />
-                    <span>Favorites</span>
-                    <span className="absolute -right-2 -top-2 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold leading-none text-primary-foreground">
-                      {guestFavoritesBadgeLabel}
-                    </span>
-                  </Button>
-                ) : null}
+            <div className="flex flex-wrap gap-2 max-sm:w-full sm:w-auto sm:justify-end">
+              {user ? (
                 <Button
-                  variant="default"
-                  size="sm"
-                  className="shrink-0 cursor-pointer rounded-xl px-4 shadow-sm"
-                  onClick={() => {
-                    window.location.href = '/login'
-                  }}
+                  className="shrink-0 rounded-full px-3 max-sm:w-full sm:px-4"
+                  render={<Link to="/library/new" />}
                 >
-                  Log in
+                  <PlusIcon />
+                  <span>New String</span>
                 </Button>
-              </>
-            )}
+              ) : (
+                <>
+                  {guestFavoritesCount > 0 ? (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="relative cursor-pointer rounded-xl shadow-sm max-sm:w-full"
+                      onClick={() => setIsDrawerOpen(true)}
+                    >
+                      <HeartIcon className="size-4" />
+                      <span>Favorites</span>
+                      <span className="absolute -right-2 -top-2 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold leading-none text-primary-foreground">
+                        {guestFavoritesBadgeLabel}
+                      </span>
+                    </Button>
+                  ) : null}
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="cursor-pointer rounded-xl px-4 shadow-sm max-sm:w-full"
+                    onClick={() => {
+                      window.location.href = '/login'
+                    }}
+                  >
+                    Log in
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
         }
       >
@@ -539,6 +542,8 @@ function DiscoverPage() {
                 variant={activeFilterKey === filter.key ? 'outline' : 'ghost'}
                 size="sm"
                 className="rounded-xl px-4"
+                aria-pressed={activeFilterKey === filter.key}
+                aria-label={`Filter by ${filter.label}`}
                 onClick={() => setActiveFilterKey(filter.key)}
               >
                 {filter.label}
@@ -552,6 +557,7 @@ function DiscoverPage() {
                       variant={activeDropdownFilter ? 'outline' : 'ghost'}
                       size="sm"
                       className="rounded-xl px-4"
+                      aria-label="Open additional tag filters"
                     >
                       {activeDropdownFilter?.label ?? 'More tags'}
                       <ChevronsUpDownIcon className="ml-1" />
@@ -586,7 +592,12 @@ function DiscoverPage() {
 
         <div className="pt-5">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3 sm:flex-nowrap">
-            <p className="text-sm text-muted-foreground whitespace-nowrap">
+            <p
+              className="text-sm text-muted-foreground whitespace-nowrap"
+              aria-live="polite"
+              role="status"
+              aria-atomic="true"
+            >
               {resultsCount} search strings found
             </p>
             <div className="flex items-center gap-2">
@@ -597,7 +608,8 @@ function DiscoverPage() {
                       variant="outline"
                       size="icon-sm"
                       className="rounded-xl"
-                      aria-label="Share"
+                      aria-label="Copy search link"
+                      title="Copy search link"
                       onClick={() => {
                         void handleCopySearchLink()
                       }}
@@ -612,8 +624,16 @@ function DiscoverPage() {
               <DropdownMenu>
                 <DropdownMenuTrigger
                   render={
-                    <Button variant="outline" size="sm" className="rounded-xl">
-                      Sort by: {sortLabel}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-xl"
+                      aria-label="Open sort options"
+                    >
+                      <span className="sm:hidden">Sort</span>
+                      <span className="hidden sm:inline">
+                        Sort by: {sortLabel}
+                      </span>
                       <ChevronsUpDownIcon className="ml-1" />
                     </Button>
                   }
@@ -693,6 +713,7 @@ function DiscoverPage() {
                 variant="outline"
                 className="rounded-xl px-6"
                 disabled={isFetchingNextPage}
+                aria-busy={isFetchingNextPage}
                 onClick={() => {
                   void fetchNextPage()
                 }}

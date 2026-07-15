@@ -20,6 +20,8 @@ import {
   TooltipTrigger,
 } from '#/components/ui/tooltip'
 import { PageHeader } from '#/components/page-header'
+import { AppSidebar } from '#/components/app-sidebar'
+import { SidebarInset, SidebarProvider } from '#/components/ui/sidebar'
 import {
   ApiRequestError,
   copyQuery,
@@ -29,6 +31,7 @@ import {
   getQueryById,
   unfavoriteQuery,
 } from '#/lib/poke-query-api'
+import { getMutationErrorMessage } from '#/lib/mutation-toast'
 
 export const Route = createFileRoute('/queries/$queryId')({
   ssr: false,
@@ -83,7 +86,7 @@ function QueryDetailPage() {
   const favoriteMutation = useMutation({
     mutationFn: favoriteQuery,
     onSuccess: async () => {
-      toast.success('Saved to favorites!')
+      toast.success('Saved to favorites.')
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['my-favorite-ids'] }),
         queryClient.invalidateQueries({ queryKey: ['my-favorites-page'] }),
@@ -91,8 +94,10 @@ function QueryDetailPage() {
         queryClient.invalidateQueries({ queryKey: ['query', queryId] }),
       ])
     },
-    onError: () => {
-      toast.error('Could not save favorite.')
+    onError: (mutationError: unknown) => {
+      toast.error(
+        getMutationErrorMessage(mutationError, 'Could not save favorite.'),
+      )
     },
   })
 
@@ -107,8 +112,10 @@ function QueryDetailPage() {
         queryClient.invalidateQueries({ queryKey: ['query', queryId] }),
       ])
     },
-    onError: () => {
-      toast.error('Could not remove favorite.')
+    onError: (mutationError: unknown) => {
+      toast.error(
+        getMutationErrorMessage(mutationError, 'Could not remove favorite.'),
+      )
     },
   })
 
@@ -136,7 +143,9 @@ function QueryDetailPage() {
         return
       }
 
-      toast.error('Could not fork string.')
+      toast.error(
+        getMutationErrorMessage(mutationError, 'Could not fork string.'),
+      )
     },
   })
 
@@ -148,7 +157,7 @@ function QueryDetailPage() {
     })
   }
 
-  return (
+  const pageContent = (
     <div className="flex min-h-screen flex-col bg-background">
       <PageHeader
         title={query?.title}
@@ -439,5 +448,16 @@ function QueryDetailPage() {
         </div>
       </main>
     </div>
+  )
+
+  if (!user) {
+    return pageContent
+  }
+
+  return (
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>{pageContent}</SidebarInset>
+    </SidebarProvider>
   )
 }

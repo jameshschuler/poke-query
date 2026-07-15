@@ -90,8 +90,13 @@ export async function requireAuthenticated(redirectPath: string) {
 
 export async function requireGuest() {
   try {
-    await getUser()
-    throw redirect({ to: '/dashboard' })
+    const user = await getUser()
+
+    if (user) {
+      throw redirect({ to: '/dashboard' })
+    }
+
+    return
   } catch (error) {
     if (error instanceof ApiRequestError && error.status === 401) {
       return

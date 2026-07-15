@@ -16,6 +16,7 @@ import { notificationsRoutes } from "./modules/notifications/notifications.route
 import { readFile } from "fs/promises";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
+import type { FastifyRequest } from "fastify";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -24,12 +25,48 @@ const isDev = process.env.NODE_ENV === "development";
 const loggerConfig = isDev
   ? {
       level: process.env.LOG_LEVEL ?? "info",
+      redact: {
+        paths: [
+          "req.headers.authorization",
+          "req.headers.cookie",
+          "req.body.token",
+          "req.body.token_hash",
+          "req.body.access_token",
+          "req.body.refresh_token",
+        ],
+        censor: "[Redacted]",
+      },
       transport: {
         target: "pino-pretty",
         options: { colorize: true, translateTime: "HH:MM:ss", ignore: "pid,hostname" },
       },
     }
-  : { level: process.env.LOG_LEVEL ?? "info" };
+  : {
+      level: process.env.LOG_LEVEL ?? "info",
+      redact: {
+        paths: [
+          "req.headers.authorization",
+          "req.headers.cookie",
+          "req.body.token",
+          "req.body.token_hash",
+          "req.body.access_token",
+          "req.body.refresh_token",
+        ],
+        censor: "[Redacted]",
+      },
+    };
+
+function getRouteCategory(request: FastifyRequest) {
+  if (request.url.startsWith("/api/v1/auth")) {
+    return "auth";
+  }
+
+  if (request.url.startsWith("/api/v1/")) {
+    return "api";
+  }
+
+  return "other";
+}
 
 function getAllowedOrigins() {
   const configured = (process.env.CORS_ORIGIN ?? "")
@@ -51,7 +88,44 @@ export async function buildApp() {
 
   const fastify = Fastify({
     logger: process.env.NODE_ENV === "test" ? false : loggerConfig,
+    genReqId: (request) => request.headers["x-request-id"]?.toString() ?? crypto.randomUUID(),
   }).withTypeProvider<TypeBoxTypeProvider>();
+
+  fastify.addHook("onRequest", async (request, reply) => {
+    reply.header("x-request-id", request.id);
+  });
+
+  fastify.addHook("onResponse", async (request, reply) => {
+    request.log.info(
+      {
+        requestId: request.id,
+        routeCategory: getRouteCategory(request),
+        method: request.method,
+        url: request.url,
+        statusCode: reply.statusCode,
+        durationMs: reply.elapsedTime,
+        userId: request.user?.id,
+      },
+      "Request completed",
+    );
+  });
+
+  fastify.addHook("onError", async (request, reply, error) => {
+    request.log.error(
+      {
+        requestId: request.id,
+        routeCategory: getRouteCategory(request),
+        method: request.method,
+        url: request.url,
+        statusCode: reply.statusCode,
+        userId: request.user?.id,
+        error,
+      },
+      "Request failed",
+    );
+
+    reply.header("x-request-id", request.id);
+  });
 
   await fastify.register(cors, {
     credentials: true,

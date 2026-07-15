@@ -28,6 +28,9 @@ import {
 import { useState } from 'react'
 import { SearchStringCard } from '#/components/search-string-card'
 import { PageHeader } from '#/components/page-header'
+import { AppSidebar } from '#/components/app-sidebar'
+import { SidebarInset, SidebarProvider } from '#/components/ui/sidebar'
+import { getMutationErrorMessage } from '#/lib/mutation-toast'
 
 export const Route = createFileRoute('/trainers/$username')({
   component: TrainerProfilePage,
@@ -131,7 +134,9 @@ function TrainerProfilePage() {
         return
       }
 
-      toast.error('Could not follow trainer.')
+      toast.error(
+        getMutationErrorMessage(mutationError, 'Could not follow trainer.'),
+      )
     },
   })
 
@@ -143,8 +148,10 @@ function TrainerProfilePage() {
         queryKey: ['trainer-followers', trainer?.id],
       })
     },
-    onError: () => {
-      toast.error('Could not unfollow trainer.')
+    onError: (mutationError: unknown) => {
+      toast.error(
+        getMutationErrorMessage(mutationError, 'Could not unfollow trainer.'),
+      )
     },
   })
 
@@ -172,22 +179,26 @@ function TrainerProfilePage() {
         return
       }
 
-      toast.error('Could not fork string.')
+      toast.error(
+        getMutationErrorMessage(mutationError, 'Could not fork string.'),
+      )
     },
   })
 
   const favoriteMutation = useMutation({
     mutationFn: favoriteQuery,
     onSuccess: async () => {
-      toast.success('Saved to favorites!')
+      toast.success('Saved to favorites.')
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['my-favorite-ids'] }),
         queryClient.invalidateQueries({ queryKey: ['my-favorites-page'] }),
         queryClient.invalidateQueries({ queryKey: ['community-discover'] }),
       ])
     },
-    onError: () => {
-      toast.error('Could not save favorite.')
+    onError: (mutationError: unknown) => {
+      toast.error(
+        getMutationErrorMessage(mutationError, 'Could not save favorite.'),
+      )
     },
   })
 
@@ -201,8 +212,10 @@ function TrainerProfilePage() {
         queryClient.invalidateQueries({ queryKey: ['community-discover'] }),
       ])
     },
-    onError: () => {
-      toast.error('Could not remove favorite.')
+    onError: (mutationError: unknown) => {
+      toast.error(
+        getMutationErrorMessage(mutationError, 'Could not remove favorite.'),
+      )
     },
   })
 
@@ -252,7 +265,7 @@ function TrainerProfilePage() {
     favoriteMutation.mutate(queryId)
   }
 
-  return (
+  const pageContent = (
     <div className="flex min-h-screen flex-col bg-background">
       <PageHeader
         title={trainer?.displayName}
@@ -261,7 +274,7 @@ function TrainerProfilePage() {
             <Button
               variant={isFollowing ? 'default' : 'outline'}
               size="sm"
-              className="rounded-lg"
+              className="rounded-lg max-sm:w-full"
               onClick={handleFollowClick}
               disabled={isFollowPending}
             >
@@ -399,7 +412,11 @@ function TrainerProfilePage() {
               {/* Tabs and content */}
               {trainer.isProfilePublic ? (
                 <>
-                  <div className="no-scrollbar flex gap-2 overflow-x-auto border-t border-border/60 px-4 pt-4 sm:gap-4 sm:px-6 sm:pt-6">
+                  <div
+                    className="no-scrollbar flex gap-2 overflow-x-auto border-t border-border/60 px-4 pt-4 sm:gap-4 sm:px-6 sm:pt-6"
+                    role="tablist"
+                    aria-label="Trainer profile sections"
+                  >
                     {(
                       [
                         {
@@ -423,19 +440,32 @@ function TrainerProfilePage() {
                         key={tab.key}
                         type="button"
                         onClick={() => setActiveTab(tab.key)}
+                        role="tab"
+                        aria-selected={activeTab === tab.key}
                         className={`pb-3 text-sm font-medium transition-colors ${
                           activeTab === tab.key
                             ? 'border-b-2 border-foreground text-foreground'
                             : 'text-muted-foreground hover:text-foreground'
-                        }`}
+                        } focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40`}
                         style={{ minWidth: 90 }}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault()
+                            setActiveTab(tab.key)
+                          }
+                        }}
+                        aria-controls={`trainer-tab-panel-${tab.key}`}
                       >
                         {tab.label}{' '}
                         <span className="ml-0.5">({tab.count})</span>
                       </button>
                     ))}
                   </div>
-                  <section className="mt-2 space-y-2 p-4 sm:space-y-4 sm:p-6">
+                  <section
+                    className="mt-2 space-y-2 p-4 sm:space-y-4 sm:p-6"
+                    id={`trainer-tab-panel-${activeTab}`}
+                    role="tabpanel"
+                  >
                     <h2 className="px-1 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-2">
                       Top Strings
                     </h2>
@@ -512,5 +542,16 @@ function TrainerProfilePage() {
         )}
       </main>
     </div>
+  )
+
+  if (!user) {
+    return pageContent
+  }
+
+  return (
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>{pageContent}</SidebarInset>
+    </SidebarProvider>
   )
 }

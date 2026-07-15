@@ -18,8 +18,8 @@ function QueryCardHeader({
   children,
 }: QueryCardHeaderProps) {
   return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <button
           type="button"
           className={cn('min-w-0 flex-1', titleClassName)}
@@ -28,10 +28,10 @@ function QueryCardHeader({
           {title}
         </button>
 
-        {action ? <div className="shrink-0">{action}</div> : null}
+        {action ? <div className="shrink-0 pt-0.5">{action}</div> : null}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">{children}</div>
+      <div className="flex flex-wrap items-center gap-2.5">{children}</div>
     </div>
   )
 }

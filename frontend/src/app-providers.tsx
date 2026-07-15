@@ -2,13 +2,14 @@ import { AuthProvider } from '@authabase/react'
 import type { AuthConfig } from '@authabase/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Toaster } from 'sonner'
 import { ApiRequestError, getMe } from '#/lib/poke-query-api'
 import { setCachedUser } from '#/lib/route-auth'
 import { TooltipProvider } from '#/components/ui/tooltip'
 import { NotificationToastListener } from '#/components/notification-toast-listener'
+import { initializeThemePreferences } from '#/lib/theme-preferences'
 
 export function AppProviders({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -59,6 +60,10 @@ export function AppProviders({ children }: { children: ReactNode }) {
     }),
     [],
   )
+
+  useEffect(() => {
+    initializeThemePreferences()
+  }, [])
 
   return (
     <TooltipProvider>

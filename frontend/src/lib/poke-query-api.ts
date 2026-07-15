@@ -39,8 +39,9 @@ export type ApiErrorResponse = {
 export class ApiRequestError extends Error {
   status: number
   data: unknown
+  requestId: string | null
 
-  constructor(status: number, data: unknown) {
+  constructor(status: number, data: unknown, requestId: string | null) {
     const message =
       typeof data === 'object' &&
       data !== null &&
@@ -53,6 +54,7 @@ export class ApiRequestError extends Error {
     this.name = 'ApiRequestError'
     this.status = status
     this.data = data
+    this.requestId = requestId
   }
 }
 
@@ -132,6 +134,17 @@ function getSupabaseAccessTokenFromStorage(): string | null {
   return null
 }
 
+function createRequestId(): string {
+  if (
+    typeof crypto !== 'undefined' &&
+    typeof crypto.randomUUID === 'function'
+  ) {
+    return crypto.randomUUID()
+  }
+
+  return `req_${Math.random().toString(36).slice(2)}_${Date.now().toString(36)}`
+}
+
 async function apiRequest<T>(
   path: string,
   {
@@ -143,6 +156,9 @@ async function apiRequest<T>(
   }: RequestOptions = {},
 ): Promise<T> {
   const requestHeaders = new Headers(headers)
+  const requestId = requestHeaders.get('x-request-id') ?? createRequestId()
+
+  requestHeaders.set('x-request-id', requestId)
 
   if (body !== undefined && !requestHeaders.has('content-type')) {
     requestHeaders.set('content-type', 'application/json')
@@ -163,7 +179,11 @@ async function apiRequest<T>(
 
   if (!response.ok) {
     const errorData = await safeParseJson(response)
-    throw new ApiRequestError(response.status, errorData)
+    throw new ApiRequestError(
+      response.status,
+      errorData,
+      response.headers.get('x-request-id') ?? requestId,
+    )
   }
 
   if (parseAs === 'void' || response.status === 204) {

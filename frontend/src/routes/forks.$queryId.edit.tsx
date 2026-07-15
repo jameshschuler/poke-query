@@ -6,7 +6,10 @@ import { toast } from 'sonner'
 
 import { PageShell } from '#/components/page-shell'
 import { Button } from '#/components/ui/button'
-import { getMyForks, updateQuery } from '#/lib/poke-query-api'
+import { findBlockedTerm } from '#/lib/content-policy'
+import { ApiRequestError, getMyForks, updateQuery } from '#/lib/poke-query-api'
+import { getMutationErrorMessage } from '#/lib/mutation-toast'
+import type { ManagedForkQuery } from '#/lib/poke-query-api'
 import { requireAuthenticated } from '#/lib/route-auth'
 
 type VisibilityMode = 'public' | 'private'
@@ -27,6 +30,11 @@ function EditForkPage() {
   const [query, setQuery] = useState('')
   const [description, setDescription] = useState('')
   const [visibility, setVisibility] = useState<VisibilityMode>('public')
+
+  const titleBlockedTerm = findBlockedTerm(title.trim())
+  const descriptionBlockedTerm = description.trim()
+    ? findBlockedTerm(description.trim())
+    : null
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['my-forks'],
@@ -55,6 +63,30 @@ function EditForkPage() {
         isPublic: visibility === 'public',
       }),
     onSuccess: async () => {
+      queryClient.setQueryData<{ forks: ManagedForkQuery[] }>(
+        ['my-forks'],
+        (previous) => {
+          if (!previous) {
+            return previous
+          }
+
+          return {
+            forks: previous.forks.map((fork) =>
+              fork.id === queryId
+                ? {
+                    ...fork,
+                    title: title.trim(),
+                    query: query.trim(),
+                    description: description.trim() || null,
+                    isPublic: visibility === 'public',
+                    updatedAt: new Date().toISOString(),
+                  }
+                : fork,
+            ),
+          }
+        },
+      )
+
       toast.success('Fork updated.')
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['my-forks'] }),
@@ -67,12 +99,23 @@ function EditForkPage() {
         replace: true,
       })
     },
-    onError: () => {
-      toast.error('Could not update fork.')
+    onError: (mutationError: unknown) => {
+      if (mutationError instanceof ApiRequestError) {
+        toast.error(mutationError.message)
+        return
+      }
+
+      toast.error(
+        getMutationErrorMessage(mutationError, 'Could not update fork.'),
+      )
     },
   })
 
-  const canSubmit = title.trim().length >= 3 && query.trim().length > 0
+  const canSubmit =
+    title.trim().length >= 3 &&
+    query.trim().length > 0 &&
+    !titleBlockedTerm &&
+    !descriptionBlockedTerm
   const isPublic = visibility === 'public'
 
   return (
@@ -84,21 +127,48 @@ function EditForkPage() {
       showHeaderSearch={false}
     >
       <div className="space-y-5">
-        <nav className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Link to="/forks" className="hover:text-foreground hover:underline">
-            Forks
-          </Link>
-          <span>/</span>
-          <Link
-            to="/forks/$queryId"
-            params={{ queryId }}
-            className="max-w-56 truncate hover:text-foreground hover:underline"
-          >
-            {currentFork?.title ?? 'Details'}
-          </Link>
-          <span>/</span>
-          <span className="text-foreground">Edit</span>
-        </nav>
+        <div className="flex items-start gap-4">
+          <nav className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Link to="/forks" className="hover:text-foreground hover:underline">
+              Forks
+            </Link>
+            <span>/</span>
+            <Link
+              to="/forks/$queryId"
+              params={{ queryId }}
+              className="max-w-56 truncate hover:text-foreground hover:underline"
+            >
+              {currentFork?.title ?? 'Details'}
+            </Link>
+            <span>/</span>
+            <span className="text-foreground">Edit</span>
+          </nav>
+
+          <div className="ml-auto flex flex-row flex-wrap justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-xl"
+              onClick={() =>
+                navigate({ to: '/forks/$queryId', params: { queryId } })
+              }
+            >
+              Cancel
+            </Button>
+
+            <Button
+              type="button"
+              className="rounded-xl"
+              disabled={!canSubmit || updateMutation.isPending}
+              onClick={() => updateMutation.mutate()}
+            >
+              {updateMutation.isPending ? (
+                <Loader2Icon className="size-4 animate-spin" />
+              ) : null}
+              Save Changes
+            </Button>
+          </div>
+        </div>
 
         {isLoading ? (
           <div className="rounded-2xl border border-border/70 bg-card/95 p-6 text-sm text-muted-foreground">
@@ -132,6 +202,11 @@ function EditForkPage() {
                 maxLength={100}
                 autoComplete="off"
               />
+              {titleBlockedTerm ? (
+                <p className="text-xs text-destructive">
+                  Remove blocked language from the name.
+                </p>
+              ) : null}
             </label>
 
             <label className="space-y-2">
@@ -153,6 +228,11 @@ function EditForkPage() {
                 className="min-h-24 w-full resize-none rounded-2xl border border-border/60 bg-background px-3 py-3 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/20"
                 maxLength={500}
               />
+              {descriptionBlockedTerm ? (
+                <p className="text-xs text-destructive">
+                  Remove blocked language from the description.
+                </p>
+              ) : null}
             </label>
 
             <div className="space-y-2">
@@ -181,31 +261,6 @@ function EditForkPage() {
                   Private
                 </button>
               </div>
-            </div>
-
-            <div className="flex flex-col gap-2 border-t border-border/60 pt-4 sm:flex-row sm:justify-between">
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-xl"
-                onClick={() =>
-                  navigate({ to: '/forks/$queryId', params: { queryId } })
-                }
-              >
-                Cancel
-              </Button>
-
-              <Button
-                type="button"
-                className="rounded-xl"
-                disabled={!canSubmit || updateMutation.isPending}
-                onClick={() => updateMutation.mutate()}
-              >
-                {updateMutation.isPending ? (
-                  <Loader2Icon className="size-4 animate-spin" />
-                ) : null}
-                Save Changes
-              </Button>
             </div>
           </div>
         )}

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { Loader2Icon, SearchIcon, UserMinusIcon, UsersIcon } from 'lucide-react'
+import { Loader2Icon, UserMinusIcon, UsersIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -10,6 +10,7 @@ import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { PageShell } from '#/components/page-shell'
 import { getMeFollowing, unfollowTrainer } from '#/lib/poke-query-api'
+import { getMutationErrorMessage } from '#/lib/mutation-toast'
 import { requireAuthenticated } from '#/lib/route-auth'
 
 export const Route = createFileRoute('/following')({
@@ -54,8 +55,10 @@ function FollowingPage() {
         queryClient.invalidateQueries({ queryKey: ['me'] }),
       ])
     },
-    onError: () => {
-      toast.error('Could not unfollow trainer.')
+    onError: (mutationError: unknown) => {
+      toast.error(
+        getMutationErrorMessage(mutationError, 'Could not unfollow trainer.'),
+      )
     },
   })
 

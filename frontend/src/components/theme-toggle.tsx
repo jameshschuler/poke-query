@@ -2,30 +2,10 @@ import { useEffect, useState } from 'react'
 import { MoonIcon, SunIcon } from 'lucide-react'
 
 import { Button } from '#/components/ui/button'
+import { getPreferredThemeMode, setThemeMode } from '#/lib/theme-preferences'
+import type { ThemeMode } from '#/lib/theme-preferences'
 
-type Theme = 'light' | 'dark'
 type ThemeTogglePlacement = 'floating' | 'inline'
-
-const THEME_STORAGE_KEY = 'poke-query-theme'
-
-function applyTheme(theme: Theme) {
-  document.documentElement.classList.toggle('dark', theme === 'dark')
-}
-
-function getPreferredTheme(): Theme {
-  if (typeof window === 'undefined') {
-    return 'light'
-  }
-
-  const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY)
-  if (savedTheme === 'light' || savedTheme === 'dark') {
-    return savedTheme
-  }
-
-  return window.matchMedia('(prefers-color-scheme: dark)').matches
-    ? 'dark'
-    : 'light'
-}
 
 type ThemeToggleProps = {
   placement?: ThemeTogglePlacement
@@ -33,20 +13,18 @@ type ThemeToggleProps = {
 
 export function ThemeToggle({ placement = 'floating' }: ThemeToggleProps) {
   const [isMounted, setIsMounted] = useState(false)
-  const [theme, setTheme] = useState<Theme>('light')
+  const [theme, setTheme] = useState<ThemeMode>('light')
 
   useEffect(() => {
-    const initialTheme = getPreferredTheme()
+    const initialTheme = getPreferredThemeMode()
     setTheme(initialTheme)
-    applyTheme(initialTheme)
     setIsMounted(true)
   }, [])
 
   function handleToggle() {
-    const nextTheme: Theme = theme === 'dark' ? 'light' : 'dark'
+    const nextTheme: ThemeMode = theme === 'dark' ? 'light' : 'dark'
     setTheme(nextTheme)
-    applyTheme(nextTheme)
-    window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme)
+    setThemeMode(nextTheme)
   }
 
   if (!isMounted) {
