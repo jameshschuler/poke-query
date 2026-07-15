@@ -3,7 +3,7 @@
   "info": {
     "title": "PokeQuery API",
     "version": "1.0.0",
-    "description": "## What This API Does\n\nTrainers can create, save, update, fork, favorite, and discover reusable Pokemon GO search strings.\n\nRecent backend changes added:\n\n- normalized user tags plus parser-generated `autoTags`\n- community discovery with text search, tag filters, sorting, and pagination\n- follower endpoints and privacy-aware public trainer fields\n- seed data that covers league, raid, and other common discovery tags\n\n**Repository:** [github.com/jameshschuler/poke-query](https://github.com/jameshschuler/poke-query)\n\n## Getting Started\n\n### 1. Run the backend locally\n\n```bash\ncd backend\nnpm install\nnpm run db:migrate\nnpm run dev\n```\n\nThe server starts at **http://localhost:3000**.\n\n### 2. Authenticate\n\n1. `POST /api/v1/auth/login` with your email to request an OTP.\n2. `POST /api/v1/auth/verify` with `email` and `token` or `token_hash`.\n3. `POST /api/v1/auth/logout` clears the session cookies.\n4. Protected endpoints require the `sb-access-token` HttpOnly cookie set during verification.\n\n### 3. Call a protected endpoint\n\n```bash\ncurl -X POST \"http://localhost:3000/api/v1/queries\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Cookie: sb-access-token=YOUR_TOKEN\" \\\n  -d '{\"title\":\"Great League IV\",\"query\":\"4*&cp-1500\",\"isPublic\":false,\"tags\":[\"great-league\",\"pvp\"]}'\n```\n\n## Authentication Model\n\nThis API uses cookie-based auth via Supabase.\n\n| Detail           | Value                                         |\n| ---------------- | --------------------------------------------- |\n| Cookie name      | `sb-access-token`                             |\n| Lifetime         | 1 hour access, 7 day refresh                  |\n| Protected routes | Declared with the cookie auth security scheme |\n\n## Query Payload Rules\n\n- Create and update requests accept `title`, `query`, `description`, `isPublic`, and optional `tags`\n- Unknown fields are rejected by validation\n- User tags are trimmed, lowercased, and deduplicated before storage\n- Parser-generated `autoTags` are derived from the query string and used by community discovery\n\nCurrent generated tag coverage includes `high-iv`, `nundo-hunt`, `pvp`, `great-league`, `ultra-league`, `master-league`, `legacy-moves`, `raid`, `mass-evolve`, `distance-trade`, and `daily-catch`.\n\n## Community Discovery\n\n`GET /api/v1/community` supports these query params:\n\n- `tag`: matches either stored user tags or generated `autoTags`\n- `search`: matches title, query text, description, or creator username\n- `filter`: `all`, `new`, or `popular`\n- `sort`: `created_desc`, `created_asc`, `title_asc`, `title_desc`, or `popular`\n- `limit`: 1-50\n- `offset`: pagination offset\n\nOnly public queries are returned. Creator `team`, `level`, and `trainerCode` are returned as `null` when the creator's profile is private.\n\n`GET /api/v1/queries/tags` returns tag metadata for public queries only:\n\n- `tags[].id`: tag id\n- `tags[].name`: normalized tag name\n- `tags[].queryCount`: number of public queries associated with the tag\n\nThis endpoint is intended for frontend filter UIs so tag options stay synchronized with real data.\n\n## Guest Favorites\n\nGuest users can favorite public queries without creating an account.\n\n- `POST /api/v1/queries/guest/session` creates/reuses a cookie-backed guest identity.\n- `GET /api/v1/queries/guest/favorites` returns guest favorite ids and current usage.\n- `POST /api/v1/queries/guest/favorites/:id` favorites a public query.\n- `POST /api/v1/queries/guest/favorites/:id/unfavorite` removes a guest favorite.\n\nRules:\n\n- max 10 guest favorites per guest id\n- duplicate favorites are idempotent\n- missing/non-public query favorite attempts return `404`\n\n## Trainer Profile Endpoints\n\nPublic trainer profiles are split for better caching and tab loading on the frontend:\n\n- `GET /api/v1/users/by-username/:username` returns public profile metadata and aggregate counts.\n- `GET /api/v1/users/:id/strings` returns up to 20 public non-fork queries.\n- `GET /api/v1/users/:id/forks` returns up to 20 public forks.\n- `GET /api/v1/users/:id/favorites` returns up to 20 public favorites.\n- `GET /api/v1/users/:id/followers` returns the trainer's follower list with privacy-aware trainer fields.\n- `GET /api/v1/users/me/followers` returns the authenticated trainer's follower list.\n\n## Seed Data\n\nThe backend includes seed scripts for local QA and demo data:\n\n- `npm run db:seed:trainers`\n- `npm run db:seed:search`\n- `npm run db:seed:followers`\n- `npm run db:seed`\n\nThe search seed script includes public and private queries plus tag coverage for great league, ultra league, master league, raid, community-day style searches, and other common filter cases.\n"
+    "description": "## What This API Does\n\nTrainers can create, save, update, fork, favorite, and discover reusable Pokemon GO search strings.\n\nRecent backend changes added:\n\n- normalized user tags plus parser-generated `autoTags`\n- community discovery with text search, tag filters, sorting, and pagination\n- follower endpoints and privacy-aware public trainer fields\n- seed data that covers league, raid, and other common discovery tags\n- authenticated favorites endpoints for paginated favorites pages and favorite id hydration\n- account metadata fields (`profileCompleted`, `deactivatedAt`) for onboarding UX\n- account deletion policy that removes private strings but preserves public strings\n\n**Repository:** [github.com/jameshschuler/poke-query](https://github.com/jameshschuler/poke-query)\n\n## Getting Started\n\n### 1. Run the backend locally\n\n```bash\ncd backend\nnpm install\nnpm run db:migrate\nnpm run dev\n```\n\nThe server starts at **http://localhost:3000**.\n\n### 2. Authenticate\n\n1. `POST /api/v1/auth/login` with your email to request an OTP.\n2. `POST /api/v1/auth/verify` with `email` and `token` or `token_hash`.\n3. `POST /api/v1/auth/logout` clears the session cookies.\n4. Protected endpoints require the `sb-access-token` HttpOnly cookie set during verification.\n\n### 3. Call a protected endpoint\n\n```bash\ncurl -X POST \"http://localhost:3000/api/v1/queries\" \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Cookie: sb-access-token=YOUR_TOKEN\" \\\n  -d '{\"title\":\"Great League IV\",\"query\":\"4*&cp-1500\",\"isPublic\":false,\"tags\":[\"great-league\",\"pvp\"]}'\n```\n\n## Authentication Model\n\nThis API uses cookie-based auth via Supabase.\n\n| Detail           | Value                                         |\n| ---------------- | --------------------------------------------- |\n| Cookie name      | `sb-access-token`                             |\n| Lifetime         | 1 hour access, 7 day refresh                  |\n| Protected routes | Declared with the cookie auth security scheme |\n\n## Query Payload Rules\n\n- Create and update requests accept `title`, `query`, `description`, `isPublic`, and optional `tags`\n- Unknown fields are rejected by validation\n- User tags are trimmed, lowercased, and deduplicated before storage\n- Parser-generated `autoTags` are derived from the query string and used by community discovery\n\nCurrent generated tag coverage includes `high-iv`, `nundo-hunt`, `pvp`, `great-league`, `ultra-league`, `master-league`, `legacy-moves`, `raid`, `mass-evolve`, `distance-trade`, and `daily-catch`.\n\n## Community Discovery\n\n`GET /api/v1/community` supports these query params:\n\n- `tag`: matches either stored user tags or generated `autoTags`\n- `search`: matches title, query text, description, or creator username\n- `filter`: `all`, `new`, or `popular`\n- `sort`: `created_desc`, `created_asc`, `title_asc`, `title_desc`, or `popular`\n- `limit`: 1-50\n- `offset`: pagination offset\n\nOnly public queries are returned. Creator `team`, `level`, and `trainerCode` are returned as `null` when the creator's profile is private.\n\n`GET /api/v1/queries/tags` returns tag metadata for public queries only:\n\n- `tags[].id`: tag id\n- `tags[].name`: normalized tag name\n- `tags[].queryCount`: number of public queries associated with the tag\n\nThis endpoint is intended for frontend filter UIs so tag options stay synchronized with real data.\n\n## Guest Favorites\n\nGuest users can favorite public queries without creating an account.\n\n- `POST /api/v1/queries/guest/session` creates/reuses a cookie-backed guest identity.\n- `GET /api/v1/queries/guest/favorites` returns guest favorite ids and current usage.\n- `POST /api/v1/queries/guest/favorites/:id` favorites a public query.\n- `POST /api/v1/queries/guest/favorites/:id/unfavorite` removes a guest favorite.\n\nRules:\n\n- max 10 guest favorites per guest id\n- duplicate favorites are idempotent\n- missing/non-public query favorite attempts return `404`\n\n## Trainer Profile Endpoints\n\nPublic trainer profiles are split for better caching and tab loading on the frontend:\n\n- `GET /api/v1/users/by-username/:username` returns public profile metadata and aggregate counts.\n- `GET /api/v1/users/:id/strings` returns up to 20 public non-fork queries.\n- `GET /api/v1/users/:id/forks` returns up to 20 public forks.\n- `GET /api/v1/users/:id/favorites` returns up to 20 public favorites.\n- `GET /api/v1/users/:id/followers` returns the trainer's follower list with privacy-aware trainer fields.\n- `GET /api/v1/users/me/followers` returns the authenticated trainer's follower list.\n\nAuthenticated trainer management endpoints:\n\n- `GET /api/v1/users/me/queries` returns the authenticated trainer's strings.\n- `GET /api/v1/users/me/forks` returns the authenticated trainer's forks with sync metadata.\n- `GET /api/v1/users/me/favorites` returns paginated favorites for authenticated users.\n- `GET /api/v1/users/me/favorites/ids` returns favorite query ids for UI hydration.\n\n`GET /api/v1/users/me` now includes:\n\n- `profileCompleted`: frontend onboarding/account-completion flag\n- `deactivatedAt`: deactivation timestamp or `null`\n\n`PATCH /api/v1/users/me` returns `409` when the requested username is already taken.\n\nAccount lifecycle behavior:\n\n- `POST /api/v1/users/me/deactivate` marks an account as deactivated and leaves strings unchanged.\n- `DELETE /api/v1/users/me` removes non-public strings and preserves public strings with anonymized ownership.\n\n## Seed Data\n\nThe backend includes seed scripts for local QA and demo data:\n\n- `npm run db:seed:trainers`\n- `npm run db:seed:search`\n- `npm run db:seed:followers`\n- `npm run db:seed`\n\nThe search seed script includes public and private queries plus tag coverage for great league, ultra league, master league, raid, community-day style searches, and other common filter cases.\n"
   },
   "components": {
     "securitySchemes": {
@@ -174,6 +174,24 @@
                 }
               }
             }
+          },
+          "500": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -241,13 +259,18 @@
                   "type": "object",
                   "required": [
                     "hasTrainer",
+                    "profileCompleted",
                     "id",
                     "email",
                     "username",
+                    "displayName",
+                    "pogoUsername",
+                    "visibleUsername",
                     "team",
                     "level",
                     "trainerCode",
                     "isProfilePublic",
+                    "deactivatedAt",
                     "avatarUrl",
                     "queryCount",
                     "favoriteCount",
@@ -256,6 +279,9 @@
                   ],
                   "properties": {
                     "hasTrainer": {
+                      "type": "boolean"
+                    },
+                    "profileCompleted": {
                       "type": "boolean"
                     },
                     "id": {
@@ -274,6 +300,35 @@
                     },
                     "username": {
                       "type": "string"
+                    },
+                    "displayName": {
+                      "type": "string"
+                    },
+                    "pogoUsername": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "visibleUsername": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "enum": [
+                            "pokequery"
+                          ]
+                        },
+                        {
+                          "type": "string",
+                          "enum": [
+                            "pogo"
+                          ]
+                        }
+                      ]
                     },
                     "team": {
                       "anyOf": [
@@ -322,6 +377,16 @@
                     },
                     "isProfilePublic": {
                       "type": "boolean"
+                    },
+                    "deactivatedAt": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
                     },
                     "avatarUrl": {
                       "anyOf": [
@@ -402,6 +467,28 @@
                     "maxLength": 20,
                     "pattern": "^[a-zA-Z0-9_]+$",
                     "type": "string"
+                  },
+                  "pogoUsername": {
+                    "minLength": 3,
+                    "maxLength": 30,
+                    "pattern": "^[a-zA-Z0-9._ -]+$",
+                    "type": "string"
+                  },
+                  "visibleUsername": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "pokequery"
+                        ]
+                      },
+                      {
+                        "type": "string",
+                        "enum": [
+                          "pogo"
+                        ]
+                      }
+                    ]
                   },
                   "level": {
                     "minimum": 1,
@@ -524,6 +611,24 @@
               }
             }
           },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "500": {
             "description": "Default Response",
             "content": {
@@ -611,6 +716,671 @@
         }
       }
     },
+    "/api/v1/users/me/queries": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "queries"
+                  ],
+                  "properties": {
+                    "queries": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "title",
+                          "query",
+                          "description",
+                          "isPublic",
+                          "copyCount",
+                          "favoriteCount",
+                          "forkCount",
+                          "autoTags",
+                          "createdAt",
+                          "updatedAt"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "query": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "isPublic": {
+                            "type": "boolean"
+                          },
+                          "copyCount": {
+                            "type": "integer"
+                          },
+                          "favoriteCount": {
+                            "type": "integer"
+                          },
+                          "forkCount": {
+                            "type": "integer"
+                          },
+                          "autoTags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/me/favorites": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "type": "integer"
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false
+          },
+          {
+            "schema": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "in": "query",
+            "name": "offset",
+            "required": false
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "favorites",
+                    "pagination"
+                  ],
+                  "properties": {
+                    "favorites": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "title",
+                          "query",
+                          "description",
+                          "isPublic",
+                          "copyCount",
+                          "favoriteCount",
+                          "forkCount",
+                          "autoTags",
+                          "createdAt",
+                          "updatedAt",
+                          "favoritedAt"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "query": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "isPublic": {
+                            "type": "boolean"
+                          },
+                          "copyCount": {
+                            "type": "integer"
+                          },
+                          "favoriteCount": {
+                            "type": "integer"
+                          },
+                          "forkCount": {
+                            "type": "integer"
+                          },
+                          "autoTags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          },
+                          "favoritedAt": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "required": [
+                        "limit",
+                        "offset",
+                        "nextOffset",
+                        "hasMore",
+                        "total"
+                      ],
+                      "properties": {
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "type": "integer"
+                        },
+                        "nextOffset": {
+                          "anyOf": [
+                            {
+                              "type": "integer"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "hasMore": {
+                          "type": "boolean"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/me/favorites/ids": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "favoriteQueryIds",
+                    "favoritesCount"
+                  ],
+                  "properties": {
+                    "favoriteQueryIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "favoritesCount": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/me/forks": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "forks"
+                  ],
+                  "properties": {
+                    "forks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "title",
+                          "query",
+                          "description",
+                          "isPublic",
+                          "copyCount",
+                          "favoriteCount",
+                          "forkCount",
+                          "autoTags",
+                          "createdAt",
+                          "updatedAt",
+                          "parentQueryId",
+                          "originalQuerySnapshot",
+                          "syncStatus",
+                          "sourceQuery"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "query": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "isPublic": {
+                            "type": "boolean"
+                          },
+                          "copyCount": {
+                            "type": "integer"
+                          },
+                          "favoriteCount": {
+                            "type": "integer"
+                          },
+                          "forkCount": {
+                            "type": "integer"
+                          },
+                          "autoTags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          },
+                          "parentQueryId": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "originalQuerySnapshot": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "syncStatus": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "up-to-date"
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "behind"
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "orphaned"
+                                ]
+                              }
+                            ]
+                          },
+                          "sourceQuery": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "required": [
+                                  "id",
+                                  "title",
+                                  "query",
+                                  "isPublic",
+                                  "updatedAt",
+                                  "creator"
+                                ],
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "title": {
+                                    "type": "string"
+                                  },
+                                  "query": {
+                                    "type": "string"
+                                  },
+                                  "isPublic": {
+                                    "type": "boolean"
+                                  },
+                                  "updatedAt": {
+                                    "type": "string"
+                                  },
+                                  "creator": {
+                                    "anyOf": [
+                                      {
+                                        "type": "object",
+                                        "required": [
+                                          "id",
+                                          "username",
+                                          "displayName",
+                                          "team",
+                                          "level",
+                                          "avatarUrl"
+                                        ],
+                                        "properties": {
+                                          "id": {
+                                            "type": "string"
+                                          },
+                                          "username": {
+                                            "type": "string"
+                                          },
+                                          "displayName": {
+                                            "type": "string"
+                                          },
+                                          "team": {
+                                            "anyOf": [
+                                              {
+                                                "type": "string",
+                                                "enum": [
+                                                  "mystic"
+                                                ]
+                                              },
+                                              {
+                                                "type": "string",
+                                                "enum": [
+                                                  "valor"
+                                                ]
+                                              },
+                                              {
+                                                "type": "string",
+                                                "enum": [
+                                                  "instinct"
+                                                ]
+                                              },
+                                              {
+                                                "type": "null"
+                                              }
+                                            ]
+                                          },
+                                          "level": {
+                                            "anyOf": [
+                                              {
+                                                "type": "integer"
+                                              },
+                                              {
+                                                "type": "null"
+                                              }
+                                            ]
+                                          },
+                                          "avatarUrl": {
+                                            "anyOf": [
+                                              {
+                                                "type": "string"
+                                              },
+                                              {
+                                                "type": "null"
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                }
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/users/me/followers": {
       "get": {
         "security": [
@@ -640,6 +1410,7 @@
                         "required": [
                           "id",
                           "username",
+                          "displayName",
                           "team",
                           "level",
                           "trainerCode",
@@ -651,6 +1422,160 @@
                             "type": "string"
                           },
                           "username": {
+                            "type": "string"
+                          },
+                          "displayName": {
+                            "type": "string"
+                          },
+                          "team": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "mystic"
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "valor"
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "instinct"
+                                ]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "level": {
+                            "anyOf": [
+                              {
+                                "type": "integer"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "trainerCode": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "avatarUrl": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "followedAt": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/me/following": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "total",
+                    "following"
+                  ],
+                  "properties": {
+                    "total": {
+                      "type": "integer"
+                    },
+                    "following": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "username",
+                          "displayName",
+                          "team",
+                          "level",
+                          "trainerCode",
+                          "avatarUrl",
+                          "followedAt"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "username": {
+                            "type": "string"
+                          },
+                          "displayName": {
                             "type": "string"
                           },
                           "team": {
@@ -780,6 +1705,7 @@
                   "required": [
                     "id",
                     "username",
+                    "displayName",
                     "team",
                     "level",
                     "trainerCode",
@@ -797,6 +1723,9 @@
                       "type": "string"
                     },
                     "username": {
+                      "type": "string"
+                    },
+                    "displayName": {
                       "type": "string"
                     },
                     "team": {
@@ -1249,6 +2178,7 @@
                   "required": [
                     "id",
                     "username",
+                    "displayName",
                     "team",
                     "level",
                     "trainerCode",
@@ -1261,6 +2191,9 @@
                       "type": "string"
                     },
                     "username": {
+                      "type": "string"
+                    },
+                    "displayName": {
                       "type": "string"
                     },
                     "team": {
@@ -1385,6 +2318,7 @@
                         "required": [
                           "id",
                           "username",
+                          "displayName",
                           "team",
                           "level",
                           "trainerCode",
@@ -1396,6 +2330,9 @@
                             "type": "string"
                           },
                           "username": {
+                            "type": "string"
+                          },
+                          "displayName": {
                             "type": "string"
                           },
                           "team": {
@@ -1537,6 +2474,24 @@
             }
           },
           "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
             "description": "Default Response",
             "content": {
               "application/json": {
@@ -2021,6 +2976,7 @@
                           "required": [
                             "id",
                             "username",
+                            "displayName",
                             "avatarUrl",
                             "team",
                             "level"
@@ -2030,6 +2986,9 @@
                               "type": "string"
                             },
                             "username": {
+                              "type": "string"
+                            },
+                            "displayName": {
                               "type": "string"
                             },
                             "avatarUrl": {
@@ -2096,6 +3055,7 @@
                                 "required": [
                                   "id",
                                   "username",
+                                  "displayName",
                                   "avatarUrl",
                                   "team",
                                   "level"
@@ -2105,6 +3065,9 @@
                                     "type": "string"
                                   },
                                   "username": {
+                                    "type": "string"
+                                  },
+                                  "displayName": {
                                     "type": "string"
                                   },
                                   "avatarUrl": {
@@ -2592,6 +3555,128 @@
         }
       }
     },
+    "/api/v1/queries/{id}/sync": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "id"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/queries/{id}/copy": {
       "patch": {
         "requestBody": {
@@ -2975,6 +4060,7 @@
                                 "required": [
                                   "id",
                                   "username",
+                                  "displayName",
                                   "avatarUrl",
                                   "team",
                                   "level",
@@ -2985,6 +4071,9 @@
                                     "type": "string"
                                   },
                                   "username": {
+                                    "type": "string"
+                                  },
+                                  "displayName": {
                                     "type": "string"
                                   },
                                   "avatarUrl": {
@@ -3088,6 +4177,540 @@
             }
           },
           "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications/": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "type": "integer"
+            },
+            "in": "query",
+            "name": "limit",
+            "required": false
+          },
+          {
+            "schema": {
+              "minimum": 0,
+              "type": "integer"
+            },
+            "in": "query",
+            "name": "offset",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "unreadOnly",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "highPriorityOnly",
+            "required": false
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "notifications",
+                    "pagination"
+                  ],
+                  "properties": {
+                    "notifications": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "eventType",
+                          "entityType",
+                          "entityId",
+                          "title",
+                          "message",
+                          "isHighPriority",
+                          "isRead",
+                          "readAt",
+                          "createdAt",
+                          "actor"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "eventType": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "new_follower"
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "query_forked"
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "query_favorited"
+                                ]
+                              }
+                            ]
+                          },
+                          "entityType": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "trainer"
+                                ]
+                              },
+                              {
+                                "type": "string",
+                                "enum": [
+                                  "query"
+                                ]
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "entityId": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "message": {
+                            "type": "string"
+                          },
+                          "isHighPriority": {
+                            "type": "boolean"
+                          },
+                          "isRead": {
+                            "type": "boolean"
+                          },
+                          "readAt": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "actor": {
+                            "anyOf": [
+                              {
+                                "type": "object",
+                                "required": [
+                                  "id",
+                                  "username",
+                                  "displayName",
+                                  "avatarUrl"
+                                ],
+                                "properties": {
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "username": {
+                                    "type": "string"
+                                  },
+                                  "displayName": {
+                                    "type": "string"
+                                  },
+                                  "avatarUrl": {
+                                    "anyOf": [
+                                      {
+                                        "type": "string"
+                                      },
+                                      {
+                                        "type": "null"
+                                      }
+                                    ]
+                                  }
+                                }
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    "pagination": {
+                      "type": "object",
+                      "required": [
+                        "limit",
+                        "offset",
+                        "nextOffset",
+                        "hasMore",
+                        "total"
+                      ],
+                      "properties": {
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "type": "integer"
+                        },
+                        "nextOffset": {
+                          "anyOf": [
+                            {
+                              "type": "integer"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "hasMore": {
+                          "type": "boolean"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications/unread-count": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "unreadCount"
+                  ],
+                  "properties": {
+                    "unreadCount": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications/{id}/read": {
+      "patch": {
+        "parameters": [
+          {
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications/read-all": {
+      "patch": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Default Response"
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications/preferences": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "notifyNewFollower",
+                    "notifyQueryFork",
+                    "notifyQueryFavorite",
+                    "inAppToasts"
+                  ],
+                  "properties": {
+                    "notifyNewFollower": {
+                      "type": "boolean"
+                    },
+                    "notifyQueryFork": {
+                      "type": "boolean"
+                    },
+                    "notifyQueryFavorite": {
+                      "type": "boolean"
+                    },
+                    "inAppToasts": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "error"
+                  ],
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "minProperties": 1,
+                "type": "object",
+                "properties": {
+                  "notifyNewFollower": {
+                    "type": "boolean"
+                  },
+                  "notifyQueryFork": {
+                    "type": "boolean"
+                  },
+                  "notifyQueryFavorite": {
+                    "type": "boolean"
+                  },
+                  "inAppToasts": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "notifyNewFollower",
+                    "notifyQueryFork",
+                    "notifyQueryFavorite",
+                    "inAppToasts"
+                  ],
+                  "properties": {
+                    "notifyNewFollower": {
+                      "type": "boolean"
+                    },
+                    "notifyQueryFork": {
+                      "type": "boolean"
+                    },
+                    "notifyQueryFavorite": {
+                      "type": "boolean"
+                    },
+                    "inAppToasts": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
             "description": "Default Response",
             "content": {
               "application/json": {

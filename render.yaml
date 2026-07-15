@@ -32,12 +32,14 @@ projects:
 
           - type: web
             name: poke-query-frontend
-            runtime: static
+            runtime: node
             rootDir: frontend
             buildCommand: npm ci && npm run build
-            staticPublishPath: dist
+            startCommand: node .output/server/index.mjs
             pullRequestPreviewsEnabled: true
             envVars:
+              - key: NODE_ENV
+                value: production
               - key: VITE_API_BASE_URL
                 sync: false
               - key: VITE_SUPABASE_URL
@@ -87,14 +89,16 @@ projects:
 
           - type: web
             name: poke-query-frontend-qa
-            runtime: static
+            runtime: node
             rootDir: frontend
             branch: main
             autoDeployTrigger: commit
             buildCommand: npm ci && npm run build
-            staticPublishPath: dist
+            startCommand: node .output/server/index.mjs
             pullRequestPreviewsEnabled: true
             envVars:
+              - key: NODE_ENV
+                value: staging
               - key: VITE_API_BASE_URL
                 sync: false
               - key: VITE_SUPABASE_URL
