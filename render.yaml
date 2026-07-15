@@ -67,7 +67,6 @@ projects:
             branch: main
             autoDeployTrigger: commit
             buildCommand: npm ci && npm run build
-            preDeployCommand: npm run db:migrate
             startCommand: npm run start
             envVars:
               - key: NODE_ENV
