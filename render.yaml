@@ -112,7 +112,6 @@ projects:
             name: poke-query-docs-site-qa
             runtime: static
             rootDir: docs-site
-            plan: free
             branch: main
             autoDeployTrigger: commit
             buildCommand: npm ci --prefix ../backend && npm ci && npm run docs:generate
