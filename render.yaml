@@ -8,6 +8,7 @@ projects:
             runtime: node
             rootDir: backend
             plan: starter
+            healthCheckPath: /health
             autoDeployTrigger: commit
             buildCommand: npm ci && npm run build
             preDeployCommand: npm run db:migrate
@@ -64,6 +65,7 @@ projects:
             runtime: node
             rootDir: backend
             plan: free
+            healthCheckPath: /health
             branch: main
             autoDeployTrigger: commit
             buildCommand: npm ci && npm run build

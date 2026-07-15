@@ -75,7 +75,9 @@ npm run build
 npm start
 ```
 
-The server starts on `http://localhost:3000`. Interactive API docs are available at `http://localhost:3000/docs`.
+The server starts on `http://localhost:4000`. Interactive API docs are available at `http://localhost:4000/docs`.
+
+Health endpoint: `GET /health` (no auth required).
 
 ## Scripts
 
@@ -135,6 +137,7 @@ The server starts on `http://localhost:3000`. Interactive API docs are available
 | `POST`   | `/api/v1/queries/:id/favorite`                   | ✓    | Favorite a visible query                                             |
 | `POST`   | `/api/v1/queries/:id/unfavorite`                 | ✓    | Remove a query from your favorites                                   |
 | `GET`    | `/api/v1/community`                              |      | Browse public queries with tag, search, sort, and pagination         |
+| `GET`    | `/health`                                        |      | Liveness/readiness health payload for deploy checks and monitors      |
 
 ## Query Endpoints
 

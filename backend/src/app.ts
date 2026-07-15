@@ -106,6 +106,7 @@ async function loadOpenApiDescription() {
 export async function buildApp() {
   const description = await loadOpenApiDescription();
   const allowedOrigins = getAllowedOrigins();
+  const startedAt = new Date().toISOString();
 
   const fastify = Fastify({
     logger: process.env.NODE_ENV === "test" ? false : loggerConfig,
@@ -203,6 +204,16 @@ export async function buildApp() {
   await fastify.register(queriesRoutes, { prefix: "/api/v1/queries" });
   await fastify.register(communityRoutes, { prefix: "/api/v1/community" });
   await fastify.register(notificationsRoutes, { prefix: "/api/v1/notifications" });
+
+  fastify.get("/health", async () => {
+    return {
+      status: "ok",
+      service: "poke-query-backend",
+      uptimeSeconds: Math.floor(process.uptime()),
+      startedAt,
+      now: new Date().toISOString(),
+    };
+  });
 
   return fastify;
 }

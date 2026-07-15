@@ -108,3 +108,25 @@ Notes:
 - Backend migrations run automatically during deploy via the blueprint `preDeployCommand`.
 - Frontend is deployed as a Node web service and started with `node .output/server/index.mjs`.
 - The docs site build regenerates OpenAPI from the backend before publishing.
+
+### Health Checks
+
+- Backend health endpoint: `GET /health`
+- Example local check: `curl http://localhost:4000/health`
+- Example production check: `curl https://<your-backend-domain>/health`
+
+The Render backend services are configured with `healthCheckPath: /health` in `render.yaml`.
+
+### Uptime Monitor Example
+
+You can point any external uptime monitor (UptimeRobot, Better Stack, Checkly, etc.) at:
+
+- `https://<your-backend-domain>/health`
+
+Recommended settings:
+
+- Method: `GET`
+- Interval: `60s`
+- Timeout: `10s`
+- Expected status: `200`
+- Optional response assertion: JSON field `status` equals `ok`
