@@ -5,7 +5,7 @@ This document is the week-of-launch checklist for deploying and sharing poke-que
 ## Deployment Targets
 
 - Backend API: Render web service from `backend/`
-- Frontend app: Render static site from `frontend/`
+- Frontend app: Render web service (Node) from `frontend/`
 - Docs site: Render static site from `docs-site/`
 
 Source of truth: `render.yaml`.

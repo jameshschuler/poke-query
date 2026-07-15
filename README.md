@@ -76,7 +76,7 @@ From `backend/`:
 This repository includes a Render Blueprint at [render.yaml](render.yaml) that provisions:
 
 - Backend web service (`backend/`)
-- Frontend static site (`frontend/`)
+- Frontend web service (`frontend/`, TanStack Start/Nitro server)
 - Docs static site (`docs-site/`)
 
 ### Steps
@@ -106,4 +106,5 @@ Frontend service:
 Notes:
 
 - Backend migrations run automatically during deploy via the blueprint `preDeployCommand`.
+- Frontend is deployed as a Node web service and started with `node .output/server/index.mjs`.
 - The docs site build regenerates OpenAPI from the backend before publishing.
