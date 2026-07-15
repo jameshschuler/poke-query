@@ -82,8 +82,29 @@ function getAllowedOrigins() {
   return ["http://localhost:3000", "http://localhost:3001", "http://localhost:5173"];
 }
 
+async function loadOpenApiDescription() {
+  const candidatePaths = [
+    resolve(__dirname, "openapi-description.md"),
+    resolve(__dirname, "../src/openapi-description.md"),
+    resolve(process.cwd(), "src/openapi-description.md"),
+    resolve(process.cwd(), "openapi-description.md"),
+  ];
+
+  for (const filePath of candidatePaths) {
+    try {
+      return await readFile(filePath, "utf-8");
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+        throw error;
+      }
+    }
+  }
+
+  throw new Error(`Unable to locate openapi-description.md. Tried: ${candidatePaths.join(", ")}`);
+}
+
 export async function buildApp() {
-  const description = await readFile(resolve(__dirname, "openapi-description.md"), "utf-8");
+  const description = await loadOpenApiDescription();
   const allowedOrigins = getAllowedOrigins();
 
   const fastify = Fastify({

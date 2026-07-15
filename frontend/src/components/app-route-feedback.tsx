@@ -124,13 +124,18 @@ export function AppNotFoundPage() {
         </p>
 
         <div className="mt-2 flex w-full flex-col items-center justify-center gap-3 sm:w-auto sm:flex-row">
-          <Button size="lg" render={<Link to="/dashboard" />}>
+          <Button
+            size="lg"
+            nativeButton={false}
+            render={<Link to="/dashboard" />}
+          >
             <HomeIcon />
             Go to dashboard
           </Button>
           <Button
             size="lg"
             variant="outline"
+            nativeButton={false}
             render={<Link to={context.ctaTo} />}
           >
             <SearchIcon />
@@ -160,6 +165,7 @@ export function AppNotFoundPage() {
               className="mt-3"
               variant="ghost"
               size="sm"
+              nativeButton={false}
               render={<Link to="/docs" target="_blank" rel="noreferrer" />}
             >
               <LifeBuoyIcon />
@@ -396,6 +402,7 @@ export function AppErrorPage({ error }: AppErrorPageProps) {
           <Button
             size="lg"
             variant="outline"
+            nativeButton={false}
             render={<Link to={context.ctaTo} />}
           >
             {context.ctaTo === '/login' ? <LogInIcon /> : <HomeIcon />}

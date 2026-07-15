@@ -83,6 +83,7 @@ export function PageShell({
             </div>
             {user ? (
               <Button
+                nativeButton={false}
                 className="shrink-0 rounded-full px-3 sm:px-4"
                 render={<Link to="/library/new" />}
               >

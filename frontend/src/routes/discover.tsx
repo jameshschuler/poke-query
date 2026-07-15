@@ -511,6 +511,7 @@ function DiscoverPage() {
             <div className="flex flex-wrap gap-2 max-sm:w-full sm:w-auto sm:justify-end">
               {user ? (
                 <Button
+                  nativeButton={false}
                   className="shrink-0 rounded-full px-3 max-sm:w-full sm:px-4"
                   render={<Link to="/library/new" />}
                 >

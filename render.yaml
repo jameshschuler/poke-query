@@ -63,7 +63,7 @@ projects:
             name: poke-query-backend-qa
             runtime: node
             rootDir: backend
-            plan: starter
+            plan: free
             branch: main
             autoDeployTrigger: commit
             buildCommand: npm ci && npm run build
@@ -91,6 +91,7 @@ projects:
             name: poke-query-frontend-qa
             runtime: node
             rootDir: frontend
+            plan: free
             branch: main
             autoDeployTrigger: commit
             buildCommand: npm ci && npm run build
@@ -112,6 +113,7 @@ projects:
             name: poke-query-docs-site-qa
             runtime: static
             rootDir: docs-site
+            plan: free
             branch: main
             autoDeployTrigger: commit
             buildCommand: npm ci --prefix ../backend && npm ci && npm run docs:generate

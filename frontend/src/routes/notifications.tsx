@@ -178,6 +178,7 @@ function NotificationsPage() {
               <Button
                 type="button"
                 variant="outline"
+                nativeButton={false}
                 className="rounded-xl"
                 render={<Link to="/discover" />}
               >

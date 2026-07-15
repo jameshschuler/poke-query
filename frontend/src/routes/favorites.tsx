@@ -319,6 +319,7 @@ function FavoritesPage() {
           <div className="mt-4 flex justify-center">
             <Button
               type="button"
+              nativeButton={false}
               className="rounded-xl"
               render={<Link to="/discover" />}
             >

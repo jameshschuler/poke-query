@@ -377,6 +377,7 @@ function LibraryPage() {
 
           <Button
             type="button"
+            nativeButton={false}
             className="rounded-xl max-sm:w-full"
             render={<Link to="/library/new" />}
           >
@@ -457,6 +458,7 @@ function LibraryPage() {
             <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
               <Button
                 type="button"
+                nativeButton={false}
                 className="rounded-xl max-sm:w-full"
                 render={<Link to="/library/new" />}
               >
@@ -466,6 +468,7 @@ function LibraryPage() {
               <Button
                 type="button"
                 variant="outline"
+                nativeButton={false}
                 className="rounded-xl max-sm:w-full"
                 render={<Link to="/discover" />}
               >
@@ -591,6 +594,7 @@ function LibraryPage() {
                             type="button"
                             variant="outline"
                             size="icon-sm"
+                            nativeButton={false}
                             className="rounded-lg"
                             aria-label="Edit"
                             render={

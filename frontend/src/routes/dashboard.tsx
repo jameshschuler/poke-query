@@ -248,6 +248,7 @@ function DashboardRoute() {
 
                 <Button
                   variant="outline"
+                  nativeButton={false}
                   className="rounded-xl"
                   render={<Link to="/account" />}
                 >
@@ -299,6 +300,7 @@ function DashboardRoute() {
                 </div>
 
                 <Button
+                  nativeButton={false}
                   className="rounded-xl"
                   render={<Link to="/library/new" />}
                 >
@@ -323,6 +325,7 @@ function DashboardRoute() {
                     <Button
                       variant="outline"
                       size="sm"
+                      nativeButton={false}
                       className="rounded-lg"
                       render={<Link to="/library" />}
                     >
@@ -331,6 +334,7 @@ function DashboardRoute() {
                     <Button
                       variant="ghost"
                       size="sm"
+                      nativeButton={false}
                       className="rounded-lg"
                       render={<Link to="/library/new" />}
                     >
@@ -362,6 +366,7 @@ function DashboardRoute() {
 
                 <Button
                   variant={latestDraft ? 'outline' : 'default'}
+                  nativeButton={false}
                   className="rounded-xl"
                   render={
                     <Link
@@ -395,6 +400,7 @@ function DashboardRoute() {
                     <Button
                       variant="outline"
                       size="sm"
+                      nativeButton={false}
                       className="rounded-lg"
                       render={
                         <Link
@@ -408,6 +414,7 @@ function DashboardRoute() {
                     <Button
                       variant="ghost"
                       size="sm"
+                      nativeButton={false}
                       className="rounded-lg"
                       render={<Link to="/library" />}
                     >
@@ -444,6 +451,7 @@ function DashboardRoute() {
                         <Button
                           variant="ghost"
                           size="sm"
+                          nativeButton={false}
                           className="rounded-lg"
                           render={
                             <Link
@@ -488,6 +496,7 @@ function DashboardRoute() {
 
               <Button
                 variant="outline"
+                nativeButton={false}
                 className="rounded-xl"
                 render={<Link to="/notifications" />}
               >
