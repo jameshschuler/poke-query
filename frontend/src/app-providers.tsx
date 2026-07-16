@@ -1,7 +1,7 @@
 import { AuthProvider } from '@authabase/react'
 import type { AuthConfig } from '@authabase/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Toaster } from 'sonner'
 import { ApiRequestError, getMe } from '#/lib/poke-query-api'
@@ -9,11 +9,6 @@ import { setCachedUser } from '#/lib/route-auth'
 import { TooltipProvider } from '#/components/ui/tooltip'
 import { NotificationToastListener } from '#/components/notification-toast-listener'
 import { initializeThemePreferences } from '#/lib/theme-preferences'
-
-const QueryDevtools = lazy(async () => {
-  const module = await import('@tanstack/react-query-devtools')
-  return { default: module.ReactQueryDevtools }
-})
 
 export function AppProviders({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -76,27 +71,8 @@ export function AppProviders({ children }: { children: ReactNode }) {
           {children}
           <NotificationToastListener />
           <Toaster richColors position="bottom-right" />
-          <LocalQueryDevtools />
         </QueryClientProvider>
       </AuthProvider>
     </TooltipProvider>
-  )
-}
-
-function LocalQueryDevtools() {
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  if (!import.meta.env.DEV || !mounted) {
-    return null
-  }
-
-  return (
-    <Suspense fallback={null}>
-      <QueryDevtools initialIsOpen={false} />
-    </Suspense>
   )
 }
