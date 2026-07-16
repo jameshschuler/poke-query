@@ -56,6 +56,8 @@
 
 - [ ] Deploy FE, BE, and docs site
   - [ ] Verify environment variables and domains for each deployment target.
+  - [ ] Map QA backend custom domain (`api.pokequery.app`) to Render service and verify DNS + TLS issuance.
+  - [ ] Update QA frontend `VITE_API_BASE_URL` to `https://api.pokequery.app` after domain verification.
 - [ ] Scalability and logging
   - [ ] Identify the main bottlenecks for query/favorite/notification traffic.
 - [ ] Mobile first is key
