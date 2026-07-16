@@ -1,4 +1,4 @@
---CREATE SCHEMA "pokequery";
+CREATE SCHEMA IF NOT EXISTS "pokequery";
 --> statement-breakpoint
 CREATE TABLE "pokequery"."favorites" (
 	"trainer_id" uuid NOT NULL,

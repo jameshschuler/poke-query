@@ -24,20 +24,7 @@ const mockRow = {
 
 const buildSelectChain = (result: object[]) => ({
   from: vi.fn(() => ({
-    leftJoin: vi.fn(function (this: any) {
-      return {
-        leftJoin: vi.fn(function (this: any) {
-          return {
-            leftJoin: vi.fn(function (this: any) {
-              return { where: vi.fn(() => ({ groupBy: vi.fn().mockResolvedValue(result) })) };
-            }),
-            where: vi.fn(() => ({ groupBy: vi.fn().mockResolvedValue(result) })),
-          };
-        }),
-        where: vi.fn(() => ({ groupBy: vi.fn().mockResolvedValue(result) })),
-      };
-    }),
-    where: vi.fn(() => ({ groupBy: vi.fn().mockResolvedValue(result) })),
+    where: vi.fn().mockResolvedValue(result),
   })),
 });
 

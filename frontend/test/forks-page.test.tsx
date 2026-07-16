@@ -20,6 +20,16 @@ vi.mock('@tanstack/react-router', () => ({
     <a {...props}>{children}</a>
   ),
   useNavigate: () => mockNavigate,
+  useRouterState: ({
+    select,
+  }: {
+    select: (state: { location: { pathname: string } }) => string
+  }) =>
+    select({
+      location: {
+        pathname: '/forks',
+      },
+    }),
 }))
 
 vi.mock('#/components/page-shell', () => ({
