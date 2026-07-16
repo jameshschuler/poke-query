@@ -84,7 +84,7 @@ This repository includes a Render Blueprint at [render.yaml](render.yaml) that p
 1. Push this repo to GitHub.
 2. In Render, create a new Blueprint and select this repository.
 3. Render will detect [render.yaml](render.yaml) and create all three services.
-4. Set the required environment variables in each service (below), then deploy.
+4. Set the required environment variables in each service (below), then add the two GitHub Actions deploy hook secrets and let the workflow handle QA and production deploys.
 
 ### Required Environment Variables
 
@@ -108,6 +108,8 @@ Notes:
 - Backend migrations run automatically during deploy via the blueprint `preDeployCommand`.
 - Frontend is deployed as a Node web service and started with `node .output/server/index.mjs`.
 - The docs site build regenerates OpenAPI from the backend before publishing.
+- QA services are triggered by GitHub Actions on pushes to `main` via `RENDER_QA_DEPLOY_HOOK`.
+- Production services are triggered only by the manual GitHub Actions workflow via `RENDER_PROD_DEPLOY_HOOK`.
 
 ### Health Checks
 

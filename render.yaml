@@ -8,8 +8,9 @@ projects:
             runtime: node
             rootDir: backend
             plan: starter
+            branch: main
             healthCheckPath: /health
-            autoDeployTrigger: commit
+            autoDeployTrigger: off
             buildCommand: npm ci --include=dev && npm run build
             preDeployCommand: npm run db:migrate
             startCommand: npm run start
@@ -35,6 +36,8 @@ projects:
             name: poke-query-frontend
             runtime: node
             rootDir: frontend
+            branch: main
+            autoDeployTrigger: off
             buildCommand: npm ci --include=dev && npm run build
             startCommand: node .output/server/index.mjs
             pullRequestPreviewsEnabled: true
@@ -56,6 +59,8 @@ projects:
             name: poke-query-docs-site
             runtime: static
             rootDir: docs-site
+            branch: main
+            autoDeployTrigger: off
             buildCommand: npm ci --prefix ../backend && npm ci && npm run docs:generate
             staticPublishPath: .
             pullRequestPreviewsEnabled: true
@@ -69,7 +74,7 @@ projects:
             plan: free
             healthCheckPath: /health
             branch: main
-            autoDeployTrigger: commit
+            autoDeployTrigger: off
             buildCommand: npm ci --include=dev && npm run build
             startCommand: npm run start
             envVars:
@@ -96,7 +101,7 @@ projects:
             rootDir: frontend
             plan: free
             branch: main
-            autoDeployTrigger: commit
+            autoDeployTrigger: off
             buildCommand: npm ci --include=dev && npm run build
             startCommand: node .output/server/index.mjs
             pullRequestPreviewsEnabled: true
@@ -119,7 +124,7 @@ projects:
             runtime: static
             rootDir: docs-site
             branch: main
-            autoDeployTrigger: commit
+            autoDeployTrigger: off
             buildCommand: npm ci --prefix ../backend && npm ci && npm run docs:generate
             staticPublishPath: .
             pullRequestPreviewsEnabled: true

@@ -1,0 +1,28 @@
+name: Deploy to Render
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy-qa:
+    name: Deploy QA
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger QA deploy hook
+        run: |
+          curl --fail --silent --show-error -X POST "${{ secrets.RENDER_QA_DEPLOY_HOOK }}"
+
+  deploy-prod:
+    name: Deploy Production
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger production deploy hook
+        run: |
+          curl --fail --silent --show-error -X POST "${{ secrets.RENDER_PROD_DEPLOY_HOOK }}"

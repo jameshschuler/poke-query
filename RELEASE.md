@@ -10,6 +10,17 @@ This document is the week-of-launch checklist for deploying and sharing poke-que
 
 Source of truth: `render.yaml`.
 
+## Deployment Model
+
+- QA deploys only when a PR is merged to `main`; GitHub Actions posts to the QA Render deploy hook.
+- Production deploys only when the manual GitHub Actions workflow is run; that workflow posts to the production Render deploy hook.
+- Render auto-deploy is disabled for all services in `render.yaml`.
+
+## Required Secrets
+
+- `RENDER_QA_DEPLOY_HOOK`
+- `RENDER_PROD_DEPLOY_HOOK`
+
 ## Environment Variables
 
 ### Backend
@@ -44,14 +55,11 @@ No direct runtime env vars required. Build depends on backend dependencies and s
 
 ## Rollout Order
 
-1. Backend
-   - Deploy backend first so frontend/docs point to a live API.
-   - Confirm migrations complete (`preDeployCommand` in blueprint).
-2. Frontend
-   - Deploy frontend after backend is healthy.
-   - Confirm `VITE_API_BASE_URL` points at the new backend URL.
-3. Docs site
-   - Deploy docs site last to publish OpenAPI aligned with deployed backend.
+1. Merge the PR to `main`.
+2. Let the QA workflow deploy the Render QA services.
+3. Confirm the QA backend health check passes.
+4. Run the manual production workflow.
+5. Confirm the production backend migrations complete (`preDeployCommand` in the blueprint).
 
 ## Pre-Deploy Checklist
 
@@ -90,8 +98,6 @@ No direct runtime env vars required. Build depends on backend dependencies and s
 
 ## Rollback Triggers
 
-Rollback if any of the following occur:
-
 - Login/session flow is broken in production.
 - Query CRUD or discover is unavailable.
 - Widespread 5xx errors or elevated auth failures.
@@ -100,13 +106,13 @@ Rollback if any of the following occur:
 ## Rollback Steps
 
 1. In Render, roll backend service back to the previous healthy deploy.
-2. If frontend depends on incompatible API shape, roll frontend back to last healthy deploy.
+2. If frontend depends on incompatible API shape, roll frontend back to the last healthy deploy.
 3. Roll docs site back if published schema no longer matches live backend.
 4. Re-run post-deploy verification for auth, core query flow, and privacy checks.
-5. Record incident notes in release thread with root cause and next fix.
+5. Record incident notes in the release thread with root cause and next fix.
 
 ## Launch Day Notes
 
 - Announce release only after post-deploy verification passes.
-- Keep at least one maintainer available for rapid rollback during first hour.
+- Keep at least one maintainer available for rapid rollback during the first hour.
 - Capture any launch issues and turn them into follow-up TODO items.
