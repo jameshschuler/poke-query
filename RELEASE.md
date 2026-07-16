@@ -12,14 +12,21 @@ Source of truth: `render.yaml`.
 
 ## Deployment Model
 
-- QA deploys only when a PR is merged to `main`; GitHub Actions posts to the QA Render deploy hook.
-- Production deploys only when the manual GitHub Actions workflow is run; that workflow posts to the production Render deploy hook.
+- QA deploys only when a PR is merged to `main`; GitHub Actions posts to the QA backend hook first, then optionally triggers QA frontend/docs hooks.
+- Production deploys only when the manual GitHub Actions workflow is run; that workflow posts to the production backend hook first, then optionally triggers production frontend/docs hooks.
 - Render auto-deploy is disabled for all services in `render.yaml`.
 
 ## Required Secrets
 
-- `RENDER_QA_DEPLOY_HOOK`
-- `RENDER_PROD_DEPLOY_HOOK`
+- `RENDER_QA_BACKEND_DEPLOY_HOOK` (must point to QA backend service)
+- `RENDER_PROD_DEPLOY_HOOK` (must point to production backend service)
+
+## Optional Secrets
+
+- `RENDER_QA_FRONTEND_DEPLOY_HOOK`
+- `RENDER_QA_DOCS_DEPLOY_HOOK`
+- `RENDER_PROD_FRONTEND_DEPLOY_HOOK`
+- `RENDER_PROD_DOCS_DEPLOY_HOOK`
 
 ## Environment Variables
 

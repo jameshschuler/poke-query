@@ -69,7 +69,7 @@ function LandingPage() {
               </a>
               <a
                 href={user ? '/discover' : '/login'}
-                className="rounded-full border border-primary/35 bg-primary/10 px-3 py-1 font-medium text-foreground transition-colors hover:bg-primary/20"
+                className="rounded-full border border-[#f59e0b]/45 bg-[#f59e0b]/18 px-3 py-1 font-medium text-foreground transition-colors hover:bg-[#f59e0b]/28"
               >
                 {user ? 'Open Workspace' : 'Log in'}
               </a>
