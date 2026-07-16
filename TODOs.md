@@ -44,6 +44,8 @@
 - Abuse protections and moderation flow (reporting, queue, telemetry, reviewer actions).
 - Full E2E suite expansion across all major flows.
 - MCP server implementation and documentation.
+- Developer API access and documentation portal.
+- Badges / achievements system for community participation and contributions.
 - Trainer profile screenshot upload + parsing flow.
 - PWA install/offline support.
 - Analytics for activation/retention funnels.
@@ -111,6 +113,31 @@
   - [ ] Backend tests for permissions, visibility, and favorite/fork behavior.
   - [ ] Frontend tests for CRUD, add/remove string flows, and optimistic states.
   - [ ] E2E smoke path for creating, sharing, and interacting with a public collection.
+
+### 3) Developer Platform
+
+- [ ] Add direct API access for power users and integrators
+  - [ ] Define which read-only and authenticated endpoints should be public-facing.
+  - [ ] Decide on API auth approach for developers (keys, OAuth, or session-based access).
+  - [ ] Document rate limits, usage guidance, and example requests.
+- [ ] Add a developers page
+  - [ ] Explain the API surface, auth model, and common use cases.
+  - [ ] Include quick-start examples for raids, PvP strings, and community tooling.
+  - [ ] Link to docs and support channels for implementation questions.
+- [ ] Add developer-focused integration coverage
+  - [ ] Tests for API access, auth, and rate-limit behavior.
+  - [ ] Smoke checks for example developer workflows.
+
+### 4) Badges and Achievements
+
+- [ ] Add badges / achievements for community participation
+  - [ ] Define badge criteria for sharing useful strings, forking, favorites, and contributions.
+  - [ ] Decide where badges appear (profile, cards, leaderboards, etc.).
+  - [ ] Keep the badge system lightweight and aligned with community sharing.
+- [ ] Add supporting UI and data model coverage
+  - [ ] Store achievement progress and earned badge state.
+  - [ ] Render badge summaries in the profile and relevant cards.
+  - [ ] Add tests for badge awarding and display behavior.
 
 ## P0 - Security, Trust, and Data Safety
 

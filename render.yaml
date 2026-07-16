@@ -49,6 +49,8 @@ projects:
                 sync: false
               - key: VITE_AUTH_REDIRECT_URL
                 sync: false
+              - key: VITE_DOCS_URL
+                sync: false
 
           - type: web
             name: poke-query-docs-site
@@ -108,6 +110,8 @@ projects:
               - key: VITE_SUPABASE_ANON_KEY
                 sync: false
               - key: VITE_AUTH_REDIRECT_URL
+                sync: false
+              - key: VITE_DOCS_URL
                 sync: false
 
           - type: web

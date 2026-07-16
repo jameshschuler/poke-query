@@ -122,12 +122,15 @@ function LoginPage() {
 
       <div className="relative flex min-h-screen flex-col">
         <header className="flex items-center justify-between px-5 py-4 sm:px-6 sm:py-4">
-          <p className="inline-flex items-center gap-2 text-base font-semibold tracking-tight text-foreground">
+          <a
+            href="/"
+            className="inline-flex items-center gap-2 text-base font-semibold tracking-tight text-foreground"
+          >
             <span className="rounded-md bg-primary/15 p-1 text-primary">
               <ZapIcon className="size-3.5" />
             </span>
             PokeQuery
-          </p>
+          </a>
 
           <a
             href={docsUrl}
