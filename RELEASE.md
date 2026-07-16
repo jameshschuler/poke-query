@@ -37,8 +37,8 @@ Required in staging and production:
 - `NODE_ENV=production`
 - `DATABASE_URL`
 - `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_SECRET_KEY`
 - `COOKIE_SECRET`
 - `CORS_ORIGIN`
 - `LOG_LEVEL` (recommended: `info`)
@@ -51,7 +51,7 @@ Required in staging and production:
 
 - `VITE_API_BASE_URL`
 - `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
 - `VITE_AUTH_REDIRECT_URL`
 
 Local template: `frontend/.env.example`.

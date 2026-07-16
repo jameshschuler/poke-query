@@ -166,7 +166,7 @@ describe("DELETE /api/v1/users/me", () => {
   });
 
   it("should return 204 when auth user is deleted and trainer row does not exist", async () => {
-    process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key";
+    process.env.SUPABASE_SECRET_KEY = "test-secret-key";
     mockAdminDeleteUser.mockResolvedValueOnce({ data: { user: null }, error: null });
 
     app.db.delete = vi.fn(() => ({

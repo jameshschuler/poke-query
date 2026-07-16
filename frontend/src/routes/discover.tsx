@@ -61,12 +61,13 @@ type SortMode =
 type FilterOption = {
   key: string
   label: string
-  filter?: 'all' | 'new' | 'popular'
+  filter?: 'all' | 'new' | 'popular' | 'official'
   tag?: string
 }
 
 const BASE_FILTERS: FilterOption[] = [
   { key: 'all', label: 'All', filter: 'all' },
+  { key: 'official', label: 'Official', filter: 'official' },
   { key: 'popular', label: 'Popular', filter: 'popular' },
   { key: 'new', label: 'New', filter: 'new' },
 ]

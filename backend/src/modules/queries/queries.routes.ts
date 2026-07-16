@@ -61,6 +61,10 @@ function resolveDisplayName(row: {
   return row.username;
 }
 
+function resolveMetadataSource(value: unknown): "official" | "community" {
+  return value === "official" ? "official" : "community";
+}
+
 export async function queriesRoutes(fastify: FastifyTypebox) {
   const server = fastify.withTypeProvider<TypeBoxTypeProvider>();
 
@@ -131,6 +135,13 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
         forkCount: sql<number>`COALESCE((
             SELECT COUNT(*)::int FROM pokequery.search_queries forked WHERE forked.parent_query_id = ${searchQueries.id}
           ), 0)`,
+        source: sql<"official" | "community" | null>`
+          CASE
+            WHEN ${searchQueries.metadata}->>'source' IN ('official', 'community')
+              THEN (${searchQueries.metadata}->>'source')::text
+            ELSE NULL
+          END
+        `,
         autoTags: sql<string[]>`COALESCE(${searchQueries.metadata}->'autoTags', '[]'::jsonb)`,
         createdAt: searchQueries.createdAt,
         updatedAt: searchQueries.updatedAt,
@@ -180,6 +191,7 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
       copyCount: row.copyCount,
       favoriteCount: row.favoriteCount,
       forkCount: row.forkCount,
+      source: row.source,
       autoTags: row.autoTags,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
@@ -235,8 +247,11 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
           return reply.code(400).send({ error: "Description contains blocked language" });
         }
 
-        // Generate the "Extensible Brain" data
-        const metadata = generateMetadata(query);
+        // Generate the "Extensible Brain" data and mark user-created strings as community
+        const metadata = {
+          ...generateMetadata(query),
+          source: "community" as const,
+        };
 
         // Deduplicate and normalize tags (case-insensitive), including autoTags
         const autoTags = Array.isArray(metadata.autoTags) ? metadata.autoTags : [];
@@ -330,7 +345,10 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
             isPublic: false, // Forks are private by default
             parentQueryId: original.id,
             originalQuerySnapshot: original.query, // Lock in the version at time of fork
-            metadata: original.metadata,
+            metadata: {
+              ...original.metadata,
+              source: "community",
+            },
           })
           .returning();
 
@@ -401,7 +419,10 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
           .set({
             query: source.query,
             originalQuerySnapshot: source.query,
-            metadata: source.metadata,
+            metadata: {
+              ...generateMetadata(source.query),
+              source: "community",
+            },
           })
           .where(and(eq(searchQueries.id, id), eq(searchQueries.creatorId, userId)))
           .returning({ id: searchQueries.id });
@@ -435,7 +456,22 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
           return reply.code(400).send({ error: "Description contains blocked language" });
         }
 
-        const metadata = generateMetadata(query);
+        const [existingQuery] = await fastify.db
+          .select({ metadata: searchQueries.metadata })
+          .from(searchQueries)
+          .where(and(eq(searchQueries.id, id), eq(searchQueries.creatorId, userId)))
+          .limit(1);
+
+        if (!existingQuery) {
+          return reply.code(404).send({ error: "Query not found or not owned by user" });
+        }
+
+        const metadata = {
+          ...generateMetadata(query),
+          source: resolveMetadataSource(
+            (existingQuery.metadata as { source?: unknown } | null)?.source,
+          ),
+        };
 
         const [updatedQuery] = await fastify.db
           .update(searchQueries)

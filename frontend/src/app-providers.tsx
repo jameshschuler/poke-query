@@ -38,7 +38,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
   const authConfig: AuthConfig = useMemo(
     () => ({
       supabaseUrl: import.meta.env.VITE_SUPABASE_URL ?? '',
-      supabaseKey: import.meta.env.VITE_SUPABASE_ANON_KEY ?? '',
+      supabaseKey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? '',
       redirectUrl:
         import.meta.env.VITE_AUTH_REDIRECT_URL ??
         (typeof window !== 'undefined' ? window.location.origin : undefined),

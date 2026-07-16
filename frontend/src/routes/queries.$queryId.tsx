@@ -23,6 +23,7 @@ import {
 import { PageHeader } from '#/components/page-header'
 import { AppSidebar } from '#/components/app-sidebar'
 import { SidebarInset, SidebarProvider } from '#/components/ui/sidebar'
+import { OfficialTrainerBadge } from '#/components/official-trainer-badge'
 import {
   ApiRequestError,
   copyQuery,
@@ -354,7 +355,8 @@ function QueryDetailPage() {
                   {query.autoTags.map((tag) => (
                     <Badge
                       key={tag}
-                      className="bg-foreground font-medium text-background"
+                      variant="outline"
+                      className="border-border/70 bg-card text-muted-foreground"
                     >
                       {tagLabels[tag] ?? tag}
                     </Badge>
@@ -370,13 +372,18 @@ function QueryDetailPage() {
                     <>
                       {' '}
                       by{' '}
-                      <Link
-                        to="/trainers/$username"
-                        params={{ username: query.creator.username }}
-                        className="hover:underline"
-                      >
-                        {query.creator.displayName}
-                      </Link>
+                      <span className="inline-flex items-center gap-1.5 align-middle">
+                        <Link
+                          to="/trainers/$username"
+                          params={{ username: query.creator.username }}
+                          className="hover:underline"
+                        >
+                          {query.creator.displayName}
+                        </Link>
+                        <OfficialTrainerBadge
+                          username={query.creator.username}
+                        />
+                      </span>
                     </>
                   ) : null}
                 </p>

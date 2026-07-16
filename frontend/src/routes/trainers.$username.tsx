@@ -30,6 +30,7 @@ import { SearchStringCard } from '#/components/search-string-card'
 import { PageHeader } from '#/components/page-header'
 import { AppSidebar } from '#/components/app-sidebar'
 import { SidebarInset, SidebarProvider } from '#/components/ui/sidebar'
+import { OfficialTrainerBadge } from '#/components/official-trainer-badge'
 import { getMutationErrorMessage } from '#/lib/mutation-toast'
 import { formatCompactNumber, formatFullNumber } from '#/lib/utils'
 
@@ -331,9 +332,12 @@ function TrainerProfilePage() {
                       </AvatarFallback>
                     </Avatar>
                     <div className="space-y-2">
-                      <h1 className="wrap-break-word text-xl font-bold sm:text-2xl">
-                        {trainer.displayName}
-                      </h1>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h1 className="wrap-break-word text-xl font-bold sm:text-2xl">
+                          {trainer.displayName}
+                        </h1>
+                        <OfficialTrainerBadge username={trainer.username} />
+                      </div>
                       <div className="flex flex-wrap items-center gap-2">
                         {trainer.isProfilePublic && trainer.team ? (
                           <Badge

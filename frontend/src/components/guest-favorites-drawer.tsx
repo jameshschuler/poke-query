@@ -30,6 +30,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '#/components/ui/tooltip'
+import { OfficialTrainerBadge } from '#/components/official-trainer-badge'
 
 type GuestFavoritesDrawerProps = {
   isOpen: boolean
@@ -160,7 +161,11 @@ export function GuestFavoritesDrawer({
                       {query.autoTags.length > 0 ? (
                         <div className="mt-2 flex flex-wrap gap-2">
                           {query.autoTags.map((tag) => (
-                            <Badge key={tag} variant="outline">
+                            <Badge
+                              key={tag}
+                              variant="outline"
+                              className="border-border/70 bg-card text-muted-foreground"
+                            >
                               {formatTagLabel(tag)}
                             </Badge>
                           ))}
@@ -205,7 +210,12 @@ export function GuestFavoritesDrawer({
 
                   {query.creator ? (
                     <p className="text-xs text-muted-foreground">
-                      by {query.creator.displayName}
+                      <span className="inline-flex items-center gap-1.5">
+                        <span>by {query.creator.displayName}</span>
+                        <OfficialTrainerBadge
+                          username={query.creator.username}
+                        />
+                      </span>
                     </p>
                   ) : null}
 

@@ -29,6 +29,7 @@ import {
   logout,
 } from '#/lib/poke-query-api'
 import type { AppNotification } from '#/lib/poke-query-api'
+import { OfficialTrainerBadge } from '#/components/official-trainer-badge'
 import { requireAuthenticated, setCachedUser } from '#/lib/route-auth'
 import { formatCompactNumber, formatFullNumber } from '#/lib/utils'
 
@@ -579,8 +580,13 @@ function DashboardRoute() {
                           </div>
 
                           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                            <span>
-                              {notification.actor?.displayName ?? 'PokeQuery'}
+                            <span className="inline-flex items-center gap-1.5">
+                              <span>
+                                {notification.actor?.displayName ?? 'PokeQuery'}
+                              </span>
+                              <OfficialTrainerBadge
+                                username={notification.actor?.username}
+                              />
                             </span>
                             <span>•</span>
                             <span>

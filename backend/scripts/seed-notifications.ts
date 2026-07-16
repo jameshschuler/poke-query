@@ -1,9 +1,11 @@
 import { config } from "dotenv";
 import { resolve } from "node:path";
 import { eq, inArray, like, count } from "drizzle-orm";
+import { assertQaLocalOnlySeedScript } from "./lib/seed-environment.js";
 
 config({ path: resolve(process.cwd(), ".env"), quiet: true });
 process.env.DATABASE_URL ??= "postgresql://postgres:postgres@localhost:5432/postgres";
+assertQaLocalOnlySeedScript("db:seed:notifications");
 
 type TrainerRow = {
   id: string;

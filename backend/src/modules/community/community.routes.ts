@@ -81,6 +81,10 @@ export async function communityRoutes(fastify: FastifyTypebox) {
       conditions.push(sql`${searchQueries.createdAt} > NOW() - INTERVAL '30 days'`);
     }
 
+    if (mode === "official") {
+      conditions.push(sql`${searchQueries.metadata}->>'source' = 'official'`);
+    }
+
     let sortOrder;
     switch (sort) {
       case "created_asc":
@@ -122,6 +126,13 @@ export async function communityRoutes(fastify: FastifyTypebox) {
           FROM pokequery.search_queries forked
           WHERE forked.parent_query_id = ${searchQueries.id}
         ), 0)`,
+        source: sql<"official" | "community" | null>`
+          CASE
+            WHEN ${searchQueries.metadata}->>'source' IN ('official', 'community')
+              THEN (${searchQueries.metadata}->>'source')::text
+            ELSE NULL
+          END
+        `,
         autoTags: sql<string[]>`COALESCE(${searchQueries.metadata}->'autoTags', '[]'::jsonb)`,
         createdAt: searchQueries.createdAt,
         updatedAt: searchQueries.updatedAt,
@@ -153,6 +164,7 @@ export async function communityRoutes(fastify: FastifyTypebox) {
       copyCount: row.copyCount,
       favoriteCount: row.favoriteCount,
       forkCount: row.forkCount,
+      source: row.source,
       autoTags: Array.isArray(row.autoTags) ? row.autoTags : [],
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),

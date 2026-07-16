@@ -17,6 +17,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '#/components/ui/tooltip'
+import { OfficialTrainerBadge } from '#/components/official-trainer-badge'
 import { copyQuery } from '#/lib/poke-query-api'
 import type { CommunityQuery, TrainerPublicQuery } from '#/lib/poke-query-api'
 import {
@@ -42,6 +43,29 @@ function isCommunityQuery(
   return 'updatedAt' in card && 'creator' in card
 }
 
+function getSourceBadge(source: CommunityQuery['source']): {
+  label: string
+  className: string
+} | null {
+  if (source === 'official') {
+    return {
+      label: 'Official',
+      className:
+        'border-emerald-300/70 bg-emerald-100/80 text-emerald-800 hover:bg-emerald-100/80',
+    }
+  }
+
+  if (source === 'community') {
+    return {
+      label: 'Community',
+      className:
+        'border-sky-300/70 bg-sky-100/80 text-sky-800 hover:bg-sky-100/80',
+    }
+  }
+
+  return null
+}
+
 export function SearchStringCard({
   card,
   variant,
@@ -63,6 +87,10 @@ export function SearchStringCard({
   )
 
   const firstTag = card.autoTags[0]
+  const discoverSourceBadge =
+    variant === 'discover' && isCommunityQuery(card)
+      ? getSourceBadge(card.source)
+      : null
   const [displayCopyCount, setDisplayCopyCount] = useState(card.copyCount)
   const [isCopyPending, setIsCopyPending] = useState(false)
 
@@ -119,8 +147,17 @@ export function SearchStringCard({
 
             {variant === 'discover' ? (
               <div className="mt-1 flex flex-wrap gap-2">
+                {discoverSourceBadge ? (
+                  <Badge className={discoverSourceBadge.className}>
+                    {discoverSourceBadge.label}
+                  </Badge>
+                ) : null}
                 {card.autoTags.map((tag) => (
-                  <Badge key={tag} variant="outline">
+                  <Badge
+                    key={tag}
+                    variant="outline"
+                    className="border-border/70 bg-card text-muted-foreground"
+                  >
                     {formatTagLabel(tag)}
                   </Badge>
                 ))}
@@ -160,19 +197,22 @@ export function SearchStringCard({
               </Avatar>
 
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-foreground">
-                  {card.creator?.username ? (
-                    <Link
-                      to="/trainers/$username"
-                      params={{ username: card.creator.username }}
-                      className="hover:underline"
-                    >
-                      {card.creator.displayName}
-                    </Link>
-                  ) : (
-                    'Anonymous trainer'
-                  )}
-                </p>
+                <div className="flex min-w-0 items-center gap-2">
+                  <p className="truncate text-sm font-semibold text-foreground">
+                    {card.creator?.username ? (
+                      <Link
+                        to="/trainers/$username"
+                        params={{ username: card.creator.username }}
+                        className="hover:underline"
+                      >
+                        {card.creator.displayName}
+                      </Link>
+                    ) : (
+                      'Anonymous trainer'
+                    )}
+                  </p>
+                  <OfficialTrainerBadge username={card.creator?.username} />
+                </div>
               </div>
             </div>
 

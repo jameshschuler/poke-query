@@ -28,6 +28,7 @@ export const GetQuerySchema = {
       copyCount: Type.Integer(),
       favoriteCount: Type.Integer(),
       forkCount: Type.Integer(),
+      source: Type.Union([Type.Literal("official"), Type.Literal("community"), Type.Null()]),
       autoTags: Type.Array(Type.String()),
       createdAt: Type.String(),
       updatedAt: Type.String(),

@@ -135,6 +135,12 @@ The backend includes seed scripts for local QA and demo data:
 - `npm run db:seed:trainers`
 - `npm run db:seed:search`
 - `npm run db:seed:followers`
+- `npm run db:seed:qa`
 - `npm run db:seed`
+
+Production curated seeding:
+
+- `npm run db:seed:search:prod`
+- Hand-maintained list lives in `scripts/data/production-search-queries.ts`
 
 The search seed script includes public and private queries plus tag coverage for great league, ultra league, master league, raid, community-day style searches, and other common filter cases.

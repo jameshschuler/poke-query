@@ -43,7 +43,7 @@
 - Use `npm run build` before finishing TypeScript changes; the repo is strict (`strict`, `exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`).
 - Use `npm test` for Vitest. Tests create the app with `buildApp()` and hit routes with `app.inject()` instead of starting a real server.
 - Shared Supabase mocking lives in `test/setup.ts`; auth-heavy tests should follow that style rather than calling real Supabase.
-- Required env vars are inferred from the code: `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `COOKIE_SECRET`.
+- Required env vars are inferred from the code: `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, and `COOKIE_SECRET`.
 
 ## When adding code
 

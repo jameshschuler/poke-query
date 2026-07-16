@@ -92,15 +92,15 @@ Backend service:
 
 - `DATABASE_URL`
 - `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_SECRET_KEY`
 - `CORS_ORIGIN` (set to your frontend URL; include multiple origins comma-separated if needed)
 
 Frontend service:
 
 - `VITE_API_BASE_URL` (your backend Render URL)
 - `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
 - `VITE_AUTH_REDIRECT_URL` (your frontend URL)
 
 Notes:
