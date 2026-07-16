@@ -108,8 +108,10 @@ Notes:
 - Backend migrations run automatically during deploy via the blueprint `preDeployCommand`.
 - Frontend is deployed as a Node web service and started with `node .output/server/index.mjs`.
 - The docs site build regenerates OpenAPI from the backend before publishing.
-- QA services are triggered by GitHub Actions on pushes to `main` via `RENDER_QA_DEPLOY_HOOK`.
-- Production services are triggered only by the manual GitHub Actions workflow via `RENDER_PROD_DEPLOY_HOOK`.
+- QA backend deploy is triggered by GitHub Actions on pushes to `main` via `RENDER_QA_BACKEND_DEPLOY_HOOK`.
+- Optional QA frontend/docs hooks can be configured with `RENDER_QA_FRONTEND_DEPLOY_HOOK` and `RENDER_QA_DOCS_DEPLOY_HOOK`.
+- Production backend deploy is triggered by the manual GitHub Actions workflow via `RENDER_PROD_DEPLOY_HOOK`.
+- Optional production frontend/docs hooks can be configured with `RENDER_PROD_FRONTEND_DEPLOY_HOOK` and `RENDER_PROD_DOCS_DEPLOY_HOOK`.
 
 ### Health Checks
 
