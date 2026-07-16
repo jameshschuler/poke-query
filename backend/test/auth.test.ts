@@ -25,6 +25,12 @@ describe("Authentication Flow", () => {
   });
 
   test("Step 2: POST /verify sets the cookie", async () => {
+    app.db.insert = vi.fn(() => ({
+      values: vi.fn(() => ({
+        onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
+      })),
+    }));
+
     const res = await app.inject({
       method: "POST",
       url: "/api/v1/auth/verify",
@@ -40,6 +46,12 @@ describe("Authentication Flow", () => {
   });
 
   test("Step 3: GET /api/v1/users/me works with the cookie", async () => {
+    app.db.insert = vi.fn(() => ({
+      values: vi.fn(() => ({
+        onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
+      })),
+    }));
+
     // 1. Get a valid cookie from a simulated verify
     const verifyRes = await app.inject({
       method: "POST",
@@ -67,13 +79,7 @@ describe("Authentication Flow", () => {
     };
     app.db.select = vi.fn(() => ({
       from: vi.fn(() => ({
-        leftJoin: vi.fn(() => ({
-          leftJoin: vi.fn(() => ({
-            leftJoin: vi.fn(() => ({
-              where: vi.fn(() => ({ groupBy: vi.fn().mockResolvedValue([mockRow]) })),
-            })),
-          })),
-        })),
+        where: vi.fn().mockResolvedValue([mockRow]),
       })),
     }));
 
