@@ -19,25 +19,39 @@ jobs:
 
   deploy-qa-frontend:
     name: Deploy QA Frontend
-    if: github.event_name == 'push' && secrets.RENDER_QA_FRONTEND_DEPLOY_HOOK != ''
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     needs: [deploy-qa]
+    env:
+      DEPLOY_HOOK: ${{ secrets.RENDER_QA_FRONTEND_DEPLOY_HOOK }}
 
     steps:
       - name: Trigger QA frontend deploy hook
         run: |
-          curl --fail --silent --show-error -X POST "${{ secrets.RENDER_QA_FRONTEND_DEPLOY_HOOK }}"
+          if [ -z "$DEPLOY_HOOK" ]; then
+            echo "Skipping QA frontend deploy: RENDER_QA_FRONTEND_DEPLOY_HOOK is not set"
+            exit 0
+          fi
+
+          curl --fail --silent --show-error -X POST "$DEPLOY_HOOK"
 
   deploy-qa-docs:
     name: Deploy QA Docs
-    if: github.event_name == 'push' && secrets.RENDER_QA_DOCS_DEPLOY_HOOK != ''
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     needs: [deploy-qa]
+    env:
+      DEPLOY_HOOK: ${{ secrets.RENDER_QA_DOCS_DEPLOY_HOOK }}
 
     steps:
       - name: Trigger QA docs deploy hook
         run: |
-          curl --fail --silent --show-error -X POST "${{ secrets.RENDER_QA_DOCS_DEPLOY_HOOK }}"
+          if [ -z "$DEPLOY_HOOK" ]; then
+            echo "Skipping QA docs deploy: RENDER_QA_DOCS_DEPLOY_HOOK is not set"
+            exit 0
+          fi
+
+          curl --fail --silent --show-error -X POST "$DEPLOY_HOOK"
 
   deploy-prod:
     name: Deploy Production Backend
@@ -51,22 +65,36 @@ jobs:
 
   deploy-prod-frontend:
     name: Deploy Production Frontend
-    if: github.event_name == 'workflow_dispatch' && secrets.RENDER_PROD_FRONTEND_DEPLOY_HOOK != ''
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     needs: [deploy-prod]
+    env:
+      DEPLOY_HOOK: ${{ secrets.RENDER_PROD_FRONTEND_DEPLOY_HOOK }}
 
     steps:
       - name: Trigger production frontend deploy hook
         run: |
-          curl --fail --silent --show-error -X POST "${{ secrets.RENDER_PROD_FRONTEND_DEPLOY_HOOK }}"
+          if [ -z "$DEPLOY_HOOK" ]; then
+            echo "Skipping production frontend deploy: RENDER_PROD_FRONTEND_DEPLOY_HOOK is not set"
+            exit 0
+          fi
+
+          curl --fail --silent --show-error -X POST "$DEPLOY_HOOK"
 
   deploy-prod-docs:
     name: Deploy Production Docs
-    if: github.event_name == 'workflow_dispatch' && secrets.RENDER_PROD_DOCS_DEPLOY_HOOK != ''
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     needs: [deploy-prod]
+    env:
+      DEPLOY_HOOK: ${{ secrets.RENDER_PROD_DOCS_DEPLOY_HOOK }}
 
     steps:
       - name: Trigger production docs deploy hook
         run: |
-          curl --fail --silent --show-error -X POST "${{ secrets.RENDER_PROD_DOCS_DEPLOY_HOOK }}"
+          if [ -z "$DEPLOY_HOOK" ]; then
+            echo "Skipping production docs deploy: RENDER_PROD_DOCS_DEPLOY_HOOK is not set"
+            exit 0
+          fi
+
+          curl --fail --silent --show-error -X POST "$DEPLOY_HOOK"
