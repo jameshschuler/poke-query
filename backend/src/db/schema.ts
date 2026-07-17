@@ -68,7 +68,12 @@ export const searchQueries = pokeSchema.table(
     originalQuerySnapshot: text("original_query_snapshot"),
     parentQueryId: uuid("parent_query_id"),
 
-    metadata: jsonb("metadata").$type<{ autoTags?: string[] }>().default({}),
+    metadata: jsonb("metadata")
+      .$type<{
+        autoTags?: string[];
+        source?: "official" | "community";
+      }>()
+      .default({}),
 
     // Timestamps
     createdAt: timestamp("created_at").defaultNow().notNull(),

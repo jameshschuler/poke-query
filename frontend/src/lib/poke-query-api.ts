@@ -285,6 +285,7 @@ export type CommunityQuery = {
   copyCount: number
   favoriteCount: number
   forkCount: number
+  source: 'official' | 'community' | null
   autoTags: string[]
   createdAt: string
   updatedAt: string
@@ -375,6 +376,7 @@ export type TrainerPublicQuery = {
   copyCount: number
   favoriteCount: number
   forkCount: number
+  source?: 'official' | 'community' | null
   autoTags: string[]
   createdAt: string
 }
@@ -535,7 +537,7 @@ export function unfollowTrainer(id: string): Promise<void> {
 
 export type CommunityQueryParams = {
   tag?: string
-  filter?: 'all' | 'new' | 'popular'
+  filter?: 'all' | 'new' | 'popular' | 'official'
   sort?: 'created_asc' | 'created_desc' | 'title_asc' | 'title_desc' | 'popular'
   limit?: number
   offset?: number

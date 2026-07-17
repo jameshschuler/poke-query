@@ -1,11 +1,13 @@
 import { config } from "dotenv";
 import { resolve } from "node:path";
 import { and, count, eq, ne, sql } from "drizzle-orm";
+import { assertQaLocalOnlySeedScript } from "./lib/seed-environment.js";
 
 import { generateMetadata } from "../src/utils/pogo-parser.js";
 
 config({ path: resolve(process.cwd(), ".env"), quiet: true });
 process.env.DATABASE_URL ??= "postgresql://postgres:postgres@localhost:5432/postgres";
+assertQaLocalOnlySeedScript("seed-user-social");
 
 const targetUsername = process.argv[2] ?? process.env.SEED_USERNAME ?? "seed_3_5670f08f";
 const followersToAdd = Number.parseInt(process.env.SEED_FOLLOWERS_TO_ADD ?? "4", 10);

@@ -10,12 +10,12 @@ function getRequiredEnv(name: string): string {
 }
 
 const supabaseUrl = getRequiredEnv("SUPABASE_URL");
-const supabaseAnonKey = getRequiredEnv("SUPABASE_ANON_KEY");
+const supabasePublishableKey = getRequiredEnv("SUPABASE_PUBLISHABLE_KEY");
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabasePublishableKey);
 
 export function createSupabaseAuthClient() {
-  return createClient(supabaseUrl, supabaseAnonKey, {
+  return createClient(supabaseUrl, supabasePublishableKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
@@ -30,14 +30,14 @@ export function getSupabaseAdmin() {
     return supabaseAdminClient;
   }
 
-  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseServiceRoleKey) {
+  const supabaseSecretKey = process.env.SUPABASE_SECRET_KEY;
+  if (!supabaseSecretKey) {
     throw new Error(
-      "SUPABASE_SERVICE_ROLE_KEY is required for admin operations (for example DELETE /api/v1/users/me).",
+      "SUPABASE_SECRET_KEY is required for admin operations (for example DELETE /api/v1/users/me).",
     );
   }
 
-  supabaseAdminClient = createClient(supabaseUrl, supabaseServiceRoleKey, {
+  supabaseAdminClient = createClient(supabaseUrl, supabaseSecretKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,

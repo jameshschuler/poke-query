@@ -20,6 +20,7 @@ import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import { ManagedStringCard } from '#/components/managed-string-card'
+import { OfficialTrainerBadge } from '#/components/official-trainer-badge'
 import { PageShell } from '#/components/page-shell'
 import { TimestampTooltip } from '#/components/timestamp-tooltip'
 import { Badge } from '#/components/ui/badge'
@@ -578,9 +579,16 @@ export function ForksPage() {
                       {fork.sourceQuery ? (
                         <>
                           {fork.sourceQuery.title}
-                          {fork.sourceQuery.creator?.displayName
-                            ? ` by ${fork.sourceQuery.creator.displayName}`
-                            : ''}
+                          {fork.sourceQuery.creator?.displayName ? (
+                            <span className="inline-flex items-center gap-1.5">
+                              <span>{` by ${fork.sourceQuery.creator.displayName}`}</span>
+                              <OfficialTrainerBadge
+                                username={fork.sourceQuery.creator.username}
+                              />
+                            </span>
+                          ) : (
+                            ''
+                          )}
                         </>
                       ) : (
                         'Original source no longer available.'

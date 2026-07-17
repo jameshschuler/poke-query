@@ -6,7 +6,7 @@ async function run() {
   config({ path: resolve(process.cwd(), ".env"), quiet: true });
 
   process.env.SUPABASE_URL ??= "http://localhost:54321";
-  process.env.SUPABASE_ANON_KEY ??= "dev-anon-key";
+  process.env.SUPABASE_PUBLISHABLE_KEY ??= "dev-publishable-key";
   process.env.COOKIE_SECRET ??= "docs-cookie-secret";
   process.env.DATABASE_URL ??= "postgresql://postgres:postgres@localhost:5432/postgres";
 

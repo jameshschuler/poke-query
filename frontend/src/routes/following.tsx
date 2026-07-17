@@ -9,6 +9,7 @@ import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { PageShell } from '#/components/page-shell'
+import { OfficialTrainerBadge } from '#/components/official-trainer-badge'
 import { getMeFollowing, unfollowTrainer } from '#/lib/poke-query-api'
 import { getMutationErrorMessage } from '#/lib/mutation-toast'
 import { requireAuthenticated } from '#/lib/route-auth'
@@ -152,9 +153,12 @@ function FollowingPage() {
                     </Avatar>
 
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-foreground">
-                        {trainer.displayName}
-                      </p>
+                      <div className="flex min-w-0 items-center gap-2">
+                        <p className="truncate text-sm font-semibold text-foreground">
+                          {trainer.displayName}
+                        </p>
+                        <OfficialTrainerBadge username={trainer.username} />
+                      </div>
                       <p className="truncate text-xs text-muted-foreground">
                         @{trainer.username}
                       </p>

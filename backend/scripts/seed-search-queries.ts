@@ -1,17 +1,20 @@
 import { config } from "dotenv";
 import { resolve } from "node:path";
-import { sql, eq, like } from "drizzle-orm";
+import { sql, eq, like, ne, and } from "drizzle-orm";
+import { assertQaLocalOnlySeedScript } from "./lib/seed-environment.js";
 
 import { generateMetadata } from "../src/utils/pogo-parser.js";
 
 config({ path: resolve(process.cwd(), ".env"), quiet: true });
 process.env.DATABASE_URL ??= "postgresql://postgres:postgres@localhost:5432/postgres";
+assertQaLocalOnlySeedScript("db:seed:search");
 
 type SeedInput = {
   title: string;
   query: string;
   category: string;
   copyCount: number;
+  source?: "official" | "community";
   isPublic?: boolean;
   tags?: string[];
 };
@@ -23,6 +26,7 @@ const seedInputs: SeedInput[] = [
     query: "cp-4000+&legendary&!mythical",
     category: "PvP",
     copyCount: 15,
+    source: "official",
     tags: ["master-league", "pvp", "meta"],
   },
   {
@@ -30,6 +34,7 @@ const seedInputs: SeedInput[] = [
     query: "cp-2500&!legendary&!mythical",
     category: "PvP",
     copyCount: 13,
+    source: "official",
     tags: ["ultra-league", "pvp", "staples"],
   },
   {
@@ -37,6 +42,7 @@ const seedInputs: SeedInput[] = [
     query: "cp-1500&!legendary&!mythical",
     category: "PvP",
     copyCount: 18,
+    source: "official",
     tags: ["great-league", "pvp", "favorites"],
   },
   {
@@ -44,6 +50,7 @@ const seedInputs: SeedInput[] = [
     query: "@move&type:dragon&4*",
     category: "Raid",
     copyCount: 20,
+    source: "official",
     tags: ["raid", "boss", "dragon"],
   },
   {
@@ -51,6 +58,7 @@ const seedInputs: SeedInput[] = [
     query: "age0-2&@special&!shadow",
     category: "Community Day",
     copyCount: 17,
+    source: "official",
     tags: ["community day", "daily-catch", "all-stars"],
   },
   {
@@ -58,6 +66,7 @@ const seedInputs: SeedInput[] = [
     query: "cp-1500&3*,4*&!shadow",
     category: "PvP",
     copyCount: 28,
+    source: "official",
     tags: ["great league", "core", "pvp"],
   },
   {
@@ -65,6 +74,7 @@ const seedInputs: SeedInput[] = [
     query: "cp-2500&3*,4*&!mythical",
     category: "PvP",
     copyCount: 22,
+    source: "official",
     tags: ["ultra league", "starters", "pvp"],
   },
   {
@@ -72,6 +82,7 @@ const seedInputs: SeedInput[] = [
     query: "cp2500-&4*&!traded",
     category: "PvP",
     copyCount: 19,
+    source: "official",
     tags: ["master league", "projects", "pvp"],
   },
   {
@@ -200,11 +211,18 @@ async function run() {
 
   try {
     await db.delete(searchQueries).where(sql`${searchQueries.description} like '[seed] %'`);
+    await db.delete(searchQueries).where(sql`${searchQueries.description} like '[seed:%'`);
+
+    const [officialCreatorRow] = await db
+      .select({ id: trainers.id })
+      .from(trainers)
+      .where(eq(trainers.username, "PokeQueryOfficial"))
+      .limit(1);
 
     const seededCreatorRows = await db
       .select({ id: trainers.id })
       .from(trainers)
-      .where(like(trainers.username, "seed_%"))
+      .where(and(like(trainers.username, "seed_%"), ne(trainers.username, "PokeQueryOfficial")))
       .orderBy(trainers.createdAt);
 
     const additionalCreatorRows = await db
@@ -213,19 +231,40 @@ async function run() {
       .orderBy(trainers.createdAt)
       .limit(50);
 
+    const officialCreatorId = officialCreatorRow?.id;
+
     const creatorIds = Array.from(
-      new Set([...seededCreatorRows, ...additionalCreatorRows].map((row) => row.id)),
+      new Set(
+        [...seededCreatorRows, ...additionalCreatorRows]
+          .map((row) => row.id)
+          .filter((id) => id !== officialCreatorId),
+      ),
     );
+
+    const communityCreatorIds =
+      creatorIds.length > 0
+        ? creatorIds
+        : officialCreatorRow
+          ? [officialCreatorRow.id]
+          : [];
 
     const baseRows = seedInputs.map((seed, index) => ({
       title: seed.title,
       query: seed.query,
-      description: `[seed] ${seed.category} example`,
-      creatorId: creatorIds.length > 0 ? creatorIds[index % creatorIds.length] : null,
+      description: `[seed:${seed.source ?? "community"}] ${seed.category} example`,
+      creatorId:
+        (seed.source ?? "community") === "official"
+          ? (officialCreatorRow?.id ?? communityCreatorIds[0] ?? null)
+          : (communityCreatorIds[index % communityCreatorIds.length] ?? null),
       isPublic: seed.isPublic ?? true,
       copyCount: seed.copyCount,
-      metadata: generateMetadata(seed.query),
-      tags: seed.tags,
+      metadata: {
+        ...generateMetadata(seed.query),
+        source: seed.source ?? "community",
+      },
+      tags: Array.from(
+        new Set([...(seed.tags ?? []), (seed.source ?? "community") === "official" ? "official" : "community-curated"]),
+      ),
       ...randomDates(),
     }));
 
@@ -345,22 +384,18 @@ async function run() {
     const publicCountResult = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(searchQueries)
-      .where(
-        sql`${searchQueries.description} like '[seed] %' and ${searchQueries.isPublic} = true`,
-      );
+      .where(sql`${searchQueries.description} like '[seed%' and ${searchQueries.isPublic} = true`);
 
     const privateCountResult = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(searchQueries)
-      .where(
-        sql`${searchQueries.description} like '[seed] %' and ${searchQueries.isPublic} = false`,
-      );
+      .where(sql`${searchQueries.description} like '[seed%' and ${searchQueries.isPublic} = false`);
 
     const totalSeeded = (publicCountResult[0]?.count ?? 0) + (privateCountResult[0]?.count ?? 0);
     const favoriteSeedCount = seededFavoriteRows.length;
 
     console.log(
-      `Seed complete: ${totalSeeded} search queries (${publicCountResult[0]?.count ?? 0} public, ${privateCountResult[0]?.count ?? 0} private) and ${favoriteSeedCount} favorites.`,
+      `Seed complete: ${totalSeeded} search queries (${publicCountResult[0]?.count ?? 0} public, ${privateCountResult[0]?.count ?? 0} private) and ${favoriteSeedCount} favorites. Official strings are owned by PokeQueryOfficial.`,
     );
   } finally {
     await queryClient.end({ timeout: 5 });

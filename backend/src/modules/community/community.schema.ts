@@ -4,7 +4,12 @@ export const CommunitySchema = {
   querystring: Type.Object({
     tag: Type.Optional(Type.String({ minLength: 1, maxLength: 50 })),
     filter: Type.Optional(
-      Type.Union([Type.Literal("all"), Type.Literal("new"), Type.Literal("popular")] as const),
+      Type.Union([
+        Type.Literal("all"),
+        Type.Literal("new"),
+        Type.Literal("popular"),
+        Type.Literal("official"),
+      ] as const),
     ),
     sort: Type.Optional(
       Type.Union([
@@ -30,6 +35,7 @@ export const CommunitySchema = {
           copyCount: Type.Integer(),
           favoriteCount: Type.Integer(),
           forkCount: Type.Integer(),
+          source: Type.Union([Type.Literal("official"), Type.Literal("community"), Type.Null()]),
           autoTags: Type.Array(Type.String()),
           createdAt: Type.String(),
           updatedAt: Type.String(),

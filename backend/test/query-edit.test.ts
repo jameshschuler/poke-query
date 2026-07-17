@@ -2,6 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 
 const ownerId = "11111111-1111-4111-8111-111111111111";
 const otherUserId = "22222222-2222-4222-8222-222222222222";
+const queryId = "33333333-3333-4333-8333-333333333333";
 
 vi.mock("@supabase/supabase-js", () => ({
   createClient: () => ({
@@ -66,14 +67,53 @@ describe("Edit Query Endpoint", () => {
   });
 
   it("allows creators to edit their own queries", async () => {
-    const returning = vi.fn().mockResolvedValue([{ id: "query-id" }]);
+    app.db.select = vi
+      .fn()
+      .mockImplementationOnce(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn(() => Promise.resolve([{ metadata: { source: "community" } }])),
+          })),
+        })),
+      }))
+      .mockImplementationOnce(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn(() => Promise.resolve([{ id: "tag-high-iv", name: "high-iv" }])),
+          })),
+        })),
+      }))
+      .mockImplementationOnce(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn(() => Promise.resolve([{ id: "tag-pvp", name: "pvp" }])),
+          })),
+        })),
+      }))
+      .mockImplementationOnce(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn(() => Promise.resolve([{ id: "tag-great-league", name: "great-league" }])),
+          })),
+        })),
+      }));
+
+    const returning = vi.fn().mockResolvedValue([{ id: queryId }]);
     const where = vi.fn(() => ({ returning }));
     const set = vi.fn(() => ({ where }));
     app.db.update = vi.fn(() => ({ set }));
 
+    app.db.insert = vi.fn(() => ({
+      values: vi.fn(() => ({
+        onConflictDoNothing: vi.fn().mockResolvedValue([]),
+      })),
+    }));
+
+    app.db.delete = vi.fn(() => ({ where: vi.fn().mockResolvedValue([]) }));
+
     const response = await app.inject({
       method: "PATCH",
-      url: "/api/v1/queries/query-id",
+      url: `/api/v1/queries/${queryId}`,
       cookies: { "sb-access-token": "owner-token" },
       payload: {
         title: "Updated Title",
@@ -83,15 +123,18 @@ describe("Edit Query Endpoint", () => {
       },
     });
 
-    expect(response.statusCode).toBe(400);
-    // Backend now returns 400 for invalid/missing required fields or tag issues
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual({ id: queryId });
   });
 
   it("returns 404 when a different user tries to edit the query", async () => {
-    const returning = vi.fn().mockResolvedValue([]);
-    const where = vi.fn(() => ({ returning }));
-    const set = vi.fn(() => ({ where }));
-    app.db.update = vi.fn(() => ({ set }));
+    app.db.select = vi.fn(() => ({
+      from: vi.fn(() => ({
+        where: vi.fn(() => ({
+          limit: vi.fn(() => Promise.resolve([])),
+        })),
+      })),
+    }));
 
     (supabase.auth.getUser as any).mockResolvedValueOnce({
       data: { user: { id: otherUserId, email: "misty@example.com" } },
@@ -100,7 +143,7 @@ describe("Edit Query Endpoint", () => {
 
     const response = await app.inject({
       method: "PATCH",
-      url: "/api/v1/queries/query-id",
+      url: `/api/v1/queries/${queryId}`,
       cookies: { "sb-access-token": "other-user-token" },
       payload: {
         title: "Updated Title",

@@ -54,8 +54,8 @@ Create a `.env` file in the `backend/` directory:
 ```env
 DATABASE_URL=postgresql://...
 SUPABASE_URL=https://<project>.supabase.co
-SUPABASE_ANON_KEY=...
-SUPABASE_SERVICE_ROLE_KEY=...
+SUPABASE_PUBLISHABLE_KEY=...
+SUPABASE_SECRET_KEY=...
 COOKIE_SECRET=a-long-random-string
 NODE_ENV=development
 ```
@@ -93,7 +93,7 @@ Health endpoint: `GET /health` (no auth required).
 | `npm run db:generate`       | Generate a new migration              |
 | `npm run db:migrate`        | Apply pending migrations              |
 | `npm run db:seed`           | Seed trainers, queries, and followers |
-| `npm run db:seed:trainers`  | Seed trainer profiles                 |
+| `npm run db:seed:trainers`  | Seed auth users and trainer profiles  |
 | `npm run db:seed:search`    | Seed search queries with tag coverage |
 | `npm run db:seed:followers` | Seed follower relationships           |
 | `npm run docs:openapi`      | Export OpenAPI JSON for the docs site |
@@ -238,12 +238,20 @@ Constraints:
 
 The backend includes sample seed scripts for demos, local QA, and filter validation:
 
-- `npm run db:seed:trainers` creates trainer profiles
-- `npm run db:seed:search` creates public and private queries with broad tag coverage, including league, raid, and community-day style tags
+- `npm run db:seed:trainers` creates seeded auth users via Supabase Admin and then creates trainer profiles
+- `npm run db:seed:search` creates public and private QA/local queries for filter coverage
 - `npm run db:seed:followers` creates follower relationships between sample trainers
-- `npm run db:seed` runs all seed steps in order
+- `npm run db:seed:qa` runs all QA/local seed steps in order
+- `npm run db:seed:search:prod` seeds production with hand-maintained curated strings
+- `npm run db:seed` aliases to `npm run db:seed:qa`
 
 The search seed data is intended to exercise community feed filters, including tags stored in the tag tables and tags generated automatically from the query parser.
+
+Notes:
+
+- `db:seed:trainers`, `db:seed:search`, `db:seed:followers`, and `db:seed:notifications` are blocked when `NODE_ENV=production`.
+- Production curated strings are maintained in `scripts/data/production-search-queries.ts`.
+- Production curated seeding is idempotent and non-destructive: it upserts by `key` and preserves engagement history (copy counts, favorites/forks).
 
 ## One-Page Docs Site
 

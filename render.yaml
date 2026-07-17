@@ -12,7 +12,7 @@ projects:
             healthCheckPath: /health
             autoDeployTrigger: off
             buildCommand: npm ci --include=dev && npm run build
-            preDeployCommand: npm run db:migrate
+            preDeployCommand: npm run db:migrate && npm run db:seed:search:prod
             startCommand: npm run start
             envVars:
               - key: NODE_ENV
@@ -21,9 +21,9 @@ projects:
                 sync: false
               - key: SUPABASE_URL
                 sync: false
-              - key: SUPABASE_ANON_KEY
+              - key: SUPABASE_PUBLISHABLE_KEY
                 sync: false
-              - key: SUPABASE_SERVICE_ROLE_KEY
+              - key: SUPABASE_SECRET_KEY
                 sync: false
               - key: COOKIE_SECRET
                 generateValue: true
@@ -48,7 +48,7 @@ projects:
                 sync: false
               - key: VITE_SUPABASE_URL
                 sync: false
-              - key: VITE_SUPABASE_ANON_KEY
+              - key: VITE_SUPABASE_PUBLISHABLE_KEY
                 sync: false
               - key: VITE_AUTH_REDIRECT_URL
                 sync: false
@@ -84,9 +84,9 @@ projects:
                 sync: false
               - key: SUPABASE_URL
                 sync: false
-              - key: SUPABASE_ANON_KEY
+              - key: SUPABASE_PUBLISHABLE_KEY
                 sync: false
-              - key: SUPABASE_SERVICE_ROLE_KEY
+              - key: SUPABASE_SECRET_KEY
                 sync: false
               - key: COOKIE_SECRET
                 generateValue: true
@@ -112,7 +112,7 @@ projects:
                 sync: false
               - key: VITE_SUPABASE_URL
                 sync: false
-              - key: VITE_SUPABASE_ANON_KEY
+              - key: VITE_SUPABASE_PUBLISHABLE_KEY
                 sync: false
               - key: VITE_AUTH_REDIRECT_URL
                 sync: false

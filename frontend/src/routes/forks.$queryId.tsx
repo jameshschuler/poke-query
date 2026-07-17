@@ -12,6 +12,7 @@ import { toast } from 'sonner'
 import { PageShell } from '#/components/page-shell'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
+import { OfficialTrainerBadge } from '#/components/official-trainer-badge'
 import {
   ApiRequestError,
   getMyForks,
@@ -201,9 +202,16 @@ function ForkDetailPage() {
                       {fork.sourceQuery.title}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {fork.sourceQuery.creator?.displayName
-                        ? `By ${fork.sourceQuery.creator.displayName}`
-                        : 'Creator unavailable'}
+                      {fork.sourceQuery.creator?.displayName ? (
+                        <span className="inline-flex items-center gap-1.5">
+                          <span>By {fork.sourceQuery.creator.displayName}</span>
+                          <OfficialTrainerBadge
+                            username={fork.sourceQuery.creator.username}
+                          />
+                        </span>
+                      ) : (
+                        'Creator unavailable'
+                      )}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       Source updated{' '}
