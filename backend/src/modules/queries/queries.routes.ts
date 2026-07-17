@@ -49,6 +49,10 @@ function hasRowsArray(value: unknown): value is { rows: unknown[] } {
   );
 }
 
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
+}
+
 function resolveDisplayName(row: {
   username: string;
   pogoUsername: string | null;
@@ -444,6 +448,9 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
     async (request, reply) => {
       try {
         const { id } = request.params;
+        if (!isUuid(id)) {
+          return reply.code(404).send({ error: "Query not found or not owned by user" });
+        }
         // Only pick allowed fields
         const { title, query, description, isPublic, tags: userTags = [] } = request.body;
         const userId = request.user.id;
