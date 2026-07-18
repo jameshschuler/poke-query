@@ -9,11 +9,6 @@ This file is for broader product initiatives that are worth tracking, but do not
   - Add a developers page with auth model, examples, and docs links.
   - Add API access, auth, and rate-limit coverage for developer endpoints.
 
-- Official Seeded Strings
-  - Support seeded official and community-curated strings in the product.
-  - Add a seeded system user to own official strings.
-  - Create the seeded auth user through Supabase Auth admin, not raw `auth.users` inserts.
-
 ## Community Features
 
 - Badges and Achievements
