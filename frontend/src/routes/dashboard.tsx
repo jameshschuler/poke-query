@@ -1,4 +1,4 @@
-import { useAuth } from '@authabase/react'
+import { useAuth } from '#/lib/auth-context'
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import {
@@ -471,7 +471,7 @@ function DashboardRoute() {
             </section>
           </div>
 
-          <section className="rounded-2xl border border-border/70 bg-card/95 p-5 shadow-sm xl:col-span-7 xl:h-[42rem] xl:min-h-[42rem] xl:max-h-[42rem] xl:flex xl:flex-col">
+          <section className="rounded-2xl border border-border/70 bg-card/95 p-5 shadow-sm xl:col-span-7 xl:h-168 xl:min-h-168 xl:max-h-168 xl:flex xl:flex-col">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="flex flex-wrap items-center gap-2">

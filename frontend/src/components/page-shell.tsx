@@ -1,4 +1,4 @@
-import { useAuth } from '@authabase/react'
+import { useAuth } from '#/lib/auth-context'
 import { Link } from '@tanstack/react-router'
 import { PlusIcon, SearchIcon } from 'lucide-react'
 import type { ReactNode } from 'react'

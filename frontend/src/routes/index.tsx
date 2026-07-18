@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useAuth } from '@authabase/react'
+import { useAuth } from '#/lib/auth-context'
 import {
   ArrowRightIcon,
   BookOpenTextIcon,
@@ -41,8 +41,8 @@ function LandingPage() {
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_15%_20%,rgb(56_189_248/0.18),transparent_40%),radial-gradient(circle_at_85%_16%,rgb(34_197_94/0.14),transparent_42%),radial-gradient(circle_at_70%_82%,rgb(245_158_11/0.12),transparent_38%),linear-gradient(180deg,hsl(var(--background)),hsl(var(--muted)/0.55))]" />
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div className="absolute -left-20 top-20 h-72 w-72 rounded-full bg-[#38bdf8]/20 blur-3xl motion-safe:animate-pulse" />
-        <div className="absolute right-[-4rem] top-8 h-80 w-80 rounded-full bg-[#22c55e]/16 blur-3xl" />
-        <div className="absolute bottom-[-6rem] left-1/3 h-96 w-96 rounded-full bg-[#f59e0b]/16 blur-3xl" />
+        <div className="absolute -right-16 top-8 h-80 w-80 rounded-full bg-[#22c55e]/16 blur-3xl" />
+        <div className="absolute -bottom-24 left-1/3 h-96 w-96 rounded-full bg-[#f59e0b]/16 blur-3xl" />
       </div>
 
       <div className="mx-auto w-full max-w-7xl space-y-6 sm:space-y-10 md:space-y-12">
@@ -54,6 +54,8 @@ function LandingPage() {
             <div className="flex flex-wrap items-center gap-3 text-sm">
               <a
                 href={docsUrl}
+                target="_blank"
+                rel="noreferrer"
                 className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-muted-foreground transition-colors hover:text-foreground"
               >
                 <span className="inline-flex items-center gap-1.5">
@@ -85,7 +87,7 @@ function LandingPage() {
 
               <h1 className="max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
                 Build, share, and fork
-                <span className="bg-gradient-to-r from-[#38bdf8] via-[#22c55e] to-[#f59e0b] bg-clip-text text-transparent">
+                <span className="bg-linear-to-r from-[#38bdf8] via-[#22c55e] to-[#f59e0b] bg-clip-text text-transparent">
                   {' '}
                   Pokemon GO raid and PvP strings
                 </span>

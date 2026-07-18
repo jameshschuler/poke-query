@@ -13,6 +13,7 @@ import { queriesRoutes } from "./modules/queries/queries.routes.js";
 import { guestRoutes } from "./modules/guests/guest.routes.js";
 import { communityRoutes } from "./modules/community/community.routes.js";
 import { notificationsRoutes } from "./modules/notifications/notifications.routes.js";
+import { moderationRoutes } from "./modules/moderation/moderation.routes.js";
 import { readFile } from "fs/promises";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
@@ -204,6 +205,7 @@ export async function buildApp() {
   await fastify.register(queriesRoutes, { prefix: "/api/v1/queries" });
   await fastify.register(communityRoutes, { prefix: "/api/v1/community" });
   await fastify.register(notificationsRoutes, { prefix: "/api/v1/notifications" });
+  await fastify.register(moderationRoutes, { prefix: "/api/v1/moderation" });
 
   fastify.get("/health", async () => {
     return {

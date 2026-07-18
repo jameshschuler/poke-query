@@ -1,4 +1,4 @@
-import { useAuth } from '@authabase/react'
+import { useAuth } from '#/lib/auth-context'
 import {
   useInfiniteQuery,
   useMutation,

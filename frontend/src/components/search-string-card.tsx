@@ -173,7 +173,7 @@ export function SearchStringCard({
         </div>
 
         <div className="min-h-24 rounded-xl border border-border/70 bg-card px-4 py-3 font-mono text-lg text-muted-foreground">
-          <pre className="line-clamp-3 whitespace-pre-wrap break-words">
+          <pre className="line-clamp-3 whitespace-pre-wrap wrap-break-word">
             {card.query}
           </pre>
         </div>

@@ -840,3 +840,137 @@ export function updateNotificationPreferences(
     },
   )
 }
+
+export type ReportTargetType = 'query' | 'trainer'
+export type ReportStatus = 'open' | 'in_review' | 'resolved' | 'dismissed'
+
+export type SubmitReportRequest = {
+  targetType: ReportTargetType
+  targetId: string
+  reason: string
+  details?: string
+}
+
+export type SubmitReportResponse = {
+  id: string
+  status: ReportStatus
+}
+
+export type ModerationActor = {
+  id: string
+  username: string
+  displayName: string
+} | null
+
+export type ModerationReport = {
+  id: string
+  targetType: ReportTargetType
+  reason: string
+  details: string | null
+  status: ReportStatus
+  target: {
+    queryId: string | null
+    trainerId: string | null
+    label: string
+  }
+  reporter: ModerationActor
+  reviewedBy: ModerationActor
+  createdAt: string
+  updatedAt: string
+}
+
+export type ModerationReportAction = {
+  id: string
+  action: 'submitted' | 'status_changed' | 'commented'
+  fromStatus: ReportStatus | null
+  toStatus: ReportStatus | null
+  comment: string | null
+  actor: ModerationActor
+  createdAt: string
+}
+
+export type ModerationReportsPage = {
+  reports: ModerationReport[]
+  pagination: {
+    limit: number
+    offset: number
+    nextOffset: number | null
+    hasMore: boolean
+    total: number
+  }
+}
+
+export type GetModerationReportsParams = {
+  status?: ReportStatus
+  targetType?: ReportTargetType
+  limit?: number
+  offset?: number
+}
+
+export type ModerationReportDetail = {
+  report: ModerationReport
+  actions: ModerationReportAction[]
+}
+
+export function submitReport(
+  body: SubmitReportRequest,
+): Promise<SubmitReportResponse> {
+  return apiRequest<SubmitReportResponse>('/api/v1/moderation/reports', {
+    method: 'POST',
+    body,
+  })
+}
+
+export function getModerationAccess(): Promise<{ isReviewer: boolean }> {
+  return apiRequest<{ isReviewer: boolean }>('/api/v1/moderation/access')
+}
+
+export function getModerationReports(
+  params: GetModerationReportsParams = {},
+): Promise<ModerationReportsPage> {
+  const search = new URLSearchParams()
+
+  if (params.status) {
+    search.set('status', params.status)
+  }
+
+  if (params.targetType) {
+    search.set('targetType', params.targetType)
+  }
+
+  if (typeof params.limit === 'number') {
+    search.set('limit', String(params.limit))
+  }
+
+  if (typeof params.offset === 'number') {
+    search.set('offset', String(params.offset))
+  }
+
+  const queryString = search.toString()
+  const path = queryString
+    ? `/api/v1/moderation/reports?${queryString}`
+    : '/api/v1/moderation/reports'
+
+  return apiRequest<ModerationReportsPage>(path)
+}
+
+export function getModerationReportDetail(
+  id: string,
+): Promise<ModerationReportDetail> {
+  return apiRequest<ModerationReportDetail>(
+    `/api/v1/moderation/reports/${encodeURIComponent(id)}`,
+  )
+}
+
+export function updateModerationReportStatus(
+  id: string,
+  body: { status: ReportStatus; comment?: string },
+): Promise<{ id: string; status: ReportStatus; updatedAt: string }> {
+  return apiRequest(
+    `/api/v1/moderation/reports/${encodeURIComponent(id)}/status`,
+    {
+      method: 'PATCH',
+      body,
+    },
+  )
+}

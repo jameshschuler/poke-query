@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as ModerationRouteImport } from './routes/moderation'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as ForksRouteImport } from './routes/forks'
@@ -29,6 +30,11 @@ import { Route as ForksQueryIdEditRouteImport } from './routes/forks.$queryId.ed
 const NotificationsRoute = NotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ModerationRoute = ModerationRouteImport.update({
+  id: '/moderation',
+  path: '/moderation',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/forks': typeof ForksRouteWithChildren
   '/library': typeof LibraryRouteWithChildren
   '/login': typeof LoginRoute
+  '/moderation': typeof ModerationRoute
   '/notifications': typeof NotificationsRoute
   '/forks/$queryId': typeof ForksQueryIdRouteWithChildren
   '/library/new': typeof LibraryNewRoute
@@ -135,6 +142,7 @@ export interface FileRoutesByTo {
   '/forks': typeof ForksRouteWithChildren
   '/library': typeof LibraryRouteWithChildren
   '/login': typeof LoginRoute
+  '/moderation': typeof ModerationRoute
   '/notifications': typeof NotificationsRoute
   '/forks/$queryId': typeof ForksQueryIdRouteWithChildren
   '/library/new': typeof LibraryNewRoute
@@ -154,6 +162,7 @@ export interface FileRoutesById {
   '/forks': typeof ForksRouteWithChildren
   '/library': typeof LibraryRouteWithChildren
   '/login': typeof LoginRoute
+  '/moderation': typeof ModerationRoute
   '/notifications': typeof NotificationsRoute
   '/forks/$queryId': typeof ForksQueryIdRouteWithChildren
   '/library/new': typeof LibraryNewRoute
@@ -174,6 +183,7 @@ export interface FileRouteTypes {
     | '/forks'
     | '/library'
     | '/login'
+    | '/moderation'
     | '/notifications'
     | '/forks/$queryId'
     | '/library/new'
@@ -192,6 +202,7 @@ export interface FileRouteTypes {
     | '/forks'
     | '/library'
     | '/login'
+    | '/moderation'
     | '/notifications'
     | '/forks/$queryId'
     | '/library/new'
@@ -210,6 +221,7 @@ export interface FileRouteTypes {
     | '/forks'
     | '/library'
     | '/login'
+    | '/moderation'
     | '/notifications'
     | '/forks/$queryId'
     | '/library/new'
@@ -229,6 +241,7 @@ export interface RootRouteChildren {
   ForksRoute: typeof ForksRouteWithChildren
   LibraryRoute: typeof LibraryRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ModerationRoute: typeof ModerationRoute
   NotificationsRoute: typeof NotificationsRoute
   QueriesQueryIdRoute: typeof QueriesQueryIdRoute
   TrainersUsernameRoute: typeof TrainersUsernameRoute
@@ -241,6 +254,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/moderation': {
+      id: '/moderation'
+      path: '/moderation'
+      fullPath: '/moderation'
+      preLoaderRoute: typeof ModerationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -396,6 +416,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForksRoute: ForksRouteWithChildren,
   LibraryRoute: LibraryRouteWithChildren,
   LoginRoute: LoginRoute,
+  ModerationRoute: ModerationRoute,
   NotificationsRoute: NotificationsRoute,
   QueriesQueryIdRoute: QueriesQueryIdRoute,
   TrainersUsernameRoute: TrainersUsernameRoute,

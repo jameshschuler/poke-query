@@ -1,8 +1,9 @@
-import { useAuth } from '@authabase/react'
+import { useAuth } from '#/lib/auth-context'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import {
   CopyIcon,
+  FlagIcon,
   GitForkIcon,
   HeartIcon,
   Loader2Icon,
@@ -24,6 +25,7 @@ import { PageHeader } from '#/components/page-header'
 import { AppSidebar } from '#/components/app-sidebar'
 import { SidebarInset, SidebarProvider } from '#/components/ui/sidebar'
 import { OfficialTrainerBadge } from '#/components/official-trainer-badge'
+import { ReportTargetDialog } from '#/components/report-target-dialog'
 import {
   ApiRequestError,
   copyQuery,
@@ -31,6 +33,7 @@ import {
   forkQuery,
   getMyFavoriteIds,
   getQueryById,
+  submitReport,
   unfavoriteQuery,
 } from '#/lib/poke-query-api'
 import { getMutationErrorMessage } from '#/lib/mutation-toast'
@@ -87,8 +90,11 @@ function QueryDetailPage() {
   const isFavorited = myFavoriteIds?.favoriteQueryIds.includes(queryId) ?? false
   const canForkQuery =
     Boolean(user) && (!query?.creator || query.creator.id !== user?.id)
+  const canReportQuery =
+    Boolean(user) && Boolean(query?.isPublic) && query?.creator?.id !== user?.id
   const [copyCountDelta, setCopyCountDelta] = useState(0)
   const [isCopyPending, setIsCopyPending] = useState(false)
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false)
 
   useEffect(() => {
     setCopyCountDelta(0)
@@ -159,6 +165,32 @@ function QueryDetailPage() {
 
       toast.error(
         getMutationErrorMessage(mutationError, 'Could not fork string.'),
+      )
+    },
+  })
+
+  const reportMutation = useMutation({
+    mutationFn: (payload: { reason: string; details?: string }) => {
+      if (!query) {
+        throw new Error('Query is required to submit a report.')
+      }
+
+      return submitReport({
+        targetType: 'query',
+        targetId: query.id,
+        reason: payload.reason,
+        details: payload.details,
+      })
+    },
+    onSuccess: () => {
+      toast.success(
+        'Report submitted. Thank you for helping keep PokeQuery safe.',
+      )
+      setIsReportDialogOpen(false)
+    },
+    onError: (mutationError: unknown) => {
+      toast.error(
+        getMutationErrorMessage(mutationError, 'Could not submit report.'),
       )
     },
   })
@@ -308,6 +340,24 @@ function QueryDetailPage() {
                     }
                   />
                   <TooltipContent>Fork</TooltipContent>
+                </Tooltip>
+              ) : null}
+              {canReportQuery ? (
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        variant="outline"
+                        size="icon-sm"
+                        className="rounded-lg"
+                        aria-label="Report"
+                        onClick={() => setIsReportDialogOpen(true)}
+                      >
+                        <FlagIcon className="size-4" />
+                      </Button>
+                    }
+                  />
+                  <TooltipContent>Report</TooltipContent>
                 </Tooltip>
               ) : null}
             </>
@@ -519,6 +569,14 @@ function QueryDetailPage() {
           ) : null}
         </div>
       </main>
+
+      <ReportTargetDialog
+        open={isReportDialogOpen}
+        onOpenChange={setIsReportDialogOpen}
+        targetLabel={query ? `Query: ${query.title}` : 'Query'}
+        isSubmitting={reportMutation.isPending}
+        onSubmit={(payload) => reportMutation.mutate(payload)}
+      />
     </div>
   )
 

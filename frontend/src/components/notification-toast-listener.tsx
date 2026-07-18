@@ -1,4 +1,4 @@
-import { useAuth } from '@authabase/react'
+import { useAuth } from '#/lib/auth-context'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef } from 'react'
 import { toast } from 'sonner'

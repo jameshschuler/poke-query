@@ -230,9 +230,30 @@ Constraints:
 
 ## Account Deletion Policy
 
-- `POST /api/v1/users/me/deactivate` marks an account as deactivated and leaves strings unchanged.
-- `DELETE /api/v1/users/me` removes non-public strings created by the user.
-- Public strings are preserved after deletion and become anonymized because `creator_id` is set to `null` when the trainer record is removed.
+
+## Moderation And Reporting
+
+User report submission:
+
+- `POST /api/v1/moderation/reports` accepts authenticated reports for:
+   - public queries (`targetType: "query"`)
+   - public trainer profiles (`targetType: "trainer"`)
+- Reports cannot be submitted against your own query/profile.
+- Duplicate submissions from the same reporter to the same target are rate-limited by cooldown.
+
+Reviewer queue and actions:
+
+- `GET /api/v1/moderation/access` returns reviewer access flag.
+- `GET /api/v1/moderation/reports` returns queue items with status/target filters.
+- `GET /api/v1/moderation/reports/:id` returns report detail with audit history.
+- `PATCH /api/v1/moderation/reports/:id/status` transitions status and appends audit records.
+
+Environment variables:
+
+- `MODERATION_REVIEWER_USER_IDS` comma-separated auth user IDs allowed to review reports.
+   - fallback key: `MODERATOR_USER_IDS`
+- `REPORT_SUBMISSION_COOLDOWN_MINUTES` cooldown window for duplicate report submissions.
+   - default: `10`
 
 ## Seed Data
 

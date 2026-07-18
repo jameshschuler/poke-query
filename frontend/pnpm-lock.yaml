@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@authabase/react':
-        specifier: 0.2.0
-        version: 0.2.0(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(tailwindcss@4.3.0)
       '@base-ui/react':
         specifier: ^1.4.1
         version: 1.6.0(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -175,13 +172,6 @@ packages:
 
   '@asamuzakjp/nwsapi@2.3.9':
     resolution: {integrity: sha512-n8GuYSrI9bF7FFZ/SjhwevlHc8xaVlb/7HmHelnc/PZXBD2ZR49NnN9sMMuDdEGPeeRQ5d0hqlSlEpgCX3Wl0Q==}
-
-  '@authabase/react@0.2.0':
-    resolution: {integrity: sha512-44BN6S4IN6neiEEiG0GTgy2cRoXakEJKtPZYjnH94OKvnMPVBEMXhoJHEKhW5qK3mH01t8xuXsc9Irs9Pbf7sA==}
-    peerDependencies:
-      react: ^19.0.0
-      react-dom: ^19.0.0
-      tailwindcss: ^4.0.0
 
   '@babel/code-frame@7.27.1':
     resolution: {integrity: sha512-cjQ7ZlQ0Mv3b47hABuTevyTuYN4i+loJKGeV9flcCgIK37cCXRh+L1bd3iBHlynerhQ7BhCkn2BPbQUL+rGqFg==}
@@ -4067,22 +4057,6 @@ snapshots:
   '@asamuzakjp/generational-cache@1.0.1': {}
 
   '@asamuzakjp/nwsapi@2.3.9': {}
-
-  '@authabase/react@0.2.0(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(tailwindcss@4.3.0)':
-    dependencies:
-      '@base-ui/react': 1.6.0(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      '@supabase/supabase-js': 2.110.1
-      class-variance-authority: 0.7.1
-      clsx: 2.1.1
-      input-otp: 1.4.2(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      react: 19.2.6
-      react-dom: 19.2.6(react@19.2.6)
-      tailwindcss: 4.3.0
-      zod: 4.4.3
-    transitivePeerDependencies:
-      - '@date-fns/tz'
-      - '@types/react'
-      - date-fns
 
   '@babel/code-frame@7.27.1':
     dependencies:
