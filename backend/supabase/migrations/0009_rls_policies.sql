@@ -12,12 +12,25 @@ BEGIN
 END
 $$;
 --> statement-breakpoint
-CREATE OR REPLACE FUNCTION "auth"."uid"()
-RETURNS uuid
-LANGUAGE sql
-STABLE
-AS $$
-  SELECT NULLIF(current_setting('request.jwt.claim.sub', true), '')::uuid
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_catalog.pg_proc p
+    JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'auth'
+      AND p.proname = 'uid'
+      AND p.pronargs = 0
+  ) THEN
+    CREATE FUNCTION "auth"."uid"()
+    RETURNS uuid
+    LANGUAGE sql
+    STABLE
+    AS $fn$
+      SELECT NULLIF(current_setting('request.jwt.claim.sub', true), '')::uuid
+    $fn$;
+  END IF;
+END
 $$;
 --> statement-breakpoint
 CREATE OR REPLACE FUNCTION "pokequery"."current_trainer_id"()
