@@ -10,7 +10,7 @@ config({ path: resolve(process.cwd(), ".env"), quiet: true });
 process.env.DATABASE_URL ??= "postgresql://postgres:postgres@localhost:5432/postgres";
 
 function getOfficialSeedEmail(): string {
-  return process.env.PROD_SEED_OFFICIAL_EMAIL?.trim() || "official@seed.pokequery.local";
+  return process.env.PROD_SEED_OFFICIAL_EMAIL?.trim() || "official@pokequery.app";
 }
 
 function buildDiceBearAvatarUrl(seed: string): string {
