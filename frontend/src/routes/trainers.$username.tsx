@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { useAuth } from '@authabase/react'
+import { useAuth } from '#/lib/auth-context'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CopyIcon, UserRoundXIcon, UsersIcon } from 'lucide-react'
+import { CopyIcon, FlagIcon, UserRoundXIcon, UsersIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { Avatar, AvatarFallback, AvatarImage } from '#/components/ui/avatar'
 import { Badge } from '#/components/ui/badge'
@@ -21,6 +21,7 @@ import {
   getTrainerFollowers,
   followTrainer,
   forkQuery,
+  submitReport,
   unfavoriteQuery,
   unfollowTrainer,
   ApiRequestError,
@@ -31,6 +32,7 @@ import { PageHeader } from '#/components/page-header'
 import { AppSidebar } from '#/components/app-sidebar'
 import { SidebarInset, SidebarProvider } from '#/components/ui/sidebar'
 import { OfficialTrainerBadge } from '#/components/official-trainer-badge'
+import { ReportTargetDialog } from '#/components/report-target-dialog'
 import { getMutationErrorMessage } from '#/lib/mutation-toast'
 import { formatCompactNumber, formatFullNumber } from '#/lib/utils'
 
@@ -70,6 +72,7 @@ function TrainerProfilePage() {
   const [activeTab, setActiveTab] = useState<'strings' | 'forks' | 'favorites'>(
     'strings',
   )
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false)
 
   const {
     data: trainer,
@@ -221,12 +224,42 @@ function TrainerProfilePage() {
     },
   })
 
+  const reportMutation = useMutation({
+    mutationFn: (payload: { reason: string; details?: string }) => {
+      if (!trainer) {
+        throw new Error('Trainer is required to submit a report.')
+      }
+
+      return submitReport({
+        targetType: 'trainer',
+        targetId: trainer.id,
+        reason: payload.reason,
+        details: payload.details,
+      })
+    },
+    onSuccess: () => {
+      toast.success('Report submitted. Moderators will review it.')
+      setIsReportDialogOpen(false)
+    },
+    onError: (mutationError: unknown) => {
+      toast.error(
+        getMutationErrorMessage(mutationError, 'Could not submit report.'),
+      )
+    },
+  })
+
   const isFollowPending = followMutation.isPending || unfollowMutation.isPending
   const favoriteIdSet = new Set(myFavoriteIds?.favoriteQueryIds ?? [])
   const isFavoritePending =
     favoriteMutation.isPending || unfavoriteMutation.isPending
 
   const canShowFollowAction =
+    trainer &&
+    trainer.isProfilePublic &&
+    !trainer.deactivatedAt &&
+    user &&
+    trainer.id !== user.id
+  const canReportTrainer =
     trainer &&
     trainer.isProfilePublic &&
     !trainer.deactivatedAt &&
@@ -273,21 +306,36 @@ function TrainerProfilePage() {
       <PageHeader
         title={trainer?.displayName}
         actions={
-          canShowFollowAction ? (
-            <Button
-              variant={isFollowing ? 'default' : 'outline'}
-              size="sm"
-              className="rounded-lg max-sm:w-full"
-              onClick={handleFollowClick}
-              disabled={isFollowPending}
-            >
-              <UsersIcon className="size-4" />
-              {isFollowPending
-                ? 'Saving...'
-                : isFollowing
-                  ? 'Following'
-                  : 'Follow'}
-            </Button>
+          canShowFollowAction || canReportTrainer ? (
+            <div className="flex items-center gap-2 max-sm:w-full">
+              {canShowFollowAction ? (
+                <Button
+                  variant={isFollowing ? 'default' : 'outline'}
+                  size="sm"
+                  className="rounded-lg max-sm:w-full"
+                  onClick={handleFollowClick}
+                  disabled={isFollowPending}
+                >
+                  <UsersIcon className="size-4" />
+                  {isFollowPending
+                    ? 'Saving...'
+                    : isFollowing
+                      ? 'Following'
+                      : 'Follow'}
+                </Button>
+              ) : null}
+              {canReportTrainer ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-lg max-sm:w-full"
+                  onClick={() => setIsReportDialogOpen(true)}
+                >
+                  <FlagIcon className="size-4" />
+                  Report
+                </Button>
+              ) : null}
+            </div>
           ) : undefined
         }
       />
@@ -559,6 +607,14 @@ function TrainerProfilePage() {
           </div>
         )}
       </main>
+
+      <ReportTargetDialog
+        open={isReportDialogOpen}
+        onOpenChange={setIsReportDialogOpen}
+        targetLabel={trainer ? `Trainer: ${trainer.displayName}` : 'Trainer'}
+        isSubmitting={reportMutation.isPending}
+        onSubmit={(payload) => reportMutation.mutate(payload)}
+      />
     </div>
   )
 

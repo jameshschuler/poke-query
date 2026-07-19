@@ -179,6 +179,49 @@ export const notifications = pokeSchema.table("notifications", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// --- MODERATION REPORTS ---
+export const reports = pokeSchema.table("reports", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  reporterTrainerId: uuid("reporter_trainer_id")
+    .references(() => trainers.id, { onDelete: "cascade" })
+    .notNull(),
+  targetType: text("target_type").notNull(),
+  targetQueryId: uuid("target_query_id").references(() => searchQueries.id, {
+    onDelete: "set null",
+  }),
+  targetTrainerId: uuid("target_trainer_id").references(() => trainers.id, {
+    onDelete: "set null",
+  }),
+  reason: text("reason").notNull(),
+  details: text("details"),
+  status: text("status").default("open").notNull(),
+  reviewedByTrainerId: uuid("reviewed_by_trainer_id").references(() => trainers.id, {
+    onDelete: "set null",
+  }),
+  reviewedAt: timestamp("reviewed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+});
+
+// --- MODERATION REPORT AUDIT ---
+export const reportActions = pokeSchema.table("report_actions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  reportId: uuid("report_id")
+    .references(() => reports.id, { onDelete: "cascade" })
+    .notNull(),
+  actorTrainerId: uuid("actor_trainer_id").references(() => trainers.id, {
+    onDelete: "set null",
+  }),
+  action: text("action").notNull(),
+  fromStatus: text("from_status"),
+  toStatus: text("to_status"),
+  comment: text("comment"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // --- NOTIFICATION PREFERENCES ---
 export const notificationPreferences = pokeSchema.table("notification_preferences", {
   trainerId: uuid("trainer_id")

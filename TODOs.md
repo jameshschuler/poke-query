@@ -4,6 +4,8 @@ See `ROADMAP.md` for longer-term product initiatives.
 
 ## Feature Work
 
+- Update Deps
+
 - [ ] Abuse Reporting and Moderation
   - [ ] Add report flow for public queries and trainer profiles.
   - [ ] Add moderation queue with report states and reviewer actions.

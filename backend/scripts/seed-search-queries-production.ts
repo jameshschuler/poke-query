@@ -141,7 +141,7 @@ async function run() {
           .set({
             title: entry.title,
             query: entry.query,
-            description: `[seed:prod:${source}] ${entry.description}`,
+            description: entry.description,
             creatorId: officialAuthId,
             isPublic: entry.isPublic ?? true,
             metadata,

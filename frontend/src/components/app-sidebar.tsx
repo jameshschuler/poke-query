@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { useAuth } from '@authabase/react'
+import { useAuth } from '#/lib/auth-context'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useRouterState } from '@tanstack/react-router'
 
@@ -19,10 +19,12 @@ import {
   BookOpenIcon,
   GitForkIcon,
   HeartIcon,
+  ShieldAlertIcon,
   UsersIcon,
 } from 'lucide-react'
 import {
   ApiRequestError,
+  getModerationAccess,
   getMe,
   getUnreadNotificationCount,
   logout,
@@ -96,6 +98,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     refetchInterval: 15_000,
   })
 
+  const { data: moderationAccess } = useQuery({
+    queryKey: ['moderation', 'access'],
+    queryFn: getModerationAccess,
+    enabled: Boolean(user),
+    staleTime: 60_000,
+    retry: false,
+  })
+
   const sidebarUser = useMemo(
     () => ({
       name:
@@ -105,7 +115,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         (typeof me?.username === 'string' && me.username.length > 0
           ? me.username
           : null) ??
-        (typeof user?.user_metadata?.username === 'string' &&
+        (typeof user?.user_metadata.username === 'string' &&
         user.user_metadata.username.length > 0
           ? user.user_metadata.username
           : (user?.email?.split('@')[0] ?? 'trainer')),
@@ -113,7 +123,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       avatar:
         typeof me?.avatarUrl === 'string' && me.avatarUrl.length > 0
           ? me.avatarUrl
-          : typeof user?.user_metadata?.avatarUrl === 'string'
+          : typeof user?.user_metadata.avatarUrl === 'string'
             ? user.user_metadata.avatarUrl
             : '',
     }),
@@ -145,14 +155,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
   }
 
-  const navMainItems = useMemo(
-    () =>
-      data.navMain.map((item) => ({
-        ...item,
-        isActive: pathname === item.url,
-      })),
-    [pathname],
-  )
+  const navMainItems = useMemo(() => {
+    const baseItems = [...data.navMain]
+
+    if (moderationAccess?.isReviewer) {
+      baseItems.push({
+        title: 'Moderation',
+        url: '/moderation',
+        icon: <ShieldAlertIcon />,
+      })
+    }
+
+    return baseItems.map((item) => ({
+      ...item,
+      isActive: pathname === item.url,
+    }))
+  }, [moderationAccess?.isReviewer, pathname])
 
   return (
     <Sidebar collapsible="icon" {...props}>
