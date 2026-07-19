@@ -11,6 +11,8 @@ import {
   UpdateModerationReportStatusSchema,
 } from "./moderation.schema.js";
 
+type ModerationStatus = "open" | "in_review" | "resolved" | "dismissed";
+
 function resolveDisplayName(row: {
   username: string | null;
   pogoUsername: string | null;
@@ -46,6 +48,18 @@ function getReportSubmissionCooldownMinutes(): number {
   }
 
   return Math.floor(parsed);
+}
+
+function normalizeModerationStatus(status: string): ModerationStatus {
+  switch (status) {
+    case "open":
+    case "in_review":
+    case "resolved":
+    case "dismissed":
+      return status;
+    default:
+      return "open";
+  }
 }
 
 export async function moderationRoutes(fastify: FastifyTypebox) {
@@ -141,7 +155,10 @@ export async function moderationRoutes(fastify: FastifyTypebox) {
           comment: null,
         });
 
-        return reply.code(201).send(createdReport);
+        return reply.code(201).send({
+          id: createdReport.id,
+          status: normalizeModerationStatus(createdReport.status),
+        });
       }
 
       const [trainerTarget] = await fastify.db
@@ -187,7 +204,10 @@ export async function moderationRoutes(fastify: FastifyTypebox) {
         comment: null,
       });
 
-      return reply.code(201).send(createdReport);
+      return reply.code(201).send({
+        id: createdReport.id,
+        status: normalizeModerationStatus(createdReport.status),
+      });
     },
   );
 
@@ -498,7 +518,7 @@ export async function moderationRoutes(fastify: FastifyTypebox) {
 
       return {
         id: updated.id,
-        status: updated.status as "open" | "in_review" | "resolved" | "dismissed",
+        status: normalizeModerationStatus(updated.status),
         updatedAt: updated.updatedAt.toISOString(),
       };
     },
