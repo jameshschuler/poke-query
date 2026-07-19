@@ -6,10 +6,6 @@ See `ROADMAP.md` for longer-term product initiatives.
 
 - Update Deps
 
-- [ ] Abuse Reporting and Moderation
-  - [ ] Add report flow for public queries and trainer profiles.
-  - [ ] Add moderation queue with report states and reviewer actions.
-
 ## Testing
 
 - [ ] E2E Coverage (Playwright)
