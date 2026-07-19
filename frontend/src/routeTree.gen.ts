@@ -9,6 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as ModerationRouteImport } from './routes/moderation'
 import { Route as LoginRouteImport } from './routes/login'
@@ -19,6 +21,7 @@ import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as DiscoverRouteImport } from './routes/discover'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AccountRouteImport } from './routes/account'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TrainersUsernameRouteImport } from './routes/trainers.$username'
 import { Route as QueriesQueryIdRouteImport } from './routes/queries.$queryId'
@@ -27,6 +30,16 @@ import { Route as ForksQueryIdRouteImport } from './routes/forks.$queryId'
 import { Route as LibraryQueryIdEditRouteImport } from './routes/library.$queryId.edit'
 import { Route as ForksQueryIdEditRouteImport } from './routes/forks.$queryId.edit'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NotificationsRoute = NotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
@@ -77,6 +90,11 @@ const AccountRoute = AccountRouteImport.update({
   path: '/account',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -115,6 +133,7 @@ const ForksQueryIdEditRoute = ForksQueryIdEditRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/account': typeof AccountRoute
   '/dashboard': typeof DashboardRoute
   '/discover': typeof DiscoverRoute
@@ -125,6 +144,8 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/moderation': typeof ModerationRoute
   '/notifications': typeof NotificationsRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/forks/$queryId': typeof ForksQueryIdRouteWithChildren
   '/library/new': typeof LibraryNewRoute
   '/queries/$queryId': typeof QueriesQueryIdRoute
@@ -134,6 +155,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/account': typeof AccountRoute
   '/dashboard': typeof DashboardRoute
   '/discover': typeof DiscoverRoute
@@ -144,6 +166,8 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/moderation': typeof ModerationRoute
   '/notifications': typeof NotificationsRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/forks/$queryId': typeof ForksQueryIdRouteWithChildren
   '/library/new': typeof LibraryNewRoute
   '/queries/$queryId': typeof QueriesQueryIdRoute
@@ -154,6 +178,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
   '/account': typeof AccountRoute
   '/dashboard': typeof DashboardRoute
   '/discover': typeof DiscoverRoute
@@ -164,6 +189,8 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/moderation': typeof ModerationRoute
   '/notifications': typeof NotificationsRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/forks/$queryId': typeof ForksQueryIdRouteWithChildren
   '/library/new': typeof LibraryNewRoute
   '/queries/$queryId': typeof QueriesQueryIdRoute
@@ -175,6 +202,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/about'
     | '/account'
     | '/dashboard'
     | '/discover'
@@ -185,6 +213,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/moderation'
     | '/notifications'
+    | '/privacy'
+    | '/terms'
     | '/forks/$queryId'
     | '/library/new'
     | '/queries/$queryId'
@@ -194,6 +224,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/about'
     | '/account'
     | '/dashboard'
     | '/discover'
@@ -204,6 +235,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/moderation'
     | '/notifications'
+    | '/privacy'
+    | '/terms'
     | '/forks/$queryId'
     | '/library/new'
     | '/queries/$queryId'
@@ -213,6 +246,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/about'
     | '/account'
     | '/dashboard'
     | '/discover'
@@ -223,6 +257,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/moderation'
     | '/notifications'
+    | '/privacy'
+    | '/terms'
     | '/forks/$queryId'
     | '/library/new'
     | '/queries/$queryId'
@@ -233,6 +269,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
   AccountRoute: typeof AccountRoute
   DashboardRoute: typeof DashboardRoute
   DiscoverRoute: typeof DiscoverRoute
@@ -243,12 +280,28 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ModerationRoute: typeof ModerationRoute
   NotificationsRoute: typeof NotificationsRoute
+  PrivacyRoute: typeof PrivacyRoute
+  TermsRoute: typeof TermsRoute
   QueriesQueryIdRoute: typeof QueriesQueryIdRoute
   TrainersUsernameRoute: typeof TrainersUsernameRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/notifications': {
       id: '/notifications'
       path: '/notifications'
@@ -317,6 +370,13 @@ declare module '@tanstack/react-router' {
       path: '/account'
       fullPath: '/account'
       preLoaderRoute: typeof AccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -408,6 +468,7 @@ const LibraryRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
   AccountRoute: AccountRoute,
   DashboardRoute: DashboardRoute,
   DiscoverRoute: DiscoverRoute,
@@ -418,6 +479,8 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ModerationRoute: ModerationRoute,
   NotificationsRoute: NotificationsRoute,
+  PrivacyRoute: PrivacyRoute,
+  TermsRoute: TermsRoute,
   QueriesQueryIdRoute: QueriesQueryIdRoute,
   TrainersUsernameRoute: TrainersUsernameRoute,
 }

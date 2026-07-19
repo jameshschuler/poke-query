@@ -11,6 +11,7 @@ import {
   ZapIcon,
 } from 'lucide-react'
 
+import { PublicInfoLinks } from '#/components/public-info-links'
 import { Button } from '#/components/ui/button'
 import { requireGuest } from '#/lib/route-auth'
 
@@ -68,6 +69,24 @@ function LandingPage() {
                 className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-muted-foreground transition-colors hover:text-foreground"
               >
                 Explore
+              </a>
+              <a
+                href="/about"
+                className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-muted-foreground transition-colors hover:text-foreground"
+              >
+                About
+              </a>
+              <a
+                href="/privacy"
+                className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Privacy
+              </a>
+              <a
+                href="/terms"
+                className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Terms
               </a>
               <a
                 href={user ? '/discover' : '/login'}
@@ -192,6 +211,8 @@ function LandingPage() {
               </p>
             </div>
           </div>
+
+          <PublicInfoLinks className="pt-6" />
         </section>
 
         <section className="rounded-3xl border border-border/60 bg-card/80 p-5 shadow-sm backdrop-blur sm:p-10 md:p-12">

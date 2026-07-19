@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { PublicInfoLinks } from '#/components/public-info-links'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { requireGuest } from '#/lib/route-auth'
@@ -418,6 +419,7 @@ function LoginPage() {
                 Browse without an account
               </Link>
             </p>
+            <PublicInfoLinks />
           </div>
         </section>
 
