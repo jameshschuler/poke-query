@@ -11,6 +11,7 @@ import {
   GetQuerySchema,
   SyncForkQuerySchema,
   GetTagsSchema,
+  TrackQueryViewSchema,
   UnfavoriteQuerySchema,
   UpdateQuerySchema,
 } from "./queries.schemas.js";
@@ -133,6 +134,7 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
         description: searchQueries.description,
         isPublic: searchQueries.isPublic,
         copyCount: searchQueries.copyCount,
+        viewCount: searchQueries.viewCount,
         favoriteCount: sql<number>`COALESCE((
             SELECT COUNT(*)::int FROM pokequery.favorites f WHERE f.query_id = ${searchQueries.id}
           ), 0)`,
@@ -193,6 +195,7 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
       description: row.description,
       isPublic: row.isPublic,
       copyCount: row.copyCount,
+      viewCount: row.viewCount,
       favoriteCount: row.favoriteCount,
       forkCount: row.forkCount,
       source: row.source,
@@ -233,6 +236,34 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
           : null,
       })),
     });
+  });
+
+  server.post("/:id/views", { schema: TrackQueryViewSchema }, async (request, reply) => {
+    const { id } = request.params;
+
+    const result = await fastify.db.execute(sql`
+      UPDATE pokequery.search_queries
+      SET view_count = view_count + 1
+      WHERE id = ${id} AND is_public = true
+      RETURNING view_count
+    `);
+
+    let rows: unknown[] = [];
+
+    if (Array.isArray(result)) {
+      rows = result;
+    } else if (hasRowsArray(result)) {
+      rows = (result as { rows: unknown[] }).rows;
+    }
+
+    const [row] = rows as Array<Record<string, unknown>>;
+    const viewCount = row?.view_count;
+
+    if (typeof viewCount !== "number") {
+      return reply.code(404).send({ error: "Query not found" });
+    }
+
+    return reply.send({ viewCount });
   });
 
   server.post(

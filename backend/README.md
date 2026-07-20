@@ -4,6 +4,7 @@ A REST API for sharing and discovering Pokemon GO search queries. Trainers can c
 
 Recent backend changes added normalized user tags, richer parser-generated `autoTags`, community search and pagination controls, follower endpoints, privacy-aware public profile fields, and seed data covering common tag filters.
 Recent account/profile updates added authenticated favorites management endpoints, profile completion metadata for onboarding UX, and explicit account deletion behavior that preserves only public strings.
+Recent engagement updates added explicit view tracking for query detail pages and trainer profile pages.
 Supabase migrations now enable row-level security on multi-tenant tables. The Fastify backend still uses a privileged Postgres connection for server-side data access, while RLS hardens any direct client-side or third-party access through Supabase roles.
 
 ## Tech Stack
@@ -116,6 +117,7 @@ Health endpoint: `GET /health` (no auth required).
 | `POST`   | `/api/v1/users/me/reactivate`                    | ✓    | Reactivate your account                                              |
 | `DELETE` | `/api/v1/users/me`                               | ✓    | Delete account (removes private strings, preserves public strings)   |
 | `GET`    | `/api/v1/users/by-username/:username`            |      | Get a public trainer profile and aggregate public counts             |
+| `POST`   | `/api/v1/users/:id/views`                        |      | Increment public trainer profile view count                          |
 | `GET`    | `/api/v1/users/:id/strings`                      |      | List up to 20 public non-fork queries by trainer                     |
 | `GET`    | `/api/v1/users/:id/forks`                        |      | List up to 20 public forks by trainer                                |
 | `GET`    | `/api/v1/users/:id/favorites`                    |      | List up to 20 public favorites by trainer                            |
@@ -129,6 +131,7 @@ Health endpoint: `GET /health` (no auth required).
 | `POST`   | `/api/v1/queries/guest/favorites/:id/unfavorite` |      | Remove a guest favorite                                              |
 | `GET`    | `/api/v1/queries/tags`                           |      | List public query tags with usage counts for discovery filters       |
 | `GET`    | `/api/v1/queries/:id`                            |      | Get one public query with public fork metadata                       |
+| `POST`   | `/api/v1/queries/:id/views`                      |      | Increment public query view count                                    |
 | `POST`   | `/api/v1/queries`                                | ✓    | Create a query                                                       |
 | `PATCH`  | `/api/v1/queries/:id`                            | ✓    | Update a query you own                                               |
 | `DELETE` | `/api/v1/queries/:id`                            | ✓    | Delete a query                                                       |
@@ -137,7 +140,7 @@ Health endpoint: `GET /health` (no auth required).
 | `POST`   | `/api/v1/queries/:id/favorite`                   | ✓    | Favorite a visible query                                             |
 | `POST`   | `/api/v1/queries/:id/unfavorite`                 | ✓    | Remove a query from your favorites                                   |
 | `GET`    | `/api/v1/community`                              |      | Browse public queries with tag, search, sort, and pagination         |
-| `GET`    | `/health`                                        |      | Liveness/readiness health payload for deploy checks and monitors      |
+| `GET`    | `/health`                                        |      | Liveness/readiness health payload for deploy checks and monitors     |
 
 ## Query Endpoints
 
@@ -230,14 +233,13 @@ Constraints:
 
 ## Account Deletion Policy
 
-
 ## Moderation And Reporting
 
 User report submission:
 
 - `POST /api/v1/moderation/reports` accepts authenticated reports for:
-   - public queries (`targetType: "query"`)
-   - public trainer profiles (`targetType: "trainer"`)
+  - public queries (`targetType: "query"`)
+  - public trainer profiles (`targetType: "trainer"`)
 - Reports cannot be submitted against your own query/profile.
 - Duplicate submissions from the same reporter to the same target are rate-limited by cooldown.
 
@@ -251,9 +253,9 @@ Reviewer queue and actions:
 Environment variables:
 
 - `MODERATION_REVIEWER_USER_IDS` comma-separated auth user IDs allowed to review reports.
-   - fallback key: `MODERATOR_USER_IDS`
+  - fallback key: `MODERATOR_USER_IDS`
 - `REPORT_SUBMISSION_COOLDOWN_MINUTES` cooldown window for duplicate report submissions.
-   - default: `10`
+  - default: `10`
 
 ## Seed Data
 

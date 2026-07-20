@@ -15,6 +15,7 @@ import {
   favoriteQuery,
   getMyFavoriteIds,
   getTrainerByUsername,
+  recordTrainerProfileView,
   getTrainerStrings,
   getTrainerForks,
   getTrainerFavorites,
@@ -26,7 +27,7 @@ import {
   unfollowTrainer,
   ApiRequestError,
 } from '#/lib/poke-query-api'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { SearchStringCard } from '#/components/search-string-card'
 import { PageHeader } from '#/components/page-header'
 import { AppSidebar } from '#/components/app-sidebar'
@@ -252,6 +253,42 @@ function TrainerProfilePage() {
   const favoriteIdSet = new Set(myFavoriteIds?.favoriteQueryIds ?? [])
   const isFavoritePending =
     favoriteMutation.isPending || unfavoriteMutation.isPending
+  const trackedViewTrainerIdRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!trainer?.id || !trainer.isProfilePublic || trainer.deactivatedAt) {
+      return
+    }
+
+    if (trackedViewTrainerIdRef.current === trainer.id) {
+      return
+    }
+
+    trackedViewTrainerIdRef.current = trainer.id
+
+    void recordTrainerProfileView(trainer.id)
+      .then(({ viewCount }) => {
+        queryClient.setQueryData(['trainer', username], (current) => {
+          if (!current) {
+            return current
+          }
+
+          return {
+            ...current,
+            profileViewCount: viewCount,
+          }
+        })
+      })
+      .catch(() => {
+        // Best effort: profile should render even if tracking fails.
+      })
+  }, [
+    trainer?.id,
+    trainer?.isProfilePublic,
+    trainer?.deactivatedAt,
+    queryClient,
+    username,
+  ])
 
   const canShowFollowAction =
     trainer &&
@@ -444,6 +481,7 @@ function TrainerProfilePage() {
                 <div className="grid grid-cols-2 gap-3 lg:flex lg:justify-start">
                   {[
                     { label: 'Strings', value: trainer.stringCount },
+                    { label: 'Views', value: trainer.profileViewCount },
                     { label: 'Saves', value: trainer.favoriteCount },
                     { label: 'Forks', value: trainer.forkCount },
                     { label: 'Followers', value: followers.length },

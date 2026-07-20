@@ -116,6 +116,7 @@ export async function communityRoutes(fastify: FastifyTypebox) {
         query: searchQueries.query,
         description: searchQueries.description,
         copyCount: searchQueries.copyCount,
+        viewCount: searchQueries.viewCount,
         favoriteCount: sql<number>`COALESCE((
           SELECT COUNT(*)::int
           FROM pokequery.favorites f
@@ -162,6 +163,7 @@ export async function communityRoutes(fastify: FastifyTypebox) {
       query: row.query,
       description: row.description,
       copyCount: row.copyCount,
+      viewCount: row.viewCount,
       favoriteCount: row.favoriteCount,
       forkCount: row.forkCount,
       source: row.source,

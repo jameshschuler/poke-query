@@ -34,6 +34,14 @@ const buildWhereChain = (result: object[]) => ({
   })),
 });
 
+const buildWhereLimitChain = (result: object[]) => ({
+  from: vi.fn(() => ({
+    where: vi.fn(() => ({
+      limit: vi.fn().mockResolvedValue(result),
+    })),
+  })),
+});
+
 const buildOrderByLimitChain = (result: object[]) => ({
   from: vi.fn(() => {
     const joinable = {
@@ -169,7 +177,7 @@ describe("DELETE /api/v1/users/me", () => {
     process.env.SUPABASE_SECRET_KEY = "test-secret-key";
     mockAdminDeleteUser.mockResolvedValueOnce({ data: { user: null }, error: null });
 
-    app.db.delete = vi.fn(() => ({
+    (app.db as any).delete = vi.fn(() => ({
       where: vi.fn(() => ({
         returning: vi.fn().mockResolvedValue([]),
       })),
@@ -209,6 +217,7 @@ describe("GET /api/v1/users/me/forks", () => {
           description: "My fork",
           isPublic: false,
           copyCount: 3,
+          viewCount: 5,
           favoriteCount: 2,
           forkCount: 0,
           autoTags: ["raid", "high-iv"],
@@ -249,6 +258,7 @@ describe("GET /api/v1/users/me/forks", () => {
           description: "My fork",
           isPublic: false,
           copyCount: 3,
+          viewCount: 5,
           favoriteCount: 2,
           forkCount: 0,
           autoTags: ["raid", "high-iv"],
@@ -330,5 +340,96 @@ describe("GET /api/v1/users/me/following", () => {
         },
       ],
     });
+  });
+});
+
+describe("GET /api/v1/users/by-username/:username", () => {
+  let app: Awaited<ReturnType<typeof buildApp>>;
+
+  beforeAll(async () => {
+    app = await buildApp();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it("returns trainer profile with profile view count", async () => {
+    mockSelect.mockReturnValueOnce(
+      buildWhereLimitChain([
+        {
+          id: "trainer-1",
+          username: "ash",
+          pogoUsername: null,
+          visibleUsername: "pokequery",
+          team: "mystic",
+          level: 45,
+          trainerCode: "1234 5678 9012",
+          avatarUrl: null,
+          profileViewCount: 99,
+          isProfilePublic: true,
+          deactivatedAt: null,
+          createdAt: new Date("2026-01-01T00:00:00.000Z"),
+        },
+      ]),
+    );
+    mockSelect.mockReturnValueOnce(
+      buildWhereLimitChain([
+        {
+          stringCount: 10,
+          forkCount: 3,
+          favoriteCount: 8,
+        },
+      ]),
+    );
+    mockSelect.mockReturnValueOnce(buildWhereChain([{ count: 4 }]));
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/users/by-username/ash",
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({
+      id: "trainer-1",
+      username: "ash",
+      displayName: "ash",
+      profileViewCount: 99,
+      stringCount: 10,
+      forkCount: 3,
+      favoriteCount: 8,
+      followerCount: 4,
+    });
+  });
+});
+
+describe("POST /api/v1/users/:id/views", () => {
+  let app: Awaited<ReturnType<typeof buildApp>>;
+
+  beforeAll(async () => {
+    app = await buildApp();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it("increments and returns trainer profile view count", async () => {
+    (app.db as any).update = vi.fn(() => ({
+      set: vi.fn(() => ({
+        where: vi.fn(() => ({
+          returning: vi.fn().mockResolvedValue([{ viewCount: 12 }]),
+        })),
+      })),
+    }));
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/users/11111111-1111-4111-8111-111111111111/views",
+      payload: {},
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ viewCount: 12 });
   });
 });

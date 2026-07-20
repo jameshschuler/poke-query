@@ -33,6 +33,7 @@ export const CommunitySchema = {
           query: Type.String(),
           description: Type.Union([Type.String(), Type.Null()]),
           copyCount: Type.Integer(),
+          viewCount: Type.Integer(),
           favoriteCount: Type.Integer(),
           forkCount: Type.Integer(),
           source: Type.Union([Type.Literal("official"), Type.Literal("community"), Type.Null()]),

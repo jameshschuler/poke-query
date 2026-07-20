@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
   ArrowLeftIcon,
@@ -10,6 +10,12 @@ import {
 import { toast } from 'sonner'
 
 import { PublicInfoLinks } from '#/components/public-info-links'
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSeparator,
+  InputOTPSlot,
+} from '#/components/ui/input-otp'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { requireGuest } from '#/lib/route-auth'
@@ -105,7 +111,6 @@ function LoginPage() {
   const [activeTestimonialIndex, setActiveTestimonialIndex] = useState(0)
   const [resendCountdown, setResendCountdown] = useState(0)
   const [deliveryTarget, setDeliveryTarget] = useState('')
-  const otpInputRefs = useRef<Array<HTMLInputElement | null>>([])
   const isVerifyStep = step === 'verify'
 
   useEffect(() => {
@@ -213,7 +218,6 @@ function LoginPage() {
       toast.success('A new OTP code was sent.')
       setResendCountdown(RESEND_SECONDS)
       setToken('')
-      otpInputRefs.current[0]?.focus()
     } catch (error) {
       const message =
         error instanceof Error && error.message
@@ -222,32 +226,6 @@ function LoginPage() {
       toast.error(message)
     } finally {
       setIsPending(false)
-    }
-  }
-
-  function handleOtpDigitChange(index: number, rawValue: string) {
-    const digit = rawValue.replace(/\D/g, '').slice(-1)
-    const digits = token.slice(0, OTP_LENGTH).split('')
-
-    while (digits.length < OTP_LENGTH) {
-      digits.push('')
-    }
-
-    digits[index] = digit
-    const nextToken = digits.join('').replace(/\s+/g, '')
-    setToken(nextToken)
-
-    if (digit && index < OTP_LENGTH - 1) {
-      otpInputRefs.current[index + 1]?.focus()
-    }
-  }
-
-  function handleOtpKeyDown(
-    index: number,
-    event: React.KeyboardEvent<HTMLInputElement>,
-  ) {
-    if (event.key === 'Backspace' && !token[index] && index > 0) {
-      otpInputRefs.current[index - 1]?.focus()
     }
   }
 
@@ -290,8 +268,8 @@ function LoginPage() {
               <p className="text-muted-foreground">Sign in to your account.</p>
             </div>
 
-            <div className="rounded-3xl border border-border p-6 sm:p-8">
-              <div className="rounded-2xl border border-border bg-card p-6">
+            <div className="rounded-3xl border border-border p-4 sm:p-8">
+              <div className="rounded-2xl border border-border bg-card p-4 sm:p-6">
                 <div className="space-y-3">
                   <label
                     className="text-sm font-medium text-foreground"
@@ -323,36 +301,25 @@ function LoginPage() {
                           <p className="text-2xl font-semibold tracking-tight text-foreground">
                             Enter OTP Code
                           </p>
-                          <div className="grid grid-cols-6 gap-2 sm:gap-3">
-                            {Array.from(
-                              { length: OTP_LENGTH },
-                              (_item, index) => (
-                                <input
-                                  key={index}
-                                  ref={(element) => {
-                                    otpInputRefs.current[index] = element
-                                  }}
-                                  type="text"
-                                  inputMode="numeric"
-                                  autoComplete="one-time-code"
-                                  maxLength={1}
-                                  value={token[index] ?? ''}
-                                  disabled={isPending}
-                                  aria-label={`OTP digit ${index + 1}`}
-                                  className="h-14 w-full min-w-0 rounded-xl border border-border bg-background text-center text-xl font-semibold text-foreground outline-none ring-offset-2 transition focus:border-foreground focus:ring-2 focus:ring-foreground/20"
-                                  onChange={(event) =>
-                                    handleOtpDigitChange(
-                                      index,
-                                      event.target.value,
-                                    )
-                                  }
-                                  onKeyDown={(event) =>
-                                    handleOtpKeyDown(index, event)
-                                  }
-                                />
-                              ),
-                            )}
-                          </div>
+                          <InputOTP
+                            maxLength={OTP_LENGTH}
+                            value={token}
+                            onChange={setToken}
+                            disabled={isPending}
+                            containerClassName="justify-center"
+                          >
+                            <InputOTPGroup>
+                              <InputOTPSlot index={0} />
+                              <InputOTPSlot index={1} />
+                              <InputOTPSlot index={2} />
+                            </InputOTPGroup>
+                            <InputOTPSeparator />
+                            <InputOTPGroup>
+                              <InputOTPSlot index={3} />
+                              <InputOTPSlot index={4} />
+                              <InputOTPSlot index={5} />
+                            </InputOTPGroup>
+                          </InputOTP>
                           <p className="text-sm text-muted-foreground">
                             A code has been sent to{' '}
                             {deliveryTarget || identifier.trim()}.

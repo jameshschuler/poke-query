@@ -238,6 +238,7 @@ const managedQueryItem = Type.Object({
   description: Type.Union([Type.String(), Type.Null()]),
   isPublic: Type.Boolean(),
   copyCount: Type.Integer(),
+  viewCount: Type.Integer(),
   favoriteCount: Type.Integer(),
   forkCount: Type.Integer(),
   autoTags: Type.Array(Type.String()),
@@ -263,12 +264,22 @@ const meFavoriteItem = Type.Object({
   description: Type.Union([Type.String(), Type.Null()]),
   isPublic: Type.Boolean(),
   copyCount: Type.Integer(),
+  viewCount: Type.Integer(),
   favoriteCount: Type.Integer(),
   forkCount: Type.Integer(),
   autoTags: Type.Array(Type.String()),
   createdAt: Type.String(),
   updatedAt: Type.String(),
   favoritedAt: Type.String(),
+  creator: Type.Union([
+    Type.Object({
+      id: Type.String(),
+      username: Type.String(),
+      displayName: Type.String(),
+      avatarUrl: Type.Union([Type.String(), Type.Null()]),
+    }),
+    Type.Null(),
+  ]),
 });
 
 export const GetMeFavoritesSchema = {
@@ -335,6 +346,7 @@ const managedForkItem = Type.Object({
   description: Type.Union([Type.String(), Type.Null()]),
   isPublic: Type.Boolean(),
   copyCount: Type.Integer(),
+  viewCount: Type.Integer(),
   favoriteCount: Type.Integer(),
   forkCount: Type.Integer(),
   autoTags: Type.Array(Type.String()),
@@ -381,6 +393,7 @@ export const GetTrainerByUsernameSchema = {
       deactivatedAt: Type.Union([Type.String(), Type.Null()]),
       createdAt: Type.String(),
       stringCount: Type.Integer(),
+      profileViewCount: Type.Integer(),
       favoriteCount: Type.Integer(),
       forkCount: Type.Integer(),
       followerCount: Type.Integer(),
@@ -390,6 +403,17 @@ export const GetTrainerByUsernameSchema = {
 };
 
 const trainerIdParams = Type.Object({ id: Type.String({ format: "uuid" }) });
+
+export const TrackTrainerViewSchema = {
+  params: trainerIdParams,
+  body: Type.Object({}),
+  response: {
+    200: Type.Object({
+      viewCount: Type.Integer(),
+    }),
+    404: Type.Object({ error: Type.String() }),
+  },
+};
 
 export const GetTrainerStringsSchema = {
   params: trainerIdParams,

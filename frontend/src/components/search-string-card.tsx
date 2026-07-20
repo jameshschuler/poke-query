@@ -375,6 +375,21 @@ export function SearchStringCard({
               {formatFullNumber(card.favoriteCount)}
             </TooltipContent>
           </Tooltip>
+          {variant === 'discover' && isCommunityQuery(card) ? (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <span className="flex items-center gap-1.5">
+                    <EyeIcon className="size-4" />
+                    {formatCompactNumber(card.viewCount)}
+                  </span>
+                }
+              />
+              <TooltipContent>
+                {formatFullNumber(card.viewCount)}
+              </TooltipContent>
+            </Tooltip>
+          ) : null}
           <Tooltip>
             <TooltipTrigger
               render={
