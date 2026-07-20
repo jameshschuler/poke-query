@@ -1,11 +1,6 @@
 export type ThemeMode = 'light' | 'dark'
 export type ThemePreset =
-  | 'default'
-  | 'ocean'
-  | 'sunset'
-  | 'forest'
-  | 'citrus'
-  | 'slate'
+  'default' | 'ocean' | 'sunset' | 'forest' | 'citrus' | 'slate'
 
 export const THEME_MODE_STORAGE_KEY = 'poke-query-theme'
 export const THEME_PRESET_STORAGE_KEY = 'poke-query-theme-preset'

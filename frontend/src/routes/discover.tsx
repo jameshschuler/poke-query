@@ -52,11 +52,7 @@ import {
 import { formatTagLabel } from '#/lib/utils'
 
 type SortMode =
-  | 'created_desc'
-  | 'created_asc'
-  | 'title_asc'
-  | 'title_desc'
-  | 'popular'
+  'created_desc' | 'created_asc' | 'title_asc' | 'title_desc' | 'popular'
 
 type FilterOption = {
   key: string
