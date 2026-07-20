@@ -36,6 +36,7 @@ This file is for broader product initiatives that are worth tracking, but do not
 - Trainer Profile Screenshot Import
   - Add screenshot upload flow for trainer profile.
   - Parse profile data into editable suggested fields before save.
+  - add ability to scan trainer code as QR code
 
 - PWA Support
   - Add install and offline support for core read paths.
