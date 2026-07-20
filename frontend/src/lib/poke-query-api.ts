@@ -723,9 +723,7 @@ export async function fetchCommunityQueries(): Promise<CommunityQuery[]> {
 }
 
 export type NotificationEventType =
-  | 'new_follower'
-  | 'query_forked'
-  | 'query_favorited'
+  'new_follower' | 'query_forked' | 'query_favorited'
 
 export type AppNotification = {
   id: string

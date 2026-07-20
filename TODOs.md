@@ -4,8 +4,6 @@ See `ROADMAP.md` for longer-term product initiatives.
 
 ## Feature Work
 
-- Update Deps
-
 ## Testing
 
 - [ ] E2E Coverage (Playwright)

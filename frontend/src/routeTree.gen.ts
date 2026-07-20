@@ -9,85 +9,30 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TermsRouteImport } from './routes/terms'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as NotificationsRouteImport } from './routes/notifications'
-import { Route as ModerationRouteImport } from './routes/moderation'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as LibraryRouteImport } from './routes/library'
-import { Route as ForksRouteImport } from './routes/forks'
-import { Route as FollowingRouteImport } from './routes/following'
-import { Route as FavoritesRouteImport } from './routes/favorites'
-import { Route as DiscoverRouteImport } from './routes/discover'
-import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as AccountRouteImport } from './routes/account'
-import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as TrainersUsernameRouteImport } from './routes/trainers.$username'
-import { Route as QueriesQueryIdRouteImport } from './routes/queries.$queryId'
-import { Route as LibraryNewRouteImport } from './routes/library.new'
+import { Route as AboutRouteImport } from './routes/about'
+import { Route as AccountRouteImport } from './routes/account'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as DiscoverRouteImport } from './routes/discover'
+import { Route as FavoritesRouteImport } from './routes/favorites'
+import { Route as FollowingRouteImport } from './routes/following'
+import { Route as ForksRouteImport } from './routes/forks'
+import { Route as LibraryRouteImport } from './routes/library'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as ModerationRouteImport } from './routes/moderation'
+import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ForksQueryIdRouteImport } from './routes/forks.$queryId'
-import { Route as LibraryQueryIdEditRouteImport } from './routes/library.$queryId.edit'
+import { Route as LibraryNewRouteImport } from './routes/library.new'
+import { Route as QueriesQueryIdRouteImport } from './routes/queries.$queryId'
+import { Route as TrainersUsernameRouteImport } from './routes/trainers.$username'
 import { Route as ForksQueryIdEditRouteImport } from './routes/forks.$queryId.edit'
+import { Route as LibraryQueryIdEditRouteImport } from './routes/library.$queryId.edit'
 
-const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NotificationsRoute = NotificationsRouteImport.update({
-  id: '/notifications',
-  path: '/notifications',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ModerationRoute = ModerationRouteImport.update({
-  id: '/moderation',
-  path: '/moderation',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LibraryRoute = LibraryRouteImport.update({
-  id: '/library',
-  path: '/library',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ForksRoute = ForksRouteImport.update({
-  id: '/forks',
-  path: '/forks',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FollowingRoute = FollowingRouteImport.update({
-  id: '/following',
-  path: '/following',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FavoritesRoute = FavoritesRouteImport.update({
-  id: '/favorites',
-  path: '/favorites',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DiscoverRoute = DiscoverRouteImport.update({
-  id: '/discover',
-  path: '/discover',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AccountRoute = AccountRouteImport.update({
-  id: '/account',
-  path: '/account',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -95,9 +40,79 @@ const AboutRoute = AboutRouteImport.update({
   path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DiscoverRoute = DiscoverRouteImport.update({
+  id: '/discover',
+  path: '/discover',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FavoritesRoute = FavoritesRouteImport.update({
+  id: '/favorites',
+  path: '/favorites',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FollowingRoute = FollowingRouteImport.update({
+  id: '/following',
+  path: '/following',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForksRoute = ForksRouteImport.update({
+  id: '/forks',
+  path: '/forks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LibraryRoute = LibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ModerationRoute = ModerationRouteImport.update({
+  id: '/moderation',
+  path: '/moderation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForksQueryIdRoute = ForksQueryIdRouteImport.update({
+  id: '/$queryId',
+  path: '/$queryId',
+  getParentRoute: () => ForksRoute,
+} as any)
+const LibraryNewRoute = LibraryNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => LibraryRoute,
+} as any)
+const QueriesQueryIdRoute = QueriesQueryIdRouteImport.update({
+  id: '/queries/$queryId',
+  path: '/queries/$queryId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TrainersUsernameRoute = TrainersUsernameRouteImport.update({
@@ -105,30 +120,15 @@ const TrainersUsernameRoute = TrainersUsernameRouteImport.update({
   path: '/trainers/$username',
   getParentRoute: () => rootRouteImport,
 } as any)
-const QueriesQueryIdRoute = QueriesQueryIdRouteImport.update({
-  id: '/queries/$queryId',
-  path: '/queries/$queryId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LibraryNewRoute = LibraryNewRouteImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => LibraryRoute,
-} as any)
-const ForksQueryIdRoute = ForksQueryIdRouteImport.update({
-  id: '/$queryId',
-  path: '/$queryId',
-  getParentRoute: () => ForksRoute,
+const ForksQueryIdEditRoute = ForksQueryIdEditRouteImport.update({
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => ForksQueryIdRoute,
 } as any)
 const LibraryQueryIdEditRoute = LibraryQueryIdEditRouteImport.update({
   id: '/$queryId/edit',
   path: '/$queryId/edit',
   getParentRoute: () => LibraryRoute,
-} as any)
-const ForksQueryIdEditRoute = ForksQueryIdEditRouteImport.update({
-  id: '/edit',
-  path: '/edit',
-  getParentRoute: () => ForksQueryIdRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -288,88 +288,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/terms': {
-      id: '/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/notifications': {
-      id: '/notifications'
-      path: '/notifications'
-      fullPath: '/notifications'
-      preLoaderRoute: typeof NotificationsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/moderation': {
-      id: '/moderation'
-      path: '/moderation'
-      fullPath: '/moderation'
-      preLoaderRoute: typeof ModerationRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/library': {
-      id: '/library'
-      path: '/library'
-      fullPath: '/library'
-      preLoaderRoute: typeof LibraryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/forks': {
-      id: '/forks'
-      path: '/forks'
-      fullPath: '/forks'
-      preLoaderRoute: typeof ForksRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/following': {
-      id: '/following'
-      path: '/following'
-      fullPath: '/following'
-      preLoaderRoute: typeof FollowingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/favorites': {
-      id: '/favorites'
-      path: '/favorites'
-      fullPath: '/favorites'
-      preLoaderRoute: typeof FavoritesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/discover': {
-      id: '/discover'
-      path: '/discover'
-      fullPath: '/discover'
-      preLoaderRoute: typeof DiscoverRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/account': {
-      id: '/account'
-      path: '/account'
-      fullPath: '/account'
-      preLoaderRoute: typeof AccountRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -379,11 +302,109 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/discover': {
+      id: '/discover'
+      path: '/discover'
+      fullPath: '/discover'
+      preLoaderRoute: typeof DiscoverRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/favorites': {
+      id: '/favorites'
+      path: '/favorites'
+      fullPath: '/favorites'
+      preLoaderRoute: typeof FavoritesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/following': {
+      id: '/following'
+      path: '/following'
+      fullPath: '/following'
+      preLoaderRoute: typeof FollowingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forks': {
+      id: '/forks'
+      path: '/forks'
+      fullPath: '/forks'
+      preLoaderRoute: typeof ForksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/library': {
+      id: '/library'
+      path: '/library'
+      fullPath: '/library'
+      preLoaderRoute: typeof LibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/moderation': {
+      id: '/moderation'
+      path: '/moderation'
+      fullPath: '/moderation'
+      preLoaderRoute: typeof ModerationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forks/$queryId': {
+      id: '/forks/$queryId'
+      path: '/$queryId'
+      fullPath: '/forks/$queryId'
+      preLoaderRoute: typeof ForksQueryIdRouteImport
+      parentRoute: typeof ForksRoute
+    }
+    '/library/new': {
+      id: '/library/new'
+      path: '/new'
+      fullPath: '/library/new'
+      preLoaderRoute: typeof LibraryNewRouteImport
+      parentRoute: typeof LibraryRoute
+    }
+    '/queries/$queryId': {
+      id: '/queries/$queryId'
+      path: '/queries/$queryId'
+      fullPath: '/queries/$queryId'
+      preLoaderRoute: typeof QueriesQueryIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/trainers/$username': {
@@ -393,26 +414,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TrainersUsernameRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/queries/$queryId': {
-      id: '/queries/$queryId'
-      path: '/queries/$queryId'
-      fullPath: '/queries/$queryId'
-      preLoaderRoute: typeof QueriesQueryIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/library/new': {
-      id: '/library/new'
-      path: '/new'
-      fullPath: '/library/new'
-      preLoaderRoute: typeof LibraryNewRouteImport
-      parentRoute: typeof LibraryRoute
-    }
-    '/forks/$queryId': {
-      id: '/forks/$queryId'
-      path: '/$queryId'
-      fullPath: '/forks/$queryId'
-      preLoaderRoute: typeof ForksQueryIdRouteImport
-      parentRoute: typeof ForksRoute
+    '/forks/$queryId/edit': {
+      id: '/forks/$queryId/edit'
+      path: '/edit'
+      fullPath: '/forks/$queryId/edit'
+      preLoaderRoute: typeof ForksQueryIdEditRouteImport
+      parentRoute: typeof ForksQueryIdRoute
     }
     '/library/$queryId/edit': {
       id: '/library/$queryId/edit'
@@ -420,13 +427,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/library/$queryId/edit'
       preLoaderRoute: typeof LibraryQueryIdEditRouteImport
       parentRoute: typeof LibraryRoute
-    }
-    '/forks/$queryId/edit': {
-      id: '/forks/$queryId/edit'
-      path: '/edit'
-      fullPath: '/forks/$queryId/edit'
-      preLoaderRoute: typeof ForksQueryIdEditRouteImport
-      parentRoute: typeof ForksQueryIdRoute
     }
   }
 }
