@@ -9,4 +9,4 @@ class ResizeObserverPolyfill {
   disconnect() {}
 }
 
-global.ResizeObserver = ResizeObserverPolyfill as any
+global.ResizeObserver = ResizeObserverPolyfill

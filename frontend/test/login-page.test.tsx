@@ -98,10 +98,8 @@ describe('LoginPage', () => {
     await screen.findByLabelText('OTP digit 1')
 
     // Find the hidden input created by input-otp and simulate typing
-    const otpInput = document.querySelector(
-      '[data-slot="input-otp"] input',
-    ) as HTMLInputElement
-    if (otpInput) {
+    const otpInput = document.querySelector('[data-slot="input-otp"] input')
+    if (otpInput instanceof HTMLInputElement) {
       // Simulate typing each digit with keyboard events
       for (const digit of '123456') {
         fireEvent.keyDown(otpInput, {
@@ -144,10 +142,8 @@ describe('LoginPage', () => {
     await screen.findByLabelText('OTP digit 1')
 
     // Find the hidden input created by input-otp and simulate typing
-    const otpInput = document.querySelector(
-      '[data-slot="input-otp"] input',
-    ) as HTMLInputElement
-    if (otpInput) {
+    const otpInput = document.querySelector('[data-slot="input-otp"] input')
+    if (otpInput instanceof HTMLInputElement) {
       // Simulate typing each digit with keyboard events
       for (const digit of '123456') {
         fireEvent.keyDown(otpInput, {
