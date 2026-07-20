@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { useAuth } from '#/lib/auth-context'
 import { useQuery } from '@tanstack/react-query'
+import { useUnreadNotificationCount } from '#/hooks/use-unread-notification-count'
 import { useNavigate, useRouterState } from '@tanstack/react-router'
 
 import { NavMain } from '@/components/nav-main'
@@ -90,13 +91,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     retry: false,
   })
 
-  const { data: unreadCountData } = useQuery({
-    queryKey: ['notifications', 'unread-count'],
-    queryFn: getUnreadNotificationCount,
-    enabled: Boolean(user),
-    staleTime: 15_000,
-    refetchInterval: 15_000,
-  })
+  const { data: unreadCountData } = useUnreadNotificationCount()
 
   const { data: moderationAccess } = useQuery({
     queryKey: ['moderation', 'access'],

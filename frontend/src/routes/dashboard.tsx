@@ -1,5 +1,6 @@
 import { useAuth } from '#/lib/auth-context'
 import { useQuery } from '@tanstack/react-query'
+import { useUnreadNotificationCount } from '#/hooks/use-unread-notification-count'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import {
   AlertCircleIcon,
@@ -25,7 +26,6 @@ import {
   getMyForks,
   getMyQueries,
   getNotifications,
-  getUnreadNotificationCount,
   logout,
 } from '#/lib/poke-query-api'
 import type { AppNotification } from '#/lib/poke-query-api'
@@ -83,12 +83,7 @@ function DashboardRoute() {
     staleTime: 30_000,
   })
 
-  const { data: unreadCountData } = useQuery({
-    queryKey: ['dashboard', 'activity', 'unread-count'],
-    queryFn: getUnreadNotificationCount,
-    staleTime: 15_000,
-    refetchInterval: 15_000,
-  })
+  const { data: unreadCountData } = useUnreadNotificationCount()
 
   const dateFormatter = useMemo(
     () =>

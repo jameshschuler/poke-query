@@ -20,6 +20,7 @@ const config = defineConfig(({ mode }) => {
     },
     test: {
       environment: 'jsdom',
+      setupFiles: ['./vitest.setup.ts'],
     },
     plugins: isTest
       ? [viteReact()]

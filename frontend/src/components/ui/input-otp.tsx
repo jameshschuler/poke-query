@@ -78,6 +78,7 @@ function InputOTPSlot({ index, className, ...props }: InputOTPSlotProps) {
   return (
     <div
       data-slot="input-otp-slot"
+      aria-label={`OTP digit ${index + 1}`}
       className={cn(
         'relative flex h-10 w-9 items-center justify-center rounded-xl border border-border bg-background text-base font-semibold text-foreground shadow-sm transition-all sm:h-14 sm:w-11 sm:text-xl',
         'group-has-focus-visible:border-foreground group-has-focus-visible:ring-2 group-has-focus-visible:ring-foreground/20',
