@@ -230,6 +230,71 @@ integrationDescribe("Queries CRUD Integration", () => {
     expect(copied?.copyCount).toBe(1);
   });
 
+  it("tracks public query detail views without exposing private queries", async () => {
+    const createPublicRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/queries",
+      cookies: { "sb-access-token": "owner-token" },
+      payload: {
+        title: "Viewed Query",
+        query: "4*&cp-1500",
+        description: "for view tracking",
+        isPublic: true,
+      },
+    });
+
+    expect(createPublicRes.statusCode).toBe(201);
+    const { id: publicQueryId } = createPublicRes.json();
+
+    const initialDetailRes = await app.inject({
+      method: "GET",
+      url: `/api/v1/queries/${publicQueryId}`,
+    });
+
+    expect(initialDetailRes.statusCode).toBe(200);
+    expect(initialDetailRes.json().viewCount).toBe(0);
+
+    const trackViewRes = await app.inject({
+      method: "POST",
+      url: `/api/v1/queries/${publicQueryId}/views`,
+      payload: {},
+    });
+
+    expect(trackViewRes.statusCode).toBe(200);
+    expect(trackViewRes.json()).toEqual({ viewCount: 1 });
+
+    const detailRes = await app.inject({
+      method: "GET",
+      url: `/api/v1/queries/${publicQueryId}`,
+    });
+
+    expect(detailRes.statusCode).toBe(200);
+    expect(detailRes.json().viewCount).toBe(1);
+
+    const createPrivateRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/queries",
+      cookies: { "sb-access-token": "owner-token" },
+      payload: {
+        title: "Private Viewed Query",
+        query: "cp-500",
+        description: "should stay private",
+        isPublic: false,
+      },
+    });
+
+    expect(createPrivateRes.statusCode).toBe(201);
+    const { id: privateQueryId } = createPrivateRes.json();
+
+    const privateTrackRes = await app.inject({
+      method: "POST",
+      url: `/api/v1/queries/${privateQueryId}/views`,
+      payload: {},
+    });
+
+    expect(privateTrackRes.statusCode).toBe(404);
+  });
+
   it("favorites and unfavorites a public query", async () => {
     const createRes = await app.inject({
       method: "POST",

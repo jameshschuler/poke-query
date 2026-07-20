@@ -50,6 +50,7 @@ import {
 import type { ManagedQuery } from '#/lib/poke-query-api'
 import { getMutationErrorMessage } from '#/lib/mutation-toast'
 import { requireAuthenticated } from '#/lib/route-auth'
+import { formatCompactNumber, formatFullNumber } from '#/lib/utils'
 
 type StatusFilter = 'all' | 'draft' | 'public'
 type LayoutMode = 'list' | 'grid-2' | 'grid-3'
@@ -159,6 +160,7 @@ function LibraryPage() {
     favoriteMutation.isPending || unfavoriteMutation.isPending
   const draftCount = queries.filter((query) => !query.isPublic).length
   const publicCount = queries.length - draftCount
+  const totalViews = queries.reduce((sum, query) => sum + query.viewCount, 0)
   const lastEdited = queries[0]?.updatedAt ?? null
   const normalizedSearch = searchText.trim().toLowerCase()
   const filteredQueries = queries.filter((query) => {
@@ -339,11 +341,19 @@ function LibraryPage() {
         showSidebar
         showHeaderSearch={false}
       >
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           {[
             { label: 'Strings', value: String(queries.length) },
             { label: 'Drafts', value: String(draftCount) },
             { label: 'Published', value: String(publicCount) },
+            {
+              label: 'Total Views',
+              value: (
+                <span title={formatFullNumber(totalViews)}>
+                  {formatCompactNumber(totalViews)}
+                </span>
+              ),
+            },
             {
               label: 'Last Edited',
               value: lastEdited ? (
@@ -530,7 +540,17 @@ function LibraryPage() {
                 }
                 description={query.description}
                 query={query.query}
-                details={<p>Updated {renderRelativeTime(query.updatedAt)}</p>}
+                details={
+                  <>
+                    <p>Updated {renderRelativeTime(query.updatedAt)}</p>
+                    <p>
+                      {formatCompactNumber(query.viewCount)} views •{' '}
+                      {formatCompactNumber(query.copyCount)} copies •{' '}
+                      {formatCompactNumber(query.favoriteCount)} saves •{' '}
+                      {formatCompactNumber(query.forkCount)} forks
+                    </p>
+                  </>
+                }
                 tags={query.autoTags}
                 footer={
                   <>

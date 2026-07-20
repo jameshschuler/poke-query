@@ -26,6 +26,7 @@ export const Route = createFileRoute('/')({
 function LandingPage() {
   const { user, isLoading } = useAuth()
   const docsUrl = import.meta.env.VITE_DOCS_URL ?? '/docs'
+  const repoUrl = 'https://github.com/jameshschuler/poke-query'
 
   if (isLoading) {
     return (
@@ -63,6 +64,14 @@ function LandingPage() {
                   <BookOpenTextIcon className="size-3.5" />
                   Documentation
                 </span>
+              </a>
+              <a
+                href={repoUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-muted-foreground transition-colors hover:text-foreground"
+              >
+                GitHub
               </a>
               <a
                 href="/discover"

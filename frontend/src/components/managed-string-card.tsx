@@ -15,6 +15,7 @@ type ManagedStringCardProps = {
   details?: ReactNode
   tags: string[]
   footer: ReactNode
+  footerSecondary?: ReactNode
 }
 
 export function ManagedStringCard({
@@ -28,6 +29,7 @@ export function ManagedStringCard({
   details,
   tags,
   footer,
+  footerSecondary,
 }: ManagedStringCardProps) {
   return (
     <article className="flex h-full flex-col rounded-2xl border border-border/70 bg-card/95 px-4 py-5 text-foreground dark:bg-card">
@@ -63,8 +65,13 @@ export function ManagedStringCard({
           </div>
         </div>
 
-        <div className="flex h-16 w-full items-end justify-center border-t border-border/60 pb-1">
+        <div
+          className={`flex w-full border-t border-border/60 ${footerSecondary ? 'flex-col items-center gap-2 pt-3 pb-1' : 'h-16 items-end justify-center pb-1'}`}
+        >
           <QueryCardActions>{footer}</QueryCardActions>
+          {footerSecondary ? (
+            <QueryCardActions>{footerSecondary}</QueryCardActions>
+          ) : null}
         </div>
       </div>
     </article>

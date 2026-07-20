@@ -7,6 +7,7 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import {
   CopyIcon,
   EyeIcon,
+  GitForkIcon,
   Grid2x2Icon,
   Grid3x3Icon,
   HeartIcon,
@@ -35,6 +36,7 @@ import {
 import type { MyFavoriteQuery } from '#/lib/poke-query-api'
 import { getMutationErrorMessage } from '#/lib/mutation-toast'
 import { requireAuthenticated } from '#/lib/route-auth'
+import { formatCompactNumber } from '#/lib/utils'
 
 type FavoritesSearch = {
   q?: string
@@ -381,6 +383,20 @@ function FavoritesPage() {
               query={item.query}
               details={
                 <>
+                  <p>
+                    Author{' '}
+                    {item.creator?.username ? (
+                      <Link
+                        to="/trainers/$username"
+                        params={{ username: item.creator.username }}
+                        className="underline-offset-2 hover:underline"
+                      >
+                        {item.creator.displayName}
+                      </Link>
+                    ) : (
+                      'Unknown'
+                    )}
+                  </p>
                   <p>Favorited {renderRelativeTime(item.favoritedAt)}</p>
                   <p>Updated {renderRelativeTime(item.updatedAt)}</p>
                 </>
@@ -425,9 +441,25 @@ function FavoritesPage() {
                     />
                     <TooltipContent>Remove</TooltipContent>
                   </Tooltip>
+                </>
+              }
+              footerSecondary={
+                <>
+                  <div className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-card px-3 py-1.5 text-xs text-muted-foreground">
+                    <EyeIcon className="size-3.5" />
+                    {formatCompactNumber(item.viewCount)}
+                  </div>
+                  <div className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-card px-3 py-1.5 text-xs text-muted-foreground">
+                    <CopyIcon className="size-3.5" />
+                    {formatCompactNumber(item.copyCount)}
+                  </div>
                   <div className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-card px-3 py-1.5 text-xs text-muted-foreground">
                     <HeartIcon className="size-3.5" />
-                    {item.favoriteCount}
+                    {formatCompactNumber(item.favoriteCount)}
+                  </div>
+                  <div className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-card px-3 py-1.5 text-xs text-muted-foreground">
+                    <GitForkIcon className="size-3.5" />
+                    {formatCompactNumber(item.forkCount)}
                   </div>
                 </>
               }

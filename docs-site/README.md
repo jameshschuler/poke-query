@@ -2,6 +2,8 @@
 
 A one-page API documentation site powered by [Scalar](https://scalar.com/), loaded from the backend's OpenAPI spec.
 
+Repository: https://github.com/jameshschuler/poke-query
+
 The generated spec includes the current backend route schemas plus the manual overview from `backend/src/openapi-description.md`.
 
 ## Commands
@@ -18,6 +20,7 @@ Run `npm run docs:generate` after backend route schema changes or edits to `back
 ## Files
 
 - `index.html` — Scalar CDN page, points at `./data/openapi.json`
+- `index.html` also includes a top-right GitHub repository link for quick source navigation
 - `data/openapi.json` — generated OpenAPI spec (do not edit manually)
 
 After starting the site, open the local URL printed by `serve`.

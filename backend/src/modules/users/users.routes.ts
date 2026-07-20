@@ -11,6 +11,7 @@ import {
   GetMeForksSchema,
   GetTrainerSchema,
   GetTrainerByUsernameSchema,
+  TrackTrainerViewSchema,
   GetTrainerStringsSchema,
   GetTrainerForksSchema,
   GetTrainerFavoritesSchema,
@@ -159,6 +160,7 @@ export async function userRoutes(fastify: FastifyTypebox) {
     description: string | null;
     isPublic: boolean;
     copyCount: number;
+    viewCount: number;
     favoriteCount: number;
     forkCount: number;
     autoTags: string[];
@@ -177,12 +179,18 @@ export async function userRoutes(fastify: FastifyTypebox) {
     description: string | null;
     isPublic: boolean;
     copyCount: number;
+    viewCount: number;
     favoriteCount: number;
     forkCount: number;
     autoTags: string[];
     createdAt: Date;
     updatedAt: Date;
     favoritedAt: Date;
+    creatorId: string | null;
+    creatorUsername: string | null;
+    creatorPogoUsername: string | null;
+    creatorVisibleUsername: string | null;
+    creatorAvatarUrl: string | null;
   }) => ({
     id: q.id,
     title: q.title,
@@ -190,12 +198,26 @@ export async function userRoutes(fastify: FastifyTypebox) {
     description: q.description,
     isPublic: q.isPublic,
     copyCount: q.copyCount,
+    viewCount: q.viewCount,
     favoriteCount: q.favoriteCount,
     forkCount: q.forkCount,
     autoTags: q.autoTags,
     createdAt: q.createdAt.toISOString(),
     updatedAt: q.updatedAt.toISOString(),
     favoritedAt: q.favoritedAt.toISOString(),
+    creator:
+      q.creatorId && q.creatorUsername
+        ? {
+            id: q.creatorId,
+            username: q.creatorUsername,
+            displayName: resolveDisplayName({
+              username: q.creatorUsername,
+              pogoUsername: q.creatorPogoUsername,
+              visibleUsername: q.creatorVisibleUsername,
+            }),
+            avatarUrl: q.creatorAvatarUrl,
+          }
+        : null,
   });
 
   const serializeManagedForkQuery = (q: {
@@ -205,6 +227,7 @@ export async function userRoutes(fastify: FastifyTypebox) {
     description: string | null;
     isPublic: boolean;
     copyCount: number;
+    viewCount: number;
     favoriteCount: number;
     forkCount: number;
     autoTags: string[];
@@ -232,6 +255,7 @@ export async function userRoutes(fastify: FastifyTypebox) {
     description: q.description,
     isPublic: q.isPublic,
     copyCount: q.copyCount,
+    viewCount: q.viewCount,
     favoriteCount: q.favoriteCount,
     forkCount: q.forkCount,
     autoTags: q.autoTags,
@@ -383,6 +407,7 @@ export async function userRoutes(fastify: FastifyTypebox) {
           description: searchQueries.description,
           isPublic: searchQueries.isPublic,
           copyCount: searchQueries.copyCount,
+          viewCount: searchQueries.viewCount,
           favoriteCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM pokequery.favorites f WHERE f.query_id = ${searchQueries.id}), 0)`,
           forkCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM pokequery.search_queries forked WHERE forked.parent_query_id = ${searchQueries.id}), 0)`,
           autoTags: sql<string[]>`COALESCE(${searchQueries.metadata}->'autoTags', '[]'::jsonb)`,
@@ -437,15 +462,22 @@ export async function userRoutes(fastify: FastifyTypebox) {
           description: searchQueries.description,
           isPublic: searchQueries.isPublic,
           copyCount: searchQueries.copyCount,
+          viewCount: searchQueries.viewCount,
           favoriteCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM pokequery.favorites f WHERE f.query_id = ${searchQueries.id}), 0)`,
           forkCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM pokequery.search_queries forked WHERE forked.parent_query_id = ${searchQueries.id}), 0)`,
           autoTags: sql<string[]>`COALESCE(${searchQueries.metadata}->'autoTags', '[]'::jsonb)`,
           createdAt: searchQueries.createdAt,
           updatedAt: searchQueries.updatedAt,
           favoritedAt: favorites.createdAt,
+          creatorId: trainers.id,
+          creatorUsername: trainers.username,
+          creatorPogoUsername: trainers.pogoUsername,
+          creatorVisibleUsername: trainers.visibleUsername,
+          creatorAvatarUrl: trainers.avatarUrl,
         })
         .from(favorites)
         .innerJoin(searchQueries, eq(searchQueries.id, favorites.queryId))
+        .leftJoin(trainers, eq(searchQueries.creatorId, trainers.id))
         .where(visibilityWhere)
         .orderBy(desc(favorites.createdAt))
         .limit(limit)
@@ -532,6 +564,7 @@ export async function userRoutes(fastify: FastifyTypebox) {
           description: searchQueries.description,
           isPublic: searchQueries.isPublic,
           copyCount: searchQueries.copyCount,
+          viewCount: searchQueries.viewCount,
           favoriteCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM pokequery.favorites f WHERE f.query_id = ${searchQueries.id}), 0)`,
           forkCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM pokequery.search_queries forked WHERE forked.parent_query_id = ${searchQueries.id}), 0)`,
           autoTags: sql<string[]>`COALESCE(${searchQueries.metadata}->'autoTags', '[]'::jsonb)`,
@@ -674,6 +707,7 @@ export async function userRoutes(fastify: FastifyTypebox) {
           level: trainers.level,
           trainerCode: trainers.trainerCode,
           avatarUrl: trainers.avatarUrl,
+          profileViewCount: trainers.profileViewCount,
           isProfilePublic: trainers.isProfilePublic,
           deactivatedAt: trainers.deactivatedAt,
           createdAt: trainers.createdAt,
@@ -730,12 +764,37 @@ export async function userRoutes(fastify: FastifyTypebox) {
         deactivatedAt: trainer.deactivatedAt?.toISOString() ?? null,
         createdAt: trainer.createdAt.toISOString(),
         stringCount: counts?.stringCount ?? 0,
+        profileViewCount: trainer.profileViewCount,
         favoriteCount: counts?.favoriteCount ?? 0,
         forkCount: counts?.forkCount ?? 0,
         followerCount: followerRow[0]?.count ?? 0,
       });
     },
   );
+
+  server.post("/:id/views", { schema: TrackTrainerViewSchema }, async (request, reply) => {
+    const { id } = request.params;
+
+    const [updated] = await fastify.db
+      .update(trainers)
+      .set({
+        profileViewCount: sql`${trainers.profileViewCount} + 1`,
+      })
+      .where(
+        and(
+          eq(trainers.id, id),
+          eq(trainers.isProfilePublic, true),
+          isNull(trainers.deactivatedAt),
+        ),
+      )
+      .returning({ viewCount: trainers.profileViewCount });
+
+    if (!updated) {
+      return reply.code(404).send({ error: "Trainer not found" });
+    }
+
+    return reply.send({ viewCount: updated.viewCount });
+  });
 
   // ── /:id/strings · /:id/forks · /:id/favorites ───────────────────────────
 

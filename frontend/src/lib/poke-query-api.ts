@@ -283,6 +283,7 @@ export type CommunityQuery = {
   query: string
   description: string | null
   copyCount: number
+  viewCount: number
   favoriteCount: number
   forkCount: number
   source: 'official' | 'community' | null
@@ -301,6 +302,7 @@ export type CommunityQuery = {
 
 export type QueryDetail = CommunityQuery & {
   isPublic: boolean
+  viewCount: number
   forks: Array<{
     id: string
     title: string
@@ -336,6 +338,13 @@ export type GuestSessionResponse = {
 
 export function getQueryById(id: string): Promise<QueryDetail> {
   return apiRequest<QueryDetail>(`/api/v1/queries/${id}`)
+}
+
+export function recordQueryView(id: string): Promise<{ viewCount: number }> {
+  return apiRequest<{ viewCount: number }>(`/api/v1/queries/${id}/views`, {
+    method: 'POST',
+    body: {},
+  })
 }
 
 export function getQueryTags(): Promise<QueryTag[]> {
@@ -383,6 +392,7 @@ export type TrainerPublicQuery = {
 
 export type ManagedQuery = TrainerPublicQuery & {
   isPublic: boolean
+  viewCount: number
   updatedAt: string
 }
 
@@ -414,12 +424,19 @@ export type MyFavoriteQuery = {
   description: string | null
   isPublic: boolean
   copyCount: number
+  viewCount: number
   favoriteCount: number
   forkCount: number
   autoTags: string[]
   createdAt: string
   updatedAt: string
   favoritedAt: string
+  creator: {
+    id: string
+    username: string
+    displayName: string
+    avatarUrl: string | null
+  } | null
 }
 
 export type MyFavoritesPage = {
@@ -454,6 +471,7 @@ export type TrainerProfile = {
   deactivatedAt: string | null
   createdAt: string
   stringCount: number
+  profileViewCount: number
   favoriteCount: number
   forkCount: number
   followerCount: number
@@ -465,6 +483,18 @@ export function getTrainerByUsername(
 ): Promise<TrainerProfile> {
   return apiRequest<TrainerProfile>(
     `/api/v1/users/by-username/${encodeURIComponent(username)}`,
+  )
+}
+
+export function recordTrainerProfileView(
+  id: string,
+): Promise<{ viewCount: number }> {
+  return apiRequest<{ viewCount: number }>(
+    `/api/v1/users/${encodeURIComponent(id)}/views`,
+    {
+      method: 'POST',
+      body: {},
+    },
   )
 }
 

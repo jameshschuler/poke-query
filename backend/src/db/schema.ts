@@ -32,6 +32,7 @@ export const trainers = pokeSchema.table("trainers", {
   trainerCode: text("trainer_code"),
   isProfilePublic: boolean("is_profile_public").default(true).notNull(),
   avatarUrl: text("avatar_url"),
+  profileViewCount: integer("profile_view_count").default(0).notNull(),
   deactivatedAt: timestamp("deactivated_at"),
   // Timestamps
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -65,6 +66,7 @@ export const searchQueries = pokeSchema.table(
     isPublic: boolean("is_public").default(false).notNull(),
 
     copyCount: integer("copy_count").default(0).notNull(),
+    viewCount: integer("view_count").default(0).notNull(),
     originalQuerySnapshot: text("original_query_snapshot"),
     parentQueryId: uuid("parent_query_id"),
 

@@ -2,16 +2,20 @@
 
 poke-query is a monorepo for a Pokemon GO query-sharing app.
 
+Repository: https://github.com/jameshschuler/poke-query
+
 At a high level, the project lets trainers create, manage, and discover reusable in-game search queries. The backend currently provides authentication, query CRUD, fork and favorite flows, follower relationships, privacy-aware profile endpoints, tag-aware community discovery, and integration-tested database workflows.
 
 ## Workspace Layout
 
 - `backend/`: Fastify + TypeScript API, database schema/migrations, and tests
+- `frontend/`: TanStack Start + React app for discover, library, favorites, forks, and trainer profiles
 - `docs-site/`: API docs site (Scalar)
 
 ## Current Status
 
 - Backend is fully set up and tested
+- Frontend includes discover, trainer profiles, library/forks/favorites management, and legal pages
 - API docs site powered by Scalar
 - Community discovery supports search, tag filters, sort modes, and pagination
 
@@ -28,6 +32,7 @@ At a high level, the project lets trainers create, manage, and discover reusable
 - `/api/v1/users/me` includes `profileCompleted` and `deactivatedAt` for onboarding/account UX
 - Account deletion policy preserves public strings (anonymized) and removes private strings
 - Trainer profiles by username with split public lists for strings, forks, favorites, and followers
+- Explicit engagement tracking endpoints for query views and trainer profile views
 - Seed scripts for trainers, search queries, and followers
 - Drizzle ORM + Postgres schema/migrations
 - Unit/integration test suites with Vitest

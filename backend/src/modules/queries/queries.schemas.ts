@@ -26,6 +26,7 @@ export const GetQuerySchema = {
       description: Type.Union([Type.String(), Type.Null()]),
       isPublic: Type.Boolean(),
       copyCount: Type.Integer(),
+      viewCount: Type.Integer(),
       favoriteCount: Type.Integer(),
       forkCount: Type.Integer(),
       source: Type.Union([Type.Literal("official"), Type.Literal("community"), Type.Null()]),
@@ -41,6 +42,19 @@ export const GetQuerySchema = {
           creator: TrainerSchema,
         }),
       ),
+    }),
+    404: Type.Object({ error: Type.String() }),
+  },
+};
+
+export const TrackQueryViewSchema = {
+  params: Type.Object({
+    id: Type.String(),
+  }),
+  body: Type.Object({}),
+  response: {
+    200: Type.Object({
+      viewCount: Type.Integer(),
     }),
     404: Type.Object({ error: Type.String() }),
   },

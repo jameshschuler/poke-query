@@ -9,7 +9,7 @@ import {
   Loader2Icon,
   ShareIcon,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import { Avatar, AvatarFallback, AvatarImage } from '#/components/ui/avatar'
@@ -33,6 +33,7 @@ import {
   forkQuery,
   getMyFavoriteIds,
   getQueryById,
+  recordQueryView,
   submitReport,
   unfavoriteQuery,
 } from '#/lib/poke-query-api'
@@ -92,6 +93,7 @@ function QueryDetailPage() {
     Boolean(user) && (!query?.creator || query.creator.id !== user?.id)
   const canReportQuery =
     Boolean(user) && Boolean(query?.isPublic) && query?.creator?.id !== user?.id
+  const trackedViewQueryIdRef = useRef<string | null>(null)
   const [copyCountDelta, setCopyCountDelta] = useState(0)
   const [isCopyPending, setIsCopyPending] = useState(false)
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false)
@@ -100,6 +102,35 @@ function QueryDetailPage() {
     setCopyCountDelta(0)
     setIsCopyPending(false)
   }, [query?.id, query?.copyCount])
+
+  useEffect(() => {
+    if (!query) {
+      return
+    }
+
+    if (trackedViewQueryIdRef.current === query.id) {
+      return
+    }
+
+    trackedViewQueryIdRef.current = query.id
+
+    void recordQueryView(query.id)
+      .then(({ viewCount }) => {
+        queryClient.setQueryData(['query', query.id], (current) => {
+          if (!current) {
+            return current
+          }
+
+          return {
+            ...current,
+            viewCount,
+          }
+        })
+      })
+      .catch(() => {
+        // Best effort: the page should still load if tracking fails.
+      })
+  }, [query?.id, queryClient])
 
   const displayCopyCount = query ? query.copyCount + copyCountDelta : 0
 
@@ -474,8 +505,13 @@ function QueryDetailPage() {
                   </span>
                 </div>
                 <div className="flex flex-col items-center gap-1.5 rounded-xl border border-border/60 bg-card px-4 py-5">
-                  <span className="text-xs text-muted-foreground">Version</span>
-                  <span className="text-2xl font-bold sm:text-3xl">v1</span>
+                  <span className="text-xs text-muted-foreground">Views</span>
+                  <span
+                    className="text-2xl font-bold sm:text-3xl"
+                    title={formatFullNumber(query.viewCount)}
+                  >
+                    {formatCompactNumber(query.viewCount)}
+                  </span>
                 </div>
               </div>
 

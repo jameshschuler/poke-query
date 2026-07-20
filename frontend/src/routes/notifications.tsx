@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { useUnreadNotificationCount } from '#/hooks/use-unread-notification-count'
 import { BellIcon, CheckCheckIcon, Loader2Icon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
@@ -9,7 +10,6 @@ import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import {
   getNotifications,
-  getUnreadNotificationCount,
   markAllNotificationsRead,
   markNotificationRead,
 } from '#/lib/poke-query-api'
@@ -48,12 +48,7 @@ function NotificationsPage() {
     queryFn: () => getNotifications(notificationQueryParams),
   })
 
-  const { data: unreadCountData } = useQuery({
-    queryKey: ['notifications', 'unread-count'],
-    queryFn: getUnreadNotificationCount,
-    staleTime: 15_000,
-    refetchInterval: 15_000,
-  })
+  const { data: unreadCountData } = useUnreadNotificationCount()
 
   const notifications = notificationsPage?.notifications ?? []
   const unreadCount = unreadCountData?.unreadCount ?? 0

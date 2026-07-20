@@ -108,6 +108,20 @@ describe("Queries Endpoint", () => {
     expect(where).toHaveBeenCalled();
   });
 
+  it("should track a public query view", async () => {
+    app.db.execute = vi.fn().mockResolvedValue({ rows: [{ view_count: 3 }] });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/v1/queries/query-id/views",
+      payload: {},
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ viewCount: 3 });
+    expect(app.db.execute).toHaveBeenCalled();
+  });
+
   it("should sync a fork from its source", async () => {
     app.db.query = {
       searchQueries: {
