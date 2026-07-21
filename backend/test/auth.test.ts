@@ -129,11 +129,18 @@ describe("Authenticated Routes", () => {
       error: null,
     });
 
-    app.db.insert = vi.fn(() => ({
-      values: vi.fn(() => ({
-        returning: vi.fn().mockResolvedValue([{ id: "new-query-id" }]),
-      })),
-    }));
+    app.db.insert = vi
+      .fn()
+      .mockImplementationOnce(() => ({
+        values: vi.fn(() => ({
+          onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
+        })),
+      }))
+      .mockImplementationOnce(() => ({
+        values: vi.fn(() => ({
+          returning: vi.fn().mockResolvedValue([{ id: "new-query-id" }]),
+        })),
+      }));
 
     const response = await app.inject({
       method: "POST",
