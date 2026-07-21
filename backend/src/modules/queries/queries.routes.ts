@@ -13,6 +13,7 @@ import {
   GetTagsSchema,
   TrackQueryViewSchema,
   UnfavoriteQuerySchema,
+  SyncOfficialQueriesSchema,
   UpdateQuerySchema,
 } from "./queries.schemas.js";
 import { and, eq, or, sql } from "drizzle-orm";
@@ -68,6 +69,25 @@ function resolveDisplayName(row: {
 
 function resolveMetadataSource(value: unknown): "official" | "community" {
   return value === "official" ? "official" : "community";
+}
+
+function getOfficialQueryEditorUserIds(): Set<string> {
+  const configured =
+    process.env.OFFICIAL_QUERY_EDITOR_USER_IDS ??
+    process.env.MODERATION_REVIEWER_USER_IDS ??
+    process.env.MODERATOR_USER_IDS ??
+    "";
+
+  return new Set(
+    configured
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean),
+  );
+}
+
+function isOfficialQueryEditorUser(userId: string): boolean {
+  return getOfficialQueryEditorUserIds().has(userId);
 }
 
 export async function queriesRoutes(fastify: FastifyTypebox) {
@@ -349,6 +369,145 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
       } catch (_error) {
         return reply.code(400).send({ error: "Failed to create query" });
       }
+    },
+  );
+
+  server.post(
+    "/official/sync",
+    { preHandler: [fastify.authenticate], schema: SyncOfficialQueriesSchema },
+    async (request, reply) => {
+      if (!isOfficialQueryEditorUser(request.user.id)) {
+        return reply.code(403).send({ error: "Official query editor access required" });
+      }
+
+      const creatorId = request.body.creatorId ?? request.user.id;
+      const now = new Date();
+
+      const [creator] = await fastify.db
+        .select({ id: trainers.id })
+        .from(trainers)
+        .where(eq(trainers.id, creatorId))
+        .limit(1);
+
+      if (!creator) {
+        return reply.code(400).send({ error: "Creator profile not found" });
+      }
+
+      let insertedCount = 0;
+      let updatedCount = 0;
+
+      for (const entry of request.body.entries) {
+        if (findBlockedTerm(entry.title.trim())) {
+          return reply
+            .code(400)
+            .send({ error: `Title contains blocked language for key ${entry.key}` });
+        }
+
+        if (entry.description?.trim() && findBlockedTerm(entry.description.trim())) {
+          return reply.code(400).send({
+            error: `Description contains blocked language for key ${entry.key}`,
+          });
+        }
+
+        const source = entry.source ?? "official";
+        const metadata = {
+          ...generateMetadata(entry.query),
+          source,
+          seedKey: entry.key,
+        };
+
+        const normalizedTags = Array.from(
+          new Set(
+            [
+              ...(entry.tags ?? []),
+              source === "official" ? "official" : "community-curated",
+              "production-seeded",
+            ]
+              .map((tag) => tag.trim().toLowerCase())
+              .filter(Boolean),
+          ),
+        );
+
+        const [existing] = await fastify.db
+          .select({ id: searchQueries.id })
+          .from(searchQueries)
+          .where(
+            and(
+              eq(searchQueries.creatorId, creatorId),
+              sql`${searchQueries.metadata}->>'seedKey' = ${entry.key}`,
+            ),
+          )
+          .limit(1);
+
+        let queryId: string;
+
+        if (existing?.id) {
+          queryId = existing.id;
+          updatedCount += 1;
+
+          await fastify.db
+            .update(searchQueries)
+            .set({
+              title: entry.title,
+              query: entry.query,
+              description: entry.description,
+              creatorId,
+              isPublic: entry.isPublic ?? true,
+              metadata,
+              updatedAt: now,
+            })
+            .where(eq(searchQueries.id, existing.id));
+        } else {
+          const [created] = await fastify.db
+            .insert(searchQueries)
+            .values({
+              title: entry.title,
+              query: entry.query,
+              description: entry.description,
+              creatorId,
+              isPublic: entry.isPublic ?? true,
+              copyCount: entry.copyCount ?? 0,
+              metadata,
+            })
+            .returning({ id: searchQueries.id });
+
+          if (!created?.id) {
+            continue;
+          }
+
+          queryId = created.id;
+          insertedCount += 1;
+        }
+
+        await fastify.db.delete(queriesToTags).where(eq(queriesToTags.queryId, queryId));
+
+        for (const tagName of normalizedTags) {
+          const [insertedTag] = await fastify.db
+            .insert(tags)
+            .values({ name: tagName })
+            .onConflictDoNothing()
+            .returning({ id: tags.id });
+
+          let tagId = insertedTag?.id;
+          if (!tagId) {
+            const [existingTag] = await fastify.db
+              .select({ id: tags.id })
+              .from(tags)
+              .where(eq(tags.name, tagName));
+            tagId = existingTag?.id;
+          }
+
+          if (tagId) {
+            await fastify.db.insert(queriesToTags).values({ queryId, tagId }).onConflictDoNothing();
+          }
+        }
+      }
+
+      return reply.code(200).send({
+        creatorId,
+        insertedCount,
+        updatedCount,
+      });
     },
   );
 
