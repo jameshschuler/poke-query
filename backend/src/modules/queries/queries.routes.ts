@@ -728,6 +728,7 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
           request.body,
           "referenceUrl",
         );
+        const hasTagsInput = Object.prototype.hasOwnProperty.call(request.body, "tags");
         const normalizedReferenceUrlInput = normalizeReferenceUrl(referenceUrl);
         if (normalizedReferenceUrlInput && !isValidReferenceUrl(normalizedReferenceUrlInput)) {
           return reply.code(400).send({ error: "Reference URL must be a valid http(s) URL" });
@@ -755,7 +756,7 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
 
         const normalizedUserTags = Array.from(
           new Set(
-            (userTags.length > 0 ? userTags : existingUserTags)
+            (hasTagsInput ? (userTags ?? []) : existingUserTags)
               .map((tag) => tag.trim().toLowerCase())
               .filter(Boolean),
           ),

@@ -139,6 +139,7 @@ export async function communityRoutes(fastify: FastifyTypebox) {
             ELSE NULL
           END
         `,
+        referenceUrl: sql<string | null>`NULLIF(${searchQueries.metadata}->>'referenceUrl', '')`,
         userTags: sql<string[]>`COALESCE(${searchQueries.metadata}->'userTags', '[]'::jsonb)`,
         autoTags: sql<string[]>`COALESCE(${searchQueries.metadata}->'autoTags', '[]'::jsonb)`,
         createdAt: searchQueries.createdAt,
@@ -173,6 +174,7 @@ export async function communityRoutes(fastify: FastifyTypebox) {
       favoriteCount: row.favoriteCount,
       forkCount: row.forkCount,
       source: row.source,
+      referenceUrl: row.referenceUrl,
       userTags: Array.isArray(row.userTags) ? row.userTags : [],
       autoTags: Array.isArray(row.autoTags) ? row.autoTags : [],
       createdAt: row.createdAt.toISOString(),
