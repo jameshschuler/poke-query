@@ -130,6 +130,7 @@ Health endpoint: `GET /health` (no auth required).
 | `POST`   | `/api/v1/queries/guest/favorites/:id`            |      | Favorite a public query as a guest (max 10)                          |
 | `POST`   | `/api/v1/queries/guest/favorites/:id/unfavorite` |      | Remove a guest favorite                                              |
 | `GET`    | `/api/v1/queries/tags`                           |      | List public query tags with usage counts for discovery filters       |
+| `POST`   | `/api/v1/queries/official/sync`                  | ✓    | Bulk upsert official/community curated queries by `seedKey`          |
 | `GET`    | `/api/v1/queries/:id`                            |      | Get one public query with public fork metadata                       |
 | `POST`   | `/api/v1/queries/:id/views`                      |      | Increment public query view count                                    |
 | `POST`   | `/api/v1/queries`                                | ✓    | Create a query                                                       |
@@ -256,6 +257,8 @@ Environment variables:
   - fallback key: `MODERATOR_USER_IDS`
 - `REPORT_SUBMISSION_COOLDOWN_MINUTES` cooldown window for duplicate report submissions.
   - default: `10`
+- `OFFICIAL_QUERY_EDITOR_USER_IDS` comma-separated auth user IDs allowed to sync official queries.
+  - fallback keys: `MODERATION_REVIEWER_USER_IDS`, `MODERATOR_USER_IDS`
 
 ## Seed Data
 
@@ -275,6 +278,28 @@ Notes:
 - `db:seed:trainers`, `db:seed:search`, `db:seed:followers`, and `db:seed:notifications` are blocked when `NODE_ENV=production`.
 - Production curated strings are maintained in `scripts/data/production-search-queries.ts`.
 - Production curated seeding is idempotent and non-destructive: it upserts by `key` and preserves engagement history (copy counts, favorites/forks).
+- Content-only production updates can use `POST /api/v1/queries/official/sync` without a deploy.
+
+Example official sync request:
+
+```bash
+curl -X POST "https://YOUR_API_HOST/api/v1/queries/official/sync" \
+  -H "Content-Type: application/json" \
+  -H "Cookie: sb-access-token=YOUR_TOKEN" \
+  -d '{
+    "entries": [
+      {
+        "key": "official_great_league_opening",
+        "title": "Great League Opening Core",
+        "query": "cp-1500&!traded&!shadow",
+        "description": "Initial pass for Great League roster prep",
+        "source": "official",
+        "isPublic": true,
+        "tags": ["great-league", "pvp"]
+      }
+    ]
+  }'
+```
 
 ## One-Page Docs Site
 

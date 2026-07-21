@@ -242,3 +242,39 @@ export const UnfavoriteQuerySchema = {
     }),
   },
 };
+
+export const SyncOfficialQueriesSchema = {
+  security: cookieAuthSecurity,
+  body: Type.Object({
+    creatorId: Type.Optional(Type.String({ format: "uuid" })),
+    entries: Type.Array(
+      Type.Object({
+        key: Type.String({ minLength: 1, maxLength: 120 }),
+        title: Type.String({ minLength: 3, maxLength: 100 }),
+        query: Type.String({ minLength: 1 }),
+        description: Type.Optional(Type.String({ maxLength: 500 })),
+        isPublic: Type.Optional(Type.Boolean()),
+        source: Type.Optional(Type.Union([Type.Literal("official"), Type.Literal("community")])),
+        tags: Type.Optional(Type.Array(Type.String({ minLength: 1, maxLength: 32 }))),
+        copyCount: Type.Optional(Type.Integer({ minimum: 0 })),
+      }),
+      { minItems: 1, maxItems: 200 },
+    ),
+  }),
+  response: {
+    200: Type.Object({
+      creatorId: Type.String(),
+      insertedCount: Type.Integer(),
+      updatedCount: Type.Integer(),
+    }),
+    400: Type.Object({
+      error: Type.String(),
+    }),
+    401: Type.Object({
+      error: Type.String(),
+    }),
+    403: Type.Object({
+      error: Type.String(),
+    }),
+  },
+};
