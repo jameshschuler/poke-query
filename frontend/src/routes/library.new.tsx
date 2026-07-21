@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 import { PageShell } from '#/components/page-shell'
+import { QueryTagsField } from '#/components/query-tags-field'
 import { Button } from '#/components/ui/button'
 import { findBlockedTerm } from '#/lib/content-policy'
 import { createQuery } from '#/lib/poke-query-api'
@@ -27,6 +28,8 @@ function NewLibraryQueryPage() {
   const [title, setTitle] = useState('')
   const [query, setQuery] = useState('')
   const [description, setDescription] = useState('')
+  const [referenceUrl, setReferenceUrl] = useState('')
+  const [tags, setTags] = useState<string[]>([])
   const [visibility, setVisibility] = useState<VisibilityMode>('public')
 
   const titleBlockedTerm = findBlockedTerm(title.trim())
@@ -40,7 +43,9 @@ function NewLibraryQueryPage() {
         title: title.trim(),
         query: query.trim(),
         description: description.trim() || undefined,
+        referenceUrl: referenceUrl.trim() || undefined,
         isPublic: nextVisibility === 'public',
+        tags,
       }),
     onSuccess: async (result, nextVisibility) => {
       await queryClient.invalidateQueries({ queryKey: ['my-queries'] })
@@ -173,6 +178,28 @@ function NewLibraryQueryPage() {
             </p>
           ) : null}
         </label>
+
+        <label className="space-y-2">
+          <span className="text-sm font-medium">Reference link (optional)</span>
+          <input
+            type="url"
+            value={referenceUrl}
+            onChange={(event) => setReferenceUrl(event.target.value)}
+            placeholder="https://example.com/source"
+            className="h-10 w-full rounded-xl border border-border/60 bg-background px-3 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/20"
+            maxLength={500}
+            autoComplete="off"
+          />
+          <p className="text-xs text-muted-foreground">
+            Add where this string came from so others can verify or learn more.
+          </p>
+        </label>
+
+        <QueryTagsField
+          tags={tags}
+          onChange={setTags}
+          helperText="Add your own tags to improve discovery for this string."
+        />
 
         <div className="space-y-2">
           <span className="text-sm font-medium">Visibility</span>

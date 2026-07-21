@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import { PageShell } from '#/components/page-shell'
+import { QueryTagsField } from '#/components/query-tags-field'
 import { Button } from '#/components/ui/button'
 import { findBlockedTerm } from '#/lib/content-policy'
 import { ApiRequestError, getMyForks, updateQuery } from '#/lib/poke-query-api'
@@ -29,6 +30,8 @@ function EditForkPage() {
   const [title, setTitle] = useState('')
   const [query, setQuery] = useState('')
   const [description, setDescription] = useState('')
+  const [referenceUrl, setReferenceUrl] = useState('')
+  const [tags, setTags] = useState<string[]>([])
   const [visibility, setVisibility] = useState<VisibilityMode>('public')
 
   const titleBlockedTerm = findBlockedTerm(title.trim())
@@ -60,6 +63,8 @@ function EditForkPage() {
     setTitle(currentFork.title)
     setQuery(currentFork.query)
     setDescription(currentFork.description ?? '')
+    setReferenceUrl(currentFork.referenceUrl ?? '')
+    setTags(currentFork.userTags)
     setVisibility(currentFork.isPublic ? 'public' : 'private')
   }, [currentFork])
 
@@ -69,7 +74,9 @@ function EditForkPage() {
         title: title.trim(),
         query: query.trim(),
         description: description.trim() || undefined,
+        referenceUrl: referenceUrl.trim() || undefined,
         isPublic: visibility === 'public',
+        tags,
       }),
     onSuccess: async () => {
       queryClient.setQueryData<{ forks: ManagedForkQuery[] }>(
@@ -87,7 +94,9 @@ function EditForkPage() {
                     title: title.trim(),
                     query: query.trim(),
                     description: description.trim() || null,
+                    referenceUrl: referenceUrl.trim() || null,
                     isPublic: visibility === 'public',
+                    userTags: tags,
                     updatedAt: new Date().toISOString(),
                   }
                 : fork,
@@ -231,6 +240,30 @@ function EditForkPage() {
                 </p>
               ) : null}
             </label>
+
+            <label className="space-y-2">
+              <span className="text-sm font-medium">
+                Reference link (optional)
+              </span>
+              <input
+                type="url"
+                value={referenceUrl}
+                onChange={(event) => setReferenceUrl(event.target.value)}
+                placeholder="https://example.com/source"
+                className="h-10 w-full rounded-xl border border-border/60 bg-background px-3 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/20"
+                maxLength={500}
+                autoComplete="off"
+              />
+              <p className="text-xs text-muted-foreground">
+                Keep an attribution link so this fork stays easy to validate.
+              </p>
+            </label>
+
+            <QueryTagsField
+              tags={tags}
+              onChange={setTags}
+              helperText="Update tags to keep this fork easy to filter and revisit."
+            />
 
             <div className="space-y-2">
               <span className="text-sm font-medium">Visibility</span>

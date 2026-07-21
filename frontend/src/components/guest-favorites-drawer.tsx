@@ -141,109 +141,120 @@ export function GuestFavoritesDrawer({
                 </Tooltip>
               </div>
 
-              {queries.map((query) => (
-                <article
-                  key={query.id}
-                  className="space-y-3 overflow-hidden rounded-2xl border border-border/60 bg-background/70 px-5 py-4"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <Link
-                        to="/queries/$queryId"
-                        params={{ queryId: query.id }}
-                        className="block hover:opacity-75"
-                      >
-                        <h3 className="truncate text-base font-semibold leading-tight">
-                          {query.title}
-                        </h3>
-                      </Link>
+              {queries.map((query) => {
+                const visibleTags = Array.from(
+                  new Set([...query.userTags, ...query.autoTags]),
+                )
+                const userTagSet = new Set(query.userTags)
 
-                      {query.autoTags.length > 0 ? (
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {query.autoTags.map((tag) => (
-                            <Badge
-                              key={tag}
-                              variant="outline"
-                              className="border-border/70 bg-card text-muted-foreground"
+                return (
+                  <article
+                    key={query.id}
+                    className="space-y-3 overflow-hidden rounded-2xl border border-border/60 bg-background/70 px-5 py-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <Link
+                          to="/queries/$queryId"
+                          params={{ queryId: query.id }}
+                          className="block hover:opacity-75"
+                        >
+                          <h3 className="truncate text-base font-semibold leading-tight">
+                            {query.title}
+                          </h3>
+                        </Link>
+
+                        {visibleTags.length > 0 ? (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {visibleTags.map((tag) => (
+                              <Badge
+                                key={tag}
+                                variant="outline"
+                                className={
+                                  userTagSet.has(tag)
+                                    ? 'border-amber-300/70 bg-amber-100/70 text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/30 dark:text-amber-200'
+                                    : 'border-border/70 bg-card text-muted-foreground'
+                                }
+                              >
+                                {formatTagLabel(tag)}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 shrink-0 cursor-pointer text-muted-foreground hover:text-destructive"
+                              onClick={() => onRemoveFavorite(query.id)}
+                              disabled={
+                                isClearingFavorites ||
+                                (isRemovingFavorite &&
+                                  removingFavoriteId === query.id)
+                              }
+                              aria-label={`Remove ${query.title} from favorites`}
                             >
-                              {formatTagLabel(tag)}
-                            </Badge>
-                          ))}
-                        </div>
-                      ) : null}
+                              {isRemovingFavorite &&
+                              removingFavoriteId === query.id ? (
+                                <Loader2Icon className="size-4 animate-spin" />
+                              ) : (
+                                <XIcon className="size-4" />
+                              )}
+                            </Button>
+                          }
+                        />
+                        <TooltipContent>Remove</TooltipContent>
+                      </Tooltip>
                     </div>
 
-                    <Tooltip>
-                      <TooltipTrigger
-                        render={
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 shrink-0 cursor-pointer text-muted-foreground hover:text-destructive"
-                            onClick={() => onRemoveFavorite(query.id)}
-                            disabled={
-                              isClearingFavorites ||
-                              (isRemovingFavorite &&
-                                removingFavoriteId === query.id)
-                            }
-                            aria-label={`Remove ${query.title} from favorites`}
-                          >
-                            {isRemovingFavorite &&
-                            removingFavoriteId === query.id ? (
-                              <Loader2Icon className="size-4 animate-spin" />
-                            ) : (
-                              <XIcon className="size-4" />
-                            )}
-                          </Button>
-                        }
-                      />
-                      <TooltipContent>Remove</TooltipContent>
-                    </Tooltip>
-                  </div>
+                    {query.description ? (
+                      <p className="text-sm text-muted-foreground">
+                        {query.description}
+                      </p>
+                    ) : null}
 
-                  {query.description ? (
-                    <p className="text-sm text-muted-foreground">
-                      {query.description}
-                    </p>
-                  ) : null}
+                    {query.creator ? (
+                      <p className="text-xs text-muted-foreground">
+                        <span className="inline-flex items-center gap-1.5">
+                          <span>by {query.creator.displayName}</span>
+                          <OfficialTrainerBadge
+                            username={query.creator.username}
+                          />
+                        </span>
+                      </p>
+                    ) : null}
 
-                  {query.creator ? (
-                    <p className="text-xs text-muted-foreground">
-                      <span className="inline-flex items-center gap-1.5">
-                        <span>by {query.creator.displayName}</span>
-                        <OfficialTrainerBadge
-                          username={query.creator.username}
-                        />
+                    <div className="flex gap-3 pt-1 text-xs text-muted-foreground">
+                      <span
+                        className="flex items-center gap-1"
+                        title={formatFullNumber(query.copyCount)}
+                      >
+                        <CopyIcon className="size-3" />
+                        {formatCompactNumber(query.copyCount)}
                       </span>
-                    </p>
-                  ) : null}
-
-                  <div className="flex gap-3 pt-1 text-xs text-muted-foreground">
-                    <span
-                      className="flex items-center gap-1"
-                      title={formatFullNumber(query.copyCount)}
-                    >
-                      <CopyIcon className="size-3" />
-                      {formatCompactNumber(query.copyCount)}
-                    </span>
-                    <span
-                      className="flex items-center gap-1"
-                      title={formatFullNumber(query.favoriteCount)}
-                    >
-                      <HeartIcon className="size-3" />
-                      {formatCompactNumber(query.favoriteCount)}
-                    </span>
-                    <span
-                      className="flex items-center gap-1"
-                      title={formatFullNumber(query.forkCount)}
-                    >
-                      <GitForkIcon className="size-3" />
-                      {formatCompactNumber(query.forkCount)}
-                    </span>
-                  </div>
-                </article>
-              ))}
+                      <span
+                        className="flex items-center gap-1"
+                        title={formatFullNumber(query.favoriteCount)}
+                      >
+                        <HeartIcon className="size-3" />
+                        {formatCompactNumber(query.favoriteCount)}
+                      </span>
+                      <span
+                        className="flex items-center gap-1"
+                        title={formatFullNumber(query.forkCount)}
+                      >
+                        <GitForkIcon className="size-3" />
+                        {formatCompactNumber(query.forkCount)}
+                      </span>
+                    </div>
+                  </article>
+                )
+              })}
             </div>
           )}
         </div>

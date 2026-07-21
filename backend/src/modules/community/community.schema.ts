@@ -37,6 +37,8 @@ export const CommunitySchema = {
           favoriteCount: Type.Integer(),
           forkCount: Type.Integer(),
           source: Type.Union([Type.Literal("official"), Type.Literal("community"), Type.Null()]),
+          referenceUrl: Type.Union([Type.String(), Type.Null()]),
+          userTags: Type.Array(Type.String()),
           autoTags: Type.Array(Type.String()),
           createdAt: Type.String(),
           updatedAt: Type.String(),

@@ -98,7 +98,7 @@ const TESTIMONIALS = [
   },
 ] as const
 
-function LoginPage() {
+export function LoginPage() {
   const navigate = useNavigate()
   const search = Route.useSearch()
   const { signInWithOtp, verifyOtp } = useAuth()

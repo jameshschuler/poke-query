@@ -17,7 +17,19 @@ This file is for broader product initiatives that are worth tracking, but do not
   - Show badges on profile and relevant community surfaces.
   - Add tests for badge awarding rules and badge rendering.
 
+- Discoverability and Quality Surfacing
+  - Add a daily rotating featured section so valuable strings do not get buried by recency alone.
+  - Build a hybrid surfacing model with three rails: Featured Today, All-Time Trusted, and Contextual Picks.
+  - Use a quality score that blends favorites, forks, copies, engagement quality, and metadata completeness.
+  - Add anti-gaming protections to reduce manipulation via low-quality repeated actions.
+  - Track success with discover-to-detail CTR, copy conversion, and impression distribution across unique strings.
+
 ## Product Extensions
+
+- Pokemon GO Stats Import
+  - Add a flow to import Pokemon GO stats using a trainer profile screenshot.
+  - Extract profile fields from the screenshot into editable account data before save.
+  - Reuse the screenshot import pattern anywhere profile bootstrap or onboarding would benefit.
 
 - Collections
   - Add collection CRUD for authenticated users.
@@ -32,6 +44,26 @@ This file is for broader product initiatives that are worth tracking, but do not
   - Support suggestion flows for raids, PvP, events, and collection cleanup.
   - Let users review, edit, and save suggested strings before publishing.
   - Explore whether suggestions should be powered by rules, templates, AI generation, or a hybrid approach.
+  - Allow users to create a search query from a prompt-based input flow.
+
+- Trade Request Strings
+  - Add support for creating and sharing trade request strings.
+  - Explore templates or guided builders for common trade-use cases.
+  - Define how trade request strings should differ from standard saved search strings in UX and metadata.
+
+- PvPoke Rankings String Generator
+  - Add a flow to generate search strings directly from PvPoke ranking lists.
+  - Start with Great League overall rankings: https://pvpoke.com/rankings/all/1500/overall/.
+  - Support list selection, rank-range targeting, and output preview before save.
+  - Add validation and tests so generated strings stay accurate as source list formats evolve.
+
+- Name <-> Dex String Converter
+  - Add a converter that can rewrite Pokemon references in strings between Pokedex numbers and Pokemon names.
+  - Support number to name conversion (for example: 1, 2, 3 -> bulbasaur, ivysaur, venusaur).
+  - Support name to number conversion (for example: bulbasaur, ivysaur, venusaur -> 1, 2, 3).
+  - Allow conversion from create/edit flows so users can quickly normalize shared strings.
+  - Plan localization support for language-specific Pokemon names and alias mapping.
+  - Add tests for parsing, normalization, and round-trip conversion accuracy.
 
 - Trainer Profile Screenshot Import
   - Add screenshot upload flow for trainer profile.

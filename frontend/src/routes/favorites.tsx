@@ -156,6 +156,7 @@ function FavoritesPage() {
       item.title,
       item.query,
       item.description ?? '',
+      ...item.userTags,
       ...item.autoTags,
     ]
       .join(' ')
@@ -401,7 +402,8 @@ function FavoritesPage() {
                   <p>Updated {renderRelativeTime(item.updatedAt)}</p>
                 </>
               }
-              tags={item.autoTags}
+              userTags={item.userTags}
+              autoTags={item.autoTags}
               footer={
                 <>
                   <Tooltip>

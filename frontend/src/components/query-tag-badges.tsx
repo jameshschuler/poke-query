@@ -1,21 +1,32 @@
 import { Badge } from '#/components/ui/badge'
 
 type QueryTagBadgesProps = {
-  tags: string[]
+  userTags?: string[]
+  autoTags?: string[]
 }
 
-function QueryTagBadges({ tags }: QueryTagBadgesProps) {
-  if (tags.length === 0) {
+function QueryTagBadges({ userTags = [], autoTags = [] }: QueryTagBadgesProps) {
+  const normalizedUserTags = Array.from(new Set(userTags))
+  const allTags = Array.from(new Set([...normalizedUserTags, ...autoTags]))
+
+  if (allTags.length === 0) {
     return null
   }
 
+  const userTagSet = new Set(normalizedUserTags)
+
+  const userTagClassName =
+    'rounded-md border-amber-300/70 bg-amber-100/70 text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/30 dark:text-amber-200'
+  const autoTagClassName =
+    'rounded-md border-border/70 bg-card text-muted-foreground'
+
   return (
     <div className="flex flex-wrap items-center gap-1.5 pt-1">
-      {tags.map((tag) => (
+      {allTags.map((tag) => (
         <Badge
           key={tag}
           variant="outline"
-          className="rounded-md border-border/70 bg-card text-muted-foreground"
+          className={userTagSet.has(tag) ? userTagClassName : autoTagClassName}
         >
           {tag}
         </Badge>

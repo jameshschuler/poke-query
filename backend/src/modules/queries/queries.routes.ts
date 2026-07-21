@@ -55,6 +55,25 @@ function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 }
 
+function normalizeReferenceUrl(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  const hasScheme = /^[a-z][a-z\d+.-]*:/i.test(trimmed);
+  return hasScheme ? trimmed : `https://${trimmed}`;
+}
+
+function isValidReferenceUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 function resolveDisplayName(row: {
   username: string;
   pogoUsername: string | null;
@@ -88,6 +107,20 @@ function getOfficialQueryEditorUserIds(): Set<string> {
 
 function isOfficialQueryEditorUser(userId: string): boolean {
   return getOfficialQueryEditorUserIds().has(userId);
+}
+
+async function ensureTrainerProfileExists(
+  fastify: FastifyTypebox,
+  user: { id: string },
+): Promise<void> {
+  await fastify.db
+    .insert(trainers)
+    .values({
+      id: user.id,
+      userId: user.id,
+      username: `trainer_${user.id.replace(/-/g, "")}`,
+    })
+    .onConflictDoNothing({ target: trainers.userId });
 }
 
 export async function queriesRoutes(fastify: FastifyTypebox) {
@@ -168,6 +201,8 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
             ELSE NULL
           END
         `,
+        referenceUrl: sql<string | null>`NULLIF(${searchQueries.metadata}->>'referenceUrl', '')`,
+        userTags: sql<string[]>`COALESCE(${searchQueries.metadata}->'userTags', '[]'::jsonb)`,
         autoTags: sql<string[]>`COALESCE(${searchQueries.metadata}->'autoTags', '[]'::jsonb)`,
         createdAt: searchQueries.createdAt,
         updatedAt: searchQueries.updatedAt,
@@ -219,6 +254,8 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
       favoriteCount: row.favoriteCount,
       forkCount: row.forkCount,
       source: row.source,
+      referenceUrl: row.referenceUrl,
+      userTags: row.userTags,
       autoTags: row.autoTags,
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),
@@ -291,8 +328,17 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
     { preHandler: [fastify.authenticate], schema: CreateQuerySchema, ...queryMutationRateLimit },
     async (request, reply) => {
       try {
-        const { title, query, description, isPublic, tags: userTags = [] } = request.body;
+        const {
+          title,
+          query,
+          description,
+          referenceUrl,
+          isPublic,
+          tags: userTags = [],
+        } = request.body;
         const userId = request.user.id;
+
+        await ensureTrainerProfileExists(fastify, request.user);
 
         if (findBlockedTerm(title.trim())) {
           return reply.code(400).send({ error: "Title contains blocked language" });
@@ -302,15 +348,25 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
           return reply.code(400).send({ error: "Description contains blocked language" });
         }
 
+        const normalizedReferenceUrl = normalizeReferenceUrl(referenceUrl);
+        if (normalizedReferenceUrl && !isValidReferenceUrl(normalizedReferenceUrl)) {
+          return reply.code(400).send({ error: "Reference URL must be a valid http(s) URL" });
+        }
+
         // Generate the "Extensible Brain" data and mark user-created strings as community
+        const normalizedUserTags = Array.from(
+          new Set(userTags.map((tag) => tag.trim().toLowerCase()).filter(Boolean)),
+        );
         const metadata = {
           ...generateMetadata(query),
           source: "community" as const,
+          userTags: normalizedUserTags,
+          ...(normalizedReferenceUrl ? { referenceUrl: normalizedReferenceUrl } : {}),
         };
 
         // Deduplicate and normalize tags (case-insensitive), including autoTags
         const autoTags = Array.isArray(metadata.autoTags) ? metadata.autoTags : [];
-        const allTags = [...userTags, ...autoTags];
+        const allTags = [...normalizedUserTags, ...autoTags];
         const uniqueTags = Array.from(new Set(allTags.map((t) => t.trim().toLowerCase())));
 
         // Insert the query first
@@ -366,7 +422,8 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
         } else {
           return reply.code(400).send({ error: "Failed to create query" });
         }
-      } catch (_error) {
+      } catch (error) {
+        request.log.error({ error }, "Failed to create query");
         return reply.code(400).send({ error: "Failed to create query" });
       }
     },
@@ -410,16 +467,20 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
         }
 
         const source = entry.source ?? "official";
+        const normalizedUserTags = Array.from(
+          new Set((entry.tags ?? []).map((tag) => tag.trim().toLowerCase()).filter(Boolean)),
+        );
         const metadata = {
           ...generateMetadata(entry.query),
           source,
           seedKey: entry.key,
+          userTags: normalizedUserTags,
         };
 
         const normalizedTags = Array.from(
           new Set(
             [
-              ...(entry.tags ?? []),
+              ...normalizedUserTags,
               source === "official" ? "official" : "community-curated",
               "production-seeded",
             ]
@@ -519,6 +580,8 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
         const { id } = request.params;
         const userId = request.user.id;
 
+        await ensureTrainerProfileExists(fastify, request.user);
+
         // 1. Find the original
         const original = await fastify.db.query.searchQueries.findFirst({
           where: eq(searchQueries.id, id),
@@ -570,7 +633,8 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
         } else {
           return reply.code(400).send({ error: "Failed to fork query" });
         }
-      } catch (_error) {
+      } catch (error) {
+        request.log.error({ error }, "Failed to fork query");
         return reply.code(400).send({ error: "Failed to fork query" });
       }
     },
@@ -642,7 +706,14 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
           return reply.code(404).send({ error: "Query not found or not owned by user" });
         }
         // Only pick allowed fields
-        const { title, query, description, isPublic, tags: userTags = [] } = request.body;
+        const {
+          title,
+          query,
+          description,
+          referenceUrl,
+          isPublic,
+          tags: userTags = [],
+        } = request.body;
         const userId = request.user.id;
 
         if (findBlockedTerm(title.trim())) {
@@ -651,6 +722,16 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
 
         if (description?.trim() && findBlockedTerm(description.trim())) {
           return reply.code(400).send({ error: "Description contains blocked language" });
+        }
+
+        const hasReferenceUrlInput = Object.prototype.hasOwnProperty.call(
+          request.body,
+          "referenceUrl",
+        );
+        const hasTagsInput = Object.prototype.hasOwnProperty.call(request.body, "tags");
+        const normalizedReferenceUrlInput = normalizeReferenceUrl(referenceUrl);
+        if (normalizedReferenceUrlInput && !isValidReferenceUrl(normalizedReferenceUrlInput)) {
+          return reply.code(400).send({ error: "Reference URL must be a valid http(s) URL" });
         }
 
         const [existingQuery] = await fastify.db
@@ -663,11 +744,37 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
           return reply.code(404).send({ error: "Query not found or not owned by user" });
         }
 
+        const existingMetadata = existingQuery.metadata as {
+          source?: unknown;
+          userTags?: unknown;
+          referenceUrl?: unknown;
+        } | null;
+
+        const existingUserTags = Array.isArray(existingMetadata?.userTags)
+          ? existingMetadata.userTags.filter((tag): tag is string => typeof tag === "string")
+          : [];
+
+        const normalizedUserTags = Array.from(
+          new Set(
+            (hasTagsInput ? (userTags ?? []) : existingUserTags)
+              .map((tag) => tag.trim().toLowerCase())
+              .filter(Boolean),
+          ),
+        );
+
+        const existingReferenceUrl =
+          typeof existingMetadata?.referenceUrl === "string"
+            ? normalizeReferenceUrl(existingMetadata.referenceUrl)
+            : undefined;
+        const nextReferenceUrl = hasReferenceUrlInput
+          ? normalizedReferenceUrlInput
+          : existingReferenceUrl;
+
         const metadata = {
           ...generateMetadata(query),
-          source: resolveMetadataSource(
-            (existingQuery.metadata as { source?: unknown } | null)?.source,
-          ),
+          source: resolveMetadataSource(existingMetadata?.source),
+          userTags: normalizedUserTags,
+          ...(nextReferenceUrl ? { referenceUrl: nextReferenceUrl } : {}),
         };
 
         const [updatedQuery] = await fastify.db
@@ -688,7 +795,7 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
 
         // Deduplicate and normalize tags (case-insensitive), including autoTags
         const autoTags = Array.isArray(metadata.autoTags) ? metadata.autoTags : [];
-        const allTags = [...userTags, ...autoTags];
+        const allTags = [...normalizedUserTags, ...autoTags];
         const uniqueTags = Array.from(new Set(allTags.map((t) => t.trim().toLowerCase())));
 
         // Remove all existing tags for this query
@@ -765,6 +872,8 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
         const { id } = request.params;
         const userId = request.user.id;
 
+        await ensureTrainerProfileExists(fastify, request.user);
+
         const query = await fastify.db.query.searchQueries.findFirst({
           where: and(
             eq(searchQueries.id, id),
@@ -801,7 +910,8 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
         }
 
         return reply.code(204).send(null);
-      } catch (_error) {
+      } catch (error) {
+        request.log.error({ error }, "Failed to favorite query");
         return reply.code(400).send({ error: "Failed to favorite query" });
       }
     },

@@ -105,8 +105,13 @@ export async function communityRoutes(fastify: FastifyTypebox) {
         break;
     }
 
-    // For the popular filter, default to sorting by popularity score unless an explicit sort is given
-    const effectiveSort = mode === "popular" && !sort ? desc(popularityScore) : sortOrder;
+    // New filter is always newest-first, regardless of stale/explicit sort params.
+    const effectiveSort =
+      mode === "new"
+        ? desc(searchQueries.createdAt)
+        : mode === "popular" && !sort
+          ? desc(popularityScore)
+          : sortOrder;
 
     // 3. Execution with Sorting and creator profile join
     const rows = await fastify.db
@@ -134,6 +139,8 @@ export async function communityRoutes(fastify: FastifyTypebox) {
             ELSE NULL
           END
         `,
+        referenceUrl: sql<string | null>`NULLIF(${searchQueries.metadata}->>'referenceUrl', '')`,
+        userTags: sql<string[]>`COALESCE(${searchQueries.metadata}->'userTags', '[]'::jsonb)`,
         autoTags: sql<string[]>`COALESCE(${searchQueries.metadata}->'autoTags', '[]'::jsonb)`,
         createdAt: searchQueries.createdAt,
         updatedAt: searchQueries.updatedAt,
@@ -167,6 +174,8 @@ export async function communityRoutes(fastify: FastifyTypebox) {
       favoriteCount: row.favoriteCount,
       forkCount: row.forkCount,
       source: row.source,
+      referenceUrl: row.referenceUrl,
+      userTags: Array.isArray(row.userTags) ? row.userTags : [],
       autoTags: Array.isArray(row.autoTags) ? row.autoTags : [],
       createdAt: row.createdAt.toISOString(),
       updatedAt: row.updatedAt.toISOString(),

@@ -4,7 +4,36 @@ See `ROADMAP.md` for longer-term product initiatives.
 
 ## Feature Work
 
+- [ ] Discoverability and Quality Surfacing
+  - [ ] MVP: Add a Featured Today section on Discover backed by a daily rotating backend selection.
+  - [ ] MVP: Define initial eligibility and weighting (favorites, forks, copies, and quality floor).
+  - [ ] MVP: Add lightweight featured badges and explanatory labels in Discover cards.
+  - [ ] V2: Add All-Time Trusted and Contextual Picks rails.
+  - [ ] V2: Introduce anti-gaming safeguards (self-action down-weighting, burst detection, suspicious action filters).
+  - [ ] V2: Add quality and discovery analytics (CTR, copy conversion, unique string impression spread).
+
+- [ ] Prompt-Based Query Creation
+  - [ ] Allow users to create a search query from a prompt.
+  - [ ] Define the first supported prompt flows and the resulting review/edit UX.
+
+- [ ] Trade Request String Support
+  - [ ] Allow users to create a trade request string.
+  - [ ] Decide whether trade requests use a dedicated type, template, or metadata-driven variant.
+
+- [ ] Frontend Cleanup
+  - [ ] Break large frontend surfaces into smaller components where ownership is unclear or rendering logic is too dense.
+  - [ ] Prioritize pages with heavy route-level UI state such as discover, library, and fork flows.
+
+- [ ] Backend Cleanup
+  - [ ] Review large endpoints and split bloated handlers into smaller helpers or service-layer functions.
+  - [ ] Prioritize query, user, and community endpoints with mixed validation, persistence, and serialization logic.
+
 ## Testing
+
+- [ ] Discoverability Ranking Tests
+  - [ ] Add backend tests for daily featured selection, eligibility thresholds, and repeat-window rules.
+  - [ ] Add frontend tests for featured rail rendering, badge visibility, and clickthrough behavior.
+  - [ ] Add regression tests for deterministic daily rotation snapshots.
 
 - [ ] E2E Coverage (Playwright)
   - [ ] Add smoke tests for auth, discover, library, and profile flows.

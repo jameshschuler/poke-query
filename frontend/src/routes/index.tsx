@@ -4,7 +4,6 @@ import {
   ArrowRightIcon,
   BookOpenTextIcon,
   CompassIcon,
-  FlameIcon,
   SparklesIcon,
   SwordsIcon,
   UsersIcon,
@@ -101,16 +100,16 @@ function LandingPage() {
                 href={user ? '/discover' : '/login'}
                 className="rounded-full border border-[#f59e0b]/45 bg-[#f59e0b]/18 px-3 py-1 font-medium text-foreground transition-colors hover:bg-[#f59e0b]/28"
               >
-                {user ? 'Open Workspace' : 'Log in'}
+                {user ? 'Open Workspace' : 'Log in to save'}
               </a>
             </div>
           </div>
 
           <div className="mt-8 grid flex-1 items-center gap-8 sm:mt-12 sm:gap-10 lg:grid-cols-[1.2fr_0.8fr]">
             <div className="flex flex-col lg:pr-6">
-              <p className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-[#f59e0b]/45 bg-[#f59e0b]/12 px-3 py-1 text-xs font-semibold text-foreground sm:mb-6">
-                <FlameIcon className="size-3.5" />
-                Your next event prep starts here
+              <p className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-[#22c55e]/45 bg-[#22c55e]/12 px-3 py-1 text-xs font-semibold text-foreground sm:mb-5">
+                <CompassIcon className="size-3.5" />
+                Browse community strings without an account
               </p>
 
               <h1 className="max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
@@ -129,17 +128,16 @@ function LandingPage() {
                 make raid and PvP knowledge easier for everyone to use.
               </p>
 
+              <p className="mt-3 max-w-2xl text-sm font-medium text-foreground/85 sm:text-base">
+                You can start in Discover right now. Create an account later if
+                you want to save favorites, fork strings, and publish your own.
+              </p>
+
               <div className="mt-7 flex flex-wrap items-center gap-3 sm:mt-9 sm:gap-4">
-                <a href={user ? '/discover' : '/login'}>
-                  <Button className="rounded-full px-6">
-                    {user ? 'Open My Strings' : 'Create My First String'}
-                    <ArrowRightIcon className="size-4" />
-                  </Button>
-                </a>
                 <a href="/discover">
-                  <Button variant="outline" className="rounded-full px-6">
+                  <Button className="rounded-full px-6">
                     <CompassIcon className="size-4" />
-                    Browse Shared Strings
+                    Explore Discover
                   </Button>
                 </a>
               </div>
@@ -155,25 +153,11 @@ function LandingPage() {
                 </p>
               </div>
               <div className="rounded-2xl border border-border/60 bg-card/80 p-4 sm:p-5">
-                <p className="text-sm font-semibold">
-                  Start your shared library
+                <p className="text-sm font-semibold">Start in Discover first</p>
+                <p className="mt-3 text-sm text-muted-foreground sm:mt-4">
+                  Explore community strings immediately with no sign-up. Log in
+                  only when you are ready to save favorites, fork, or publish.
                 </p>
-                <div className="mt-3 flex flex-wrap gap-2 sm:mt-4 sm:gap-3">
-                  <a href={user ? '/discover' : '/login'}>
-                    <Button size="sm" className="rounded-full">
-                      {user ? 'Open Dashboard' : 'Create Account'}
-                    </Button>
-                  </a>
-                  <a href="/discover">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="rounded-full"
-                    >
-                      View Community Examples
-                    </Button>
-                  </a>
-                </div>
               </div>
             </div>
           </div>

@@ -14,6 +14,7 @@ import {
   PlusIcon,
   Share2Icon,
   SearchIcon,
+  UserIcon,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '#/components/ui/button'
@@ -51,9 +52,6 @@ import {
 } from '#/components/ui/tooltip'
 import { formatTagLabel } from '#/lib/utils'
 
-type SortMode =
-  'created_desc' | 'created_asc' | 'title_asc' | 'title_desc' | 'popular'
-
 type FilterOption = {
   key: string
   label: string
@@ -76,31 +74,8 @@ const DEFAULT_TAG_FILTERS: Array<{ tag: string; label: string }> = [
   { tag: 'daily-catch', label: 'Community Day' },
 ]
 
-const sortOptions: Array<{
-  value: SortMode
-  label: string
-  triggerLabel: string
-}> = [
-  {
-    value: 'created_desc',
-    label: 'Created date (newest first)',
-    triggerLabel: 'Newest',
-  },
-  {
-    value: 'created_asc',
-    label: 'Created date (oldest first)',
-    triggerLabel: 'Oldest',
-  },
-  { value: 'popular', label: 'Most popular', triggerLabel: 'Popular' },
-  { value: 'title_asc', label: 'Title (A-Z)', triggerLabel: 'Title A-Z' },
-  { value: 'title_desc', label: 'Title (Z-A)', triggerLabel: 'Title Z-A' },
-]
-
-const sortValues = new Set(sortOptions.map((option) => option.value))
-
 type DiscoverSearch = {
   q?: string
-  sort?: SortMode
   filter?: string
 }
 
@@ -112,11 +87,6 @@ export const Route = createFileRoute('/discover')({
         ? search.q
         : undefined
 
-    const sort =
-      typeof search.sort === 'string' && sortValues.has(search.sort as SortMode)
-        ? (search.sort as SortMode)
-        : undefined
-
     const filter =
       typeof search.filter === 'string' && search.filter.trim().length > 0
         ? search.filter
@@ -124,7 +94,6 @@ export const Route = createFileRoute('/discover')({
 
     return {
       q,
-      sort,
       filter,
     }
   },
@@ -136,11 +105,8 @@ function DiscoverPage() {
   const routeSearch = Route.useSearch()
   const { user } = useAuth()
   const queryClient = useQueryClient()
-  const [sortMode, setSortMode] = useState<SortMode>(
-    routeSearch.sort ?? 'created_desc',
-  )
   const [activeFilterKey, setActiveFilterKey] = useState(
-    routeSearch.filter ?? 'all',
+    routeSearch.filter ?? 'new',
   )
   const [searchTerm, setSearchTerm] = useState(routeSearch.q ?? '')
   const [debouncedSearch, setDebouncedSearch] = useState(routeSearch.q ?? '')
@@ -270,28 +236,25 @@ function DiscoverPage() {
 
   useEffect(() => {
     const nextQ = routeSearch.q ?? ''
-    const nextSort = routeSearch.sort ?? 'created_desc'
-    const nextFilter = routeSearch.filter ?? 'all'
+    const nextFilter = routeSearch.filter ?? 'new'
 
     setSearchTerm((current) => (current === nextQ ? current : nextQ))
     setDebouncedSearch((current) => (current === nextQ ? current : nextQ))
-    setSortMode((current) => (current === nextSort ? current : nextSort))
     setActiveFilterKey((current) =>
       current === nextFilter ? current : nextFilter,
     )
-  }, [routeSearch.filter, routeSearch.q, routeSearch.sort])
+  }, [routeSearch.filter, routeSearch.q])
 
   useEffect(() => {
     void navigate({
       to: '/discover',
       search: {
         q: debouncedSearch.trim().length > 0 ? debouncedSearch : undefined,
-        sort: sortMode !== 'created_desc' ? sortMode : undefined,
-        filter: activeFilterKey !== 'all' ? activeFilterKey : undefined,
+        filter: activeFilterKey,
       },
       replace: true,
     })
-  }, [activeFilterKey, debouncedSearch, navigate, sortMode])
+  }, [activeFilterKey, debouncedSearch, navigate])
 
   const { visibleFilters, dropdownFilters, allFilters } = useMemo(() => {
     const tagCounts = new Map(
@@ -333,7 +296,7 @@ function DiscoverPage() {
     const isCustomTagFilter = activeFilterKey.startsWith('tag:')
 
     if (!hasKnownFilter && !isCustomTagFilter) {
-      setActiveFilterKey('all')
+      setActiveFilterKey('new')
     }
   }, [allFilters, activeFilterKey])
 
@@ -367,14 +330,12 @@ function DiscoverPage() {
       'community-discover',
       activeFilter.filter,
       activeFilter.tag,
-      sortMode,
       debouncedSearch,
     ],
     queryFn: ({ pageParam = 0 }) =>
       getCommunityQueriesPage({
         filter: activeFilter.filter,
         tag: activeFilter.tag,
-        sort: sortMode,
         limit: 12,
         offset: pageParam,
         search: debouncedSearch.trim() || undefined,
@@ -405,12 +366,6 @@ function DiscoverPage() {
   // Server-side search, so just use rows
   const filteredRows = rows
   const resultsCount = filteredRows.length
-
-  const selectedSortOption = sortOptions.find(
-    (option) => option.value === sortMode,
-  )
-  const sortLabel = selectedSortOption?.label ?? 'Created date (newest first)'
-  const sortTriggerLabel = selectedSortOption?.triggerLabel ?? 'Newest'
 
   function handleToggleFavorite(queryId: string, isFavorited: boolean) {
     if (user) {
@@ -466,11 +421,11 @@ function DiscoverPage() {
       <PageShell
         headerPrefix={user ? undefined : 'PokeQuery'}
         title="Discover"
-        subtitle="Browse popular and recently updated community search strings."
+        subtitle="Browse the newest community search strings first."
         contentHeaderVariant="floating"
         headerControls={
-          <div className="flex w-full flex-wrap items-center gap-2 max-sm:flex-col max-sm:items-stretch md:ml-auto md:max-w-xl md:flex-nowrap">
-            <div className="relative w-full md:flex-1">
+          <div className="flex w-full min-w-0 items-center gap-2 md:ml-auto md:max-w-xl">
+            <div className="relative min-w-0 flex-1">
               <SearchIcon className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search strings..."
@@ -505,11 +460,11 @@ function DiscoverPage() {
                 </button>
               )}
             </div>
-            <div className="flex flex-wrap gap-2 max-sm:w-full sm:w-auto sm:justify-end">
+            <div className="flex shrink-0 items-center gap-2">
               {user ? (
                 <Button
                   nativeButton={false}
-                  className="shrink-0 rounded-full px-3 max-sm:w-full sm:px-4"
+                  className="shrink-0 rounded-full px-3 sm:px-4"
                   render={<Link to="/library/new" />}
                 >
                   <PlusIcon />
@@ -521,7 +476,7 @@ function DiscoverPage() {
                     <Button
                       variant="secondary"
                       size="sm"
-                      className="relative cursor-pointer rounded-xl shadow-sm max-sm:w-full"
+                      className="relative cursor-pointer rounded-xl shadow-sm"
                       onClick={() => setIsDrawerOpen(true)}
                     >
                       <HeartIcon className="size-4" />
@@ -531,16 +486,24 @@ function DiscoverPage() {
                       </span>
                     </Button>
                   ) : null}
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="cursor-pointer rounded-xl px-4 shadow-sm max-sm:w-full"
-                    onClick={() => {
-                      window.location.href = '/login'
-                    }}
-                  >
-                    Log in
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <Button
+                          variant="outline"
+                          size="icon-sm"
+                          className="cursor-pointer rounded-xl shadow-sm"
+                          aria-label="Log in"
+                          onClick={() => {
+                            window.location.href = '/login'
+                          }}
+                        >
+                          <UserIcon className="size-4" />
+                        </Button>
+                      }
+                    />
+                    <TooltipContent>Log in</TooltipContent>
+                  </Tooltip>
                 </>
               )}
             </div>
@@ -641,43 +604,6 @@ function DiscoverPage() {
                 />
                 <TooltipContent>Share</TooltipContent>
               </Tooltip>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  render={
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="rounded-xl"
-                      aria-label={`Open sort options. Current: ${sortLabel}`}
-                    >
-                      <span className="truncate">Sort: {sortTriggerLabel}</span>
-                      <ChevronsUpDownIcon className="ml-1" />
-                    </Button>
-                  }
-                />
-                <DropdownMenuContent
-                  align="end"
-                  className="min-w-56 sm:min-w-72"
-                >
-                  <DropdownMenuGroup>
-                    <DropdownMenuLabel>Sort order</DropdownMenuLabel>
-                  </DropdownMenuGroup>
-                  <DropdownMenuRadioGroup
-                    value={sortMode}
-                    onValueChange={(value) => setSortMode(value as SortMode)}
-                  >
-                    {sortOptions.map((option) => (
-                      <DropdownMenuRadioItem
-                        key={option.value}
-                        value={option.value}
-                      >
-                        {option.label}
-                      </DropdownMenuRadioItem>
-                    ))}
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
           </div>
 
