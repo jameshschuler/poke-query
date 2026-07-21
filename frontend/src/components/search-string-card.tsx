@@ -86,7 +86,12 @@ export function SearchStringCard({
     [],
   )
 
-  const firstTag = card.autoTags[0]
+  const visibleTags = Array.from(new Set([...card.userTags, ...card.autoTags]))
+  const userTagSet = new Set(card.userTags)
+  const userTagClassName =
+    'border-amber-300/70 bg-amber-100/70 text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/30 dark:text-amber-200'
+  const autoTagClassName = 'border-border/70 bg-card text-muted-foreground'
+  const firstTag = visibleTags[0]
   const discoverSourceBadge =
     variant === 'discover' && isCommunityQuery(card)
       ? getSourceBadge(card.source)
@@ -152,11 +157,13 @@ export function SearchStringCard({
                     {discoverSourceBadge.label}
                   </Badge>
                 ) : null}
-                {card.autoTags.map((tag) => (
+                {visibleTags.map((tag) => (
                   <Badge
                     key={tag}
                     variant="outline"
-                    className="border-border/70 bg-card text-muted-foreground"
+                    className={
+                      userTagSet.has(tag) ? userTagClassName : autoTagClassName
+                    }
                   >
                     {formatTagLabel(tag)}
                   </Badge>
@@ -164,7 +171,13 @@ export function SearchStringCard({
               </div>
             ) : firstTag ? (
               <div className="mt-1">
-                <span className="rounded-full border border-border/70 bg-card px-3 py-1 text-xs font-medium text-muted-foreground">
+                <span
+                  className={`rounded-full border px-3 py-1 text-xs font-medium ${
+                    userTagSet.has(firstTag)
+                      ? 'border-amber-300/70 bg-amber-100/70 text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/30 dark:text-amber-200'
+                      : 'border-border/70 bg-card text-muted-foreground'
+                  }`}
+                >
                   {formatTagLabel(firstTag)}
                 </span>
               </div>

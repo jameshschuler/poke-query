@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import {
   CopyIcon,
+  ExternalLinkIcon,
   FlagIcon,
   GitForkIcon,
   HeartIcon,
@@ -64,6 +65,23 @@ function relativeTime(iso: string): string {
   if (days < 30) return `${days}d ago`
   const months = Math.floor(days / 30)
   return `${months}mo ago`
+}
+
+function toSafeExternalUrl(value: string | null | undefined): string | null {
+  if (!value) {
+    return null
+  }
+
+  try {
+    const parsed = new URL(value)
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return null
+    }
+
+    return parsed.toString()
+  } catch {
+    return null
+  }
 }
 
 function QueryDetailPage() {
@@ -133,6 +151,14 @@ function QueryDetailPage() {
   }, [query?.id, queryClient])
 
   const displayCopyCount = query ? query.copyCount + copyCountDelta : 0
+  const referenceUrl = toSafeExternalUrl(query?.referenceUrl)
+  const visibleTags = query
+    ? Array.from(new Set([...query.userTags, ...query.autoTags]))
+    : []
+  const userTagSet = new Set(query?.userTags ?? [])
+  const userTagClassName =
+    'border-amber-300/70 bg-amber-100/70 text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/30 dark:text-amber-200'
+  const autoTagClassName = 'border-border/70 bg-card text-muted-foreground'
 
   const favoriteMutation = useMutation({
     mutationFn: favoriteQuery,
@@ -433,11 +459,15 @@ function QueryDetailPage() {
               {/* Meta row */}
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-2">
-                  {query.autoTags.map((tag) => (
+                  {visibleTags.map((tag) => (
                     <Badge
                       key={tag}
                       variant="outline"
-                      className="border-border/70 bg-card text-muted-foreground"
+                      className={
+                        userTagSet.has(tag)
+                          ? userTagClassName
+                          : autoTagClassName
+                      }
                     >
                       {tagLabels[tag] ?? tag}
                     </Badge>
@@ -555,6 +585,23 @@ function QueryDetailPage() {
                     About
                   </p>
                   <p className="text-sm leading-relaxed">{query.description}</p>
+                </div>
+              ) : null}
+
+              {referenceUrl ? (
+                <div className="rounded-xl border border-border/60 bg-card p-5">
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                    Reference link
+                  </p>
+                  <a
+                    href={referenceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+                  >
+                    Open source
+                    <ExternalLinkIcon className="size-4" />
+                  </a>
                 </div>
               ) : null}
 

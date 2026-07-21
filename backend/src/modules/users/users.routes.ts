@@ -137,6 +137,8 @@ export async function userRoutes(fastify: FastifyTypebox) {
     copyCount: searchQueries.copyCount,
     favoriteCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM pokequery.favorites f WHERE f.query_id = ${searchQueries.id}), 0)`,
     forkCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM pokequery.search_queries forked WHERE forked.parent_query_id = ${searchQueries.id}), 0)`,
+    referenceUrl: sql<string | null>`NULLIF(${searchQueries.metadata}->>'referenceUrl', '')`,
+    userTags: sql<string[]>`COALESCE(${searchQueries.metadata}->'userTags', '[]'::jsonb)`,
     autoTags: sql<string[]>`COALESCE(${searchQueries.metadata}->'autoTags', '[]'::jsonb)`,
     createdAt: searchQueries.createdAt,
   } as const;
@@ -149,6 +151,8 @@ export async function userRoutes(fastify: FastifyTypebox) {
     copyCount: number;
     favoriteCount: number;
     forkCount: number;
+    referenceUrl: string | null;
+    userTags: string[];
     autoTags: string[];
     createdAt: Date;
   }) => ({ ...q, createdAt: q.createdAt.toISOString() });
@@ -163,6 +167,8 @@ export async function userRoutes(fastify: FastifyTypebox) {
     viewCount: number;
     favoriteCount: number;
     forkCount: number;
+    referenceUrl: string | null;
+    userTags: string[];
     autoTags: string[];
     createdAt: Date;
     updatedAt: Date;
@@ -182,6 +188,8 @@ export async function userRoutes(fastify: FastifyTypebox) {
     viewCount: number;
     favoriteCount: number;
     forkCount: number;
+    referenceUrl: string | null;
+    userTags: string[];
     autoTags: string[];
     createdAt: Date;
     updatedAt: Date;
@@ -201,6 +209,8 @@ export async function userRoutes(fastify: FastifyTypebox) {
     viewCount: q.viewCount,
     favoriteCount: q.favoriteCount,
     forkCount: q.forkCount,
+    referenceUrl: q.referenceUrl,
+    userTags: q.userTags,
     autoTags: q.autoTags,
     createdAt: q.createdAt.toISOString(),
     updatedAt: q.updatedAt.toISOString(),
@@ -230,6 +240,8 @@ export async function userRoutes(fastify: FastifyTypebox) {
     viewCount: number;
     favoriteCount: number;
     forkCount: number;
+    referenceUrl: string | null;
+    userTags: string[];
     autoTags: string[];
     createdAt: Date;
     updatedAt: Date;
@@ -258,6 +270,8 @@ export async function userRoutes(fastify: FastifyTypebox) {
     viewCount: q.viewCount,
     favoriteCount: q.favoriteCount,
     forkCount: q.forkCount,
+    referenceUrl: q.referenceUrl,
+    userTags: q.userTags,
     autoTags: q.autoTags,
     createdAt: q.createdAt.toISOString(),
     updatedAt: q.updatedAt.toISOString(),
@@ -410,6 +424,8 @@ export async function userRoutes(fastify: FastifyTypebox) {
           viewCount: searchQueries.viewCount,
           favoriteCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM pokequery.favorites f WHERE f.query_id = ${searchQueries.id}), 0)`,
           forkCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM pokequery.search_queries forked WHERE forked.parent_query_id = ${searchQueries.id}), 0)`,
+          referenceUrl: sql<string | null>`NULLIF(${searchQueries.metadata}->>'referenceUrl', '')`,
+          userTags: sql<string[]>`COALESCE(${searchQueries.metadata}->'userTags', '[]'::jsonb)`,
           autoTags: sql<string[]>`COALESCE(${searchQueries.metadata}->'autoTags', '[]'::jsonb)`,
           createdAt: searchQueries.createdAt,
           updatedAt: searchQueries.updatedAt,
@@ -465,6 +481,8 @@ export async function userRoutes(fastify: FastifyTypebox) {
           viewCount: searchQueries.viewCount,
           favoriteCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM pokequery.favorites f WHERE f.query_id = ${searchQueries.id}), 0)`,
           forkCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM pokequery.search_queries forked WHERE forked.parent_query_id = ${searchQueries.id}), 0)`,
+          referenceUrl: sql<string | null>`NULLIF(${searchQueries.metadata}->>'referenceUrl', '')`,
+          userTags: sql<string[]>`COALESCE(${searchQueries.metadata}->'userTags', '[]'::jsonb)`,
           autoTags: sql<string[]>`COALESCE(${searchQueries.metadata}->'autoTags', '[]'::jsonb)`,
           createdAt: searchQueries.createdAt,
           updatedAt: searchQueries.updatedAt,
@@ -567,6 +585,8 @@ export async function userRoutes(fastify: FastifyTypebox) {
           viewCount: searchQueries.viewCount,
           favoriteCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM pokequery.favorites f WHERE f.query_id = ${searchQueries.id}), 0)`,
           forkCount: sql<number>`COALESCE((SELECT COUNT(*)::int FROM pokequery.search_queries forked WHERE forked.parent_query_id = ${searchQueries.id}), 0)`,
+          referenceUrl: sql<string | null>`NULLIF(${searchQueries.metadata}->>'referenceUrl', '')`,
+          userTags: sql<string[]>`COALESCE(${searchQueries.metadata}->'userTags', '[]'::jsonb)`,
           autoTags: sql<string[]>`COALESCE(${searchQueries.metadata}->'autoTags', '[]'::jsonb)`,
           createdAt: searchQueries.createdAt,
           updatedAt: searchQueries.updatedAt,

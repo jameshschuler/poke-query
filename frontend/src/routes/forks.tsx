@@ -211,6 +211,7 @@ export function ForksPage() {
       fork.title,
       fork.query,
       fork.description ?? '',
+      ...fork.userTags,
       ...fork.autoTags,
       fork.sourceQuery?.title ?? '',
       fork.sourceQuery?.query ?? '',
@@ -596,7 +597,8 @@ export function ForksPage() {
                     </p>
                   </>
                 }
-                tags={fork.autoTags}
+                userTags={fork.userTags}
+                autoTags={fork.autoTags}
                 footer={
                   <>
                     <Tooltip>

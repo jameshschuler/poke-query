@@ -44,6 +44,28 @@ integrationDescribe("Queries CRUD Integration", () => {
     await app.db.delete(searchQueries).where(eq(searchQueries.creatorId, TEST_USER_ID));
     await app.db.delete(searchQueries).where(eq(searchQueries.creatorId, OTHER_USER_ID));
 
+    await app.db
+      .insert(trainers)
+      .values({
+        id: TEST_USER_ID,
+        userId: TEST_USER_ID,
+        username: "integration_trainer",
+        level: 25,
+        team: "mystic",
+      })
+      .onConflictDoNothing();
+
+    await app.db
+      .insert(trainers)
+      .values({
+        id: OTHER_USER_ID,
+        userId: OTHER_USER_ID,
+        username: "integration_other",
+        level: 30,
+        team: "valor",
+      })
+      .onConflictDoNothing();
+
     (supabase.auth.getUser as any).mockResolvedValue({
       data: { user: { id: TEST_USER_ID, email: "integration@example.com" } },
       error: null,
@@ -115,6 +137,44 @@ integrationDescribe("Queries CRUD Integration", () => {
     });
 
     expect(deleted).toBeUndefined();
+  });
+
+  it("creates a query with an App Store reference URL", async () => {
+    const referenceUrl = "https://apps.apple.com/us/app/poke-genie-remote-raid-iv-pvp/id1143920524";
+
+    await app.db.delete(trainers).where(eq(trainers.userId, TEST_USER_ID));
+
+    const createRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/queries",
+      cookies: { "sb-access-token": "integration-token" },
+      payload: {
+        title: "Reference URL Query",
+        query: "4*&cp-1500",
+        description: "created with a source link",
+        referenceUrl,
+        isPublic: false,
+      },
+    });
+
+    expect(createRes.statusCode).toBe(201);
+    const { id } = createRes.json();
+
+    const created = await app.db.query.searchQueries.findFirst({
+      where: eq(searchQueries.id, id),
+    });
+
+    expect(created).toBeTruthy();
+    expect(created?.metadata).toMatchObject({
+      referenceUrl,
+    });
+
+    const restoredTrainer = await app.db.query.trainers.findFirst({
+      where: eq(trainers.userId, TEST_USER_ID),
+    });
+
+    expect(restoredTrainer).toBeTruthy();
+    expect(restoredTrainer?.id).toBe(TEST_USER_ID);
   });
 
   it("blocks update and delete when another authenticated user is not the owner", async () => {
@@ -371,6 +431,9 @@ integrationDescribe("Queries CRUD Integration", () => {
         .returning({ id: searchQueries.id });
 
       expect(row?.id).toBeTypeOf("string");
+      if (!row?.id) {
+        throw new Error("Expected inserted guest favorite query id");
+      }
       createdIds.push(row.id);
     }
 

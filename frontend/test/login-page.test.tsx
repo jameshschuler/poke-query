@@ -8,7 +8,7 @@ import {
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { Route } from '#/routes/login'
+import { LoginPage } from '#/routes/login'
 
 const { mockNavigate, mockSignInWithOtp, mockUseSearch, mockVerifyOtp } =
   vi.hoisted(() => ({
@@ -72,7 +72,7 @@ describe('LoginPage', () => {
   })
 
   it('requests email OTP', async () => {
-    render(<Route.component />)
+    render(<LoginPage />)
 
     fireEvent.change(screen.getByLabelText('Email'), {
       target: { value: 'ash@example.com' },
@@ -88,7 +88,7 @@ describe('LoginPage', () => {
   })
 
   it.skip('verifies OTP and navigates to dashboard', async () => {
-    render(<Route.component />)
+    render(<LoginPage />)
 
     fireEvent.change(screen.getByLabelText('Email'), {
       target: { value: 'ash@example.com' },
@@ -132,7 +132,7 @@ describe('LoginPage', () => {
   it.skip('verifies OTP and navigates to redirect target', async () => {
     mockUseSearch.mockReturnValue({ redirect: '/account' })
 
-    render(<Route.component />)
+    render(<LoginPage />)
 
     fireEvent.change(screen.getByLabelText('Email'), {
       target: { value: 'ash@example.com' },

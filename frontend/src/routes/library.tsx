@@ -180,6 +180,7 @@ function LibraryPage() {
       query.title,
       query.query,
       query.description ?? '',
+      ...query.userTags,
       ...query.autoTags,
     ]
       .join(' ')
@@ -551,7 +552,8 @@ function LibraryPage() {
                     </p>
                   </>
                 }
-                tags={query.autoTags}
+                userTags={query.userTags}
+                autoTags={query.autoTags}
                 footer={
                   <>
                     <Tooltip>

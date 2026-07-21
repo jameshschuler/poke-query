@@ -6,7 +6,7 @@ import {
   useNavigate,
   useRouterState,
 } from '@tanstack/react-router'
-import { Edit3Icon } from 'lucide-react'
+import { Edit3Icon, ExternalLinkIcon } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { PageShell } from '#/components/page-shell'
@@ -61,6 +61,23 @@ function formatSyncLabel(syncStatus: 'up-to-date' | 'behind' | 'orphaned') {
   return 'Source removed'
 }
 
+function toSafeExternalUrl(value: string | null | undefined): string | null {
+  if (!value) {
+    return null
+  }
+
+  try {
+    const parsed = new URL(value)
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return null
+    }
+
+    return parsed.toString()
+  } catch {
+    return null
+  }
+}
+
 function ForkDetailPage() {
   const { queryId } = Route.useParams()
   const pathname = useRouterState({
@@ -80,6 +97,7 @@ function ForkDetailPage() {
   })
 
   const fork = data?.forks.find((item) => item.id === queryId) ?? null
+  const referenceUrl = toSafeExternalUrl(fork?.referenceUrl)
 
   const syncMutation = useMutation({
     mutationFn: syncForkQuery,
@@ -190,6 +208,23 @@ function ForkDetailPage() {
                 </pre>
               </div>
             </div>
+
+            {referenceUrl ? (
+              <div className="rounded-2xl border border-border/70 bg-card/95 p-5 dark:bg-card">
+                <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  Reference link
+                </p>
+                <a
+                  href={referenceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-3 inline-flex items-center gap-2 text-sm text-primary hover:underline"
+                >
+                  Open source
+                  <ExternalLinkIcon className="size-4" />
+                </a>
+              </div>
+            ) : null}
 
             <div className="rounded-2xl border border-border/70 bg-card/95 p-5 dark:bg-card">
               <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">

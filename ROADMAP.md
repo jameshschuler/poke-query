@@ -19,6 +19,11 @@ This file is for broader product initiatives that are worth tracking, but do not
 
 ## Product Extensions
 
+- Pokemon GO Stats Import
+  - Add a flow to import Pokemon GO stats using a trainer profile screenshot.
+  - Extract profile fields from the screenshot into editable account data before save.
+  - Reuse the screenshot import pattern anywhere profile bootstrap or onboarding would benefit.
+
 - Collections
   - Add collection CRUD for authenticated users.
   - Add and remove query strings in collections.
@@ -32,6 +37,20 @@ This file is for broader product initiatives that are worth tracking, but do not
   - Support suggestion flows for raids, PvP, events, and collection cleanup.
   - Let users review, edit, and save suggested strings before publishing.
   - Explore whether suggestions should be powered by rules, templates, AI generation, or a hybrid approach.
+  - Allow users to create a search query from a prompt-based input flow.
+
+- Trade Request Strings
+  - Add support for creating and sharing trade request strings.
+  - Explore templates or guided builders for common trade-use cases.
+  - Define how trade request strings should differ from standard saved search strings in UX and metadata.
+
+- Name <-> Dex String Converter
+  - Add a converter that can rewrite Pokemon references in strings between Pokedex numbers and Pokemon names.
+  - Support number to name conversion (for example: 1, 2, 3 -> bulbasaur, ivysaur, venusaur).
+  - Support name to number conversion (for example: bulbasaur, ivysaur, venusaur -> 1, 2, 3).
+  - Allow conversion from create/edit flows so users can quickly normalize shared strings.
+  - Plan localization support for language-specific Pokemon names and alias mapping.
+  - Add tests for parsing, normalization, and round-trip conversion accuracy.
 
 - Trainer Profile Screenshot Import
   - Add screenshot upload flow for trainer profile.

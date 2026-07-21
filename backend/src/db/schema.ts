@@ -73,7 +73,9 @@ export const searchQueries = pokeSchema.table(
     metadata: jsonb("metadata")
       .$type<{
         autoTags?: string[];
+        userTags?: string[];
         source?: "official" | "community";
+        referenceUrl?: string;
       }>()
       .default({}),
 

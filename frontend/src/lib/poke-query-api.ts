@@ -267,14 +267,18 @@ export type CreateQueryRequest = {
   title: string
   query: string
   description?: string
+  referenceUrl?: string
   isPublic: boolean
+  tags?: string[]
 }
 
 export type UpdateQueryRequest = {
   title: string
   query: string
   description?: string
+  referenceUrl?: string
   isPublic: boolean
+  tags?: string[]
 }
 
 export type CommunityQuery = {
@@ -287,6 +291,8 @@ export type CommunityQuery = {
   favoriteCount: number
   forkCount: number
   source: 'official' | 'community' | null
+  referenceUrl: string | null
+  userTags: string[]
   autoTags: string[]
   createdAt: string
   updatedAt: string
@@ -386,6 +392,8 @@ export type TrainerPublicQuery = {
   favoriteCount: number
   forkCount: number
   source?: 'official' | 'community' | null
+  referenceUrl: string | null
+  userTags: string[]
   autoTags: string[]
   createdAt: string
 }
@@ -393,6 +401,7 @@ export type TrainerPublicQuery = {
 export type ManagedQuery = TrainerPublicQuery & {
   isPublic: boolean
   viewCount: number
+  userTags: string[]
   updatedAt: string
 }
 
@@ -427,6 +436,8 @@ export type MyFavoriteQuery = {
   viewCount: number
   favoriteCount: number
   forkCount: number
+  referenceUrl: string | null
+  userTags: string[]
   autoTags: string[]
   createdAt: string
   updatedAt: string

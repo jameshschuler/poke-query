@@ -13,7 +13,8 @@ type ManagedStringCardProps = {
   description?: string | null
   query: string
   details?: ReactNode
-  tags: string[]
+  userTags: string[]
+  autoTags: string[]
   footer: ReactNode
   footerSecondary?: ReactNode
 }
@@ -27,7 +28,8 @@ export function ManagedStringCard({
   description,
   query,
   details,
-  tags,
+  userTags,
+  autoTags,
   footer,
   footerSecondary,
 }: ManagedStringCardProps) {
@@ -60,7 +62,7 @@ export function ManagedStringCard({
             ) : null}
 
             <div className="border-t border-border/60 pt-3">
-              <QueryTagBadges tags={tags} />
+              <QueryTagBadges userTags={userTags} autoTags={autoTags} />
             </div>
           </div>
         </div>

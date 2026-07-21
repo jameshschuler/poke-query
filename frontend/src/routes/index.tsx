@@ -110,7 +110,7 @@ function LandingPage() {
             <div className="flex flex-col lg:pr-6">
               <p className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-[#f59e0b]/45 bg-[#f59e0b]/12 px-3 py-1 text-xs font-semibold text-foreground sm:mb-6">
                 <FlameIcon className="size-3.5" />
-                Your next event prep starts here
+                Your next search starts here
               </p>
 
               <h1 className="max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
@@ -158,22 +158,10 @@ function LandingPage() {
                 <p className="text-sm font-semibold">
                   Start your shared library
                 </p>
-                <div className="mt-3 flex flex-wrap gap-2 sm:mt-4 sm:gap-3">
-                  <a href={user ? '/discover' : '/login'}>
-                    <Button size="sm" className="rounded-full">
-                      {user ? 'Open Dashboard' : 'Create Account'}
-                    </Button>
-                  </a>
-                  <a href="/discover">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="rounded-full"
-                    >
-                      View Community Examples
-                    </Button>
-                  </a>
-                </div>
+                <p className="mt-3 text-sm text-muted-foreground sm:mt-4">
+                  Use the main action buttons to jump in, then come back here
+                  for quick context while exploring.
+                </p>
               </div>
             </div>
           </div>
