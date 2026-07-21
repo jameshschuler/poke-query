@@ -4,6 +4,14 @@ See `ROADMAP.md` for longer-term product initiatives.
 
 ## Feature Work
 
+- [ ] Discoverability and Quality Surfacing
+  - [ ] MVP: Add a Featured Today section on Discover backed by a daily rotating backend selection.
+  - [ ] MVP: Define initial eligibility and weighting (favorites, forks, copies, and quality floor).
+  - [ ] MVP: Add lightweight featured badges and explanatory labels in Discover cards.
+  - [ ] V2: Add All-Time Trusted and Contextual Picks rails.
+  - [ ] V2: Introduce anti-gaming safeguards (self-action down-weighting, burst detection, suspicious action filters).
+  - [ ] V2: Add quality and discovery analytics (CTR, copy conversion, unique string impression spread).
+
 - [ ] Prompt-Based Query Creation
   - [ ] Allow users to create a search query from a prompt.
   - [ ] Define the first supported prompt flows and the resulting review/edit UX.
@@ -21,6 +29,11 @@ See `ROADMAP.md` for longer-term product initiatives.
   - [ ] Prioritize query, user, and community endpoints with mixed validation, persistence, and serialization logic.
 
 ## Testing
+
+- [ ] Discoverability Ranking Tests
+  - [ ] Add backend tests for daily featured selection, eligibility thresholds, and repeat-window rules.
+  - [ ] Add frontend tests for featured rail rendering, badge visibility, and clickthrough behavior.
+  - [ ] Add regression tests for deterministic daily rotation snapshots.
 
 - [ ] E2E Coverage (Playwright)
   - [ ] Add smoke tests for auth, discover, library, and profile flows.

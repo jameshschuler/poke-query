@@ -17,6 +17,13 @@ This file is for broader product initiatives that are worth tracking, but do not
   - Show badges on profile and relevant community surfaces.
   - Add tests for badge awarding rules and badge rendering.
 
+- Discoverability and Quality Surfacing
+  - Add a daily rotating featured section so valuable strings do not get buried by recency alone.
+  - Build a hybrid surfacing model with three rails: Featured Today, All-Time Trusted, and Contextual Picks.
+  - Use a quality score that blends favorites, forks, copies, engagement quality, and metadata completeness.
+  - Add anti-gaming protections to reduce manipulation via low-quality repeated actions.
+  - Track success with discover-to-detail CTR, copy conversion, and impression distribution across unique strings.
+
 ## Product Extensions
 
 - Pokemon GO Stats Import
@@ -43,6 +50,12 @@ This file is for broader product initiatives that are worth tracking, but do not
   - Add support for creating and sharing trade request strings.
   - Explore templates or guided builders for common trade-use cases.
   - Define how trade request strings should differ from standard saved search strings in UX and metadata.
+
+- PvPoke Rankings String Generator
+  - Add a flow to generate search strings directly from PvPoke ranking lists.
+  - Start with Great League overall rankings: https://pvpoke.com/rankings/all/1500/overall/.
+  - Support list selection, rank-range targeting, and output preview before save.
+  - Add validation and tests so generated strings stay accurate as source list formats evolve.
 
 - Name <-> Dex String Converter
   - Add a converter that can rewrite Pokemon references in strings between Pokedex numbers and Pokemon names.
