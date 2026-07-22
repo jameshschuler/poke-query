@@ -1,0 +1,50 @@
+{
+    "id": "/",
+    "short_name": "PokeQuery",
+    "name": "PokeQuery",
+    "description": "Explore, save, and share Pokemon GO search strings.",
+    "icons": [
+        {
+            "src": "/pwa-icon-192.png",
+            "type": "image/png",
+            "sizes": "192x192"
+        },
+        {
+            "src": "/pwa-icon-512.png",
+            "type": "image/png",
+            "sizes": "512x512"
+        },
+        {
+            "src": "/pwa-icon-512.png",
+            "type": "image/png",
+            "sizes": "512x512",
+            "purpose": "maskable"
+        }
+    ],
+    "start_url": "/discover",
+    "scope": "/",
+    "display_override": [
+        "standalone",
+        "browser"
+    ],
+    "display": "standalone",
+    "orientation": "portrait",
+    "categories": [
+        "utilities",
+        "social"
+    ],
+    "theme_color": "#0f172a",
+    "background_color": "#0f172a",
+    "shortcuts": [
+        {
+            "name": "Discover",
+            "short_name": "Discover",
+            "url": "/discover"
+        },
+        {
+            "name": "My Library",
+            "short_name": "Library",
+            "url": "/library"
+        }
+    ]
+}
