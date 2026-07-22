@@ -1,7 +1,12 @@
 import { type TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, isNull, lte, or, sql } from "drizzle-orm";
 
-import { discoverEventRollups, searchQueries, trainers } from "../../db/schema.js";
+import {
+  discoverEventRollups,
+  discoverWeeklyPicks,
+  searchQueries,
+  trainers,
+} from "../../db/schema.js";
 import type { FastifyTypebox } from "../../types/fastify.js";
 import {
   buildCommunityConditions,
@@ -11,9 +16,12 @@ import {
   toCommunityItem,
 } from "../community/community.routes.js";
 import {
+  DeleteWeeklyPickSchema,
+  GetWeeklyPicksSchema,
   MetricsSchema,
   MetricsSurfacingSchema,
   TrackMetricsSurfacingEventsSchema,
+  UpsertWeeklyPickSchema,
 } from "./metrics.schema.js";
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -57,8 +65,198 @@ function uniqueById<T extends { id: string }>(items: T[]) {
   return out;
 }
 
+async function isAdminRequest(fastify: FastifyTypebox, userId: string) {
+  const [trainer] = await fastify.db
+    .select({ role: trainers.role })
+    .from(trainers)
+    .where(eq(trainers.userId, userId))
+    .limit(1);
+
+  return trainer?.role === "admin";
+}
+
+function parseOptionalDate(value: string | null | undefined) {
+  if (value == null) {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return parsed;
+}
+
 export async function metricsRoutes(fastify: FastifyTypebox) {
   const server = fastify.withTypeProvider<TypeBoxTypeProvider>();
+
+  server.get(
+    "/surfacing/weekly-picks",
+    { preHandler: [fastify.authenticate], schema: GetWeeklyPicksSchema },
+    async (request, reply) => {
+      const isAdmin = await isAdminRequest(fastify, request.user.id);
+      if (!isAdmin) {
+        return reply.code(403).send({ error: "Admin access required" });
+      }
+
+      const rows = await fastify.db
+        .select({
+          queryId: discoverWeeklyPicks.queryId,
+          title: searchQueries.title,
+          isPublic: searchQueries.isPublic,
+          displayOrder: discoverWeeklyPicks.displayOrder,
+          isActive: discoverWeeklyPicks.isActive,
+          startsAt: discoverWeeklyPicks.startsAt,
+          endsAt: discoverWeeklyPicks.endsAt,
+          notes: discoverWeeklyPicks.notes,
+          createdAt: discoverWeeklyPicks.createdAt,
+          updatedAt: discoverWeeklyPicks.updatedAt,
+        })
+        .from(discoverWeeklyPicks)
+        .innerJoin(searchQueries, eq(searchQueries.id, discoverWeeklyPicks.queryId))
+        .orderBy(asc(discoverWeeklyPicks.displayOrder), desc(discoverWeeklyPicks.updatedAt));
+
+      return reply.send({
+        items: rows.map((row) => ({
+          queryId: row.queryId,
+          title: row.title,
+          isPublic: row.isPublic,
+          displayOrder: row.displayOrder,
+          isActive: row.isActive,
+          startsAt: row.startsAt ? row.startsAt.toISOString() : null,
+          endsAt: row.endsAt ? row.endsAt.toISOString() : null,
+          notes: row.notes,
+          createdAt: row.createdAt.toISOString(),
+          updatedAt: row.updatedAt.toISOString(),
+        })),
+      });
+    },
+  );
+
+  server.post(
+    "/surfacing/weekly-picks",
+    { preHandler: [fastify.authenticate], schema: UpsertWeeklyPickSchema },
+    async (request, reply) => {
+      const isAdmin = await isAdminRequest(fastify, request.user.id);
+      if (!isAdmin) {
+        return reply.code(403).send({ error: "Admin access required" });
+      }
+
+      const { queryId, displayOrder, isActive, startsAt, endsAt, notes } = request.body;
+
+      if (!isUuid(queryId)) {
+        return reply.code(400).send({ error: "queryId must be a valid UUID" });
+      }
+
+      const startsAtDate = parseOptionalDate(startsAt);
+      const endsAtDate = parseOptionalDate(endsAt);
+
+      if (startsAt && startsAtDate === null) {
+        return reply.code(400).send({ error: "startsAt must be a valid date-time" });
+      }
+
+      if (endsAt && endsAtDate === null) {
+        return reply.code(400).send({ error: "endsAt must be a valid date-time" });
+      }
+
+      if (startsAtDate && endsAtDate && startsAtDate > endsAtDate) {
+        return reply.code(400).send({ error: "startsAt must be before endsAt" });
+      }
+
+      const [query] = await fastify.db
+        .select({
+          id: searchQueries.id,
+          title: searchQueries.title,
+          isPublic: searchQueries.isPublic,
+        })
+        .from(searchQueries)
+        .where(eq(searchQueries.id, queryId))
+        .limit(1);
+
+      if (!query || !query.isPublic) {
+        return reply.code(404).send({ error: "Public query not found" });
+      }
+
+      const [upserted] = await fastify.db
+        .insert(discoverWeeklyPicks)
+        .values({
+          queryId,
+          displayOrder: displayOrder ?? 0,
+          isActive: isActive ?? true,
+          startsAt: startsAtDate,
+          endsAt: endsAtDate,
+          notes: notes?.trim() ? notes.trim() : null,
+        })
+        .onConflictDoUpdate({
+          target: discoverWeeklyPicks.queryId,
+          set: {
+            displayOrder: displayOrder ?? 0,
+            isActive: isActive ?? true,
+            startsAt: startsAtDate,
+            endsAt: endsAtDate,
+            notes: notes?.trim() ? notes.trim() : null,
+            updatedAt: new Date(),
+          },
+        })
+        .returning({
+          queryId: discoverWeeklyPicks.queryId,
+          displayOrder: discoverWeeklyPicks.displayOrder,
+          isActive: discoverWeeklyPicks.isActive,
+          startsAt: discoverWeeklyPicks.startsAt,
+          endsAt: discoverWeeklyPicks.endsAt,
+          notes: discoverWeeklyPicks.notes,
+          createdAt: discoverWeeklyPicks.createdAt,
+          updatedAt: discoverWeeklyPicks.updatedAt,
+        });
+
+      if (!upserted) {
+        return reply.code(400).send({ error: "Could not upsert weekly pick" });
+      }
+
+      return reply.send({
+        item: {
+          queryId: upserted.queryId,
+          title: query.title,
+          isPublic: query.isPublic,
+          displayOrder: upserted.displayOrder,
+          isActive: upserted.isActive,
+          startsAt: upserted.startsAt ? upserted.startsAt.toISOString() : null,
+          endsAt: upserted.endsAt ? upserted.endsAt.toISOString() : null,
+          notes: upserted.notes,
+          createdAt: upserted.createdAt.toISOString(),
+          updatedAt: upserted.updatedAt.toISOString(),
+        },
+      });
+    },
+  );
+
+  server.delete(
+    "/surfacing/weekly-picks/:queryId",
+    { preHandler: [fastify.authenticate], schema: DeleteWeeklyPickSchema },
+    async (request, reply) => {
+      const isAdmin = await isAdminRequest(fastify, request.user.id);
+      if (!isAdmin) {
+        return reply.code(403).send({ error: "Admin access required" });
+      }
+
+      const { queryId } = request.params;
+      if (!isUuid(queryId)) {
+        return reply.code(404).send({ error: "Weekly pick not found" });
+      }
+
+      const [removed] = await fastify.db
+        .delete(discoverWeeklyPicks)
+        .where(eq(discoverWeeklyPicks.queryId, queryId))
+        .returning({ queryId: discoverWeeklyPicks.queryId });
+
+      if (!removed) {
+        return reply.code(404).send({ error: "Weekly pick not found" });
+      }
+
+      return reply.send({ removedQueryId: removed.queryId });
+    },
+  );
 
   server.get("/surfacing", { schema: MetricsSurfacingSchema }, async (request, reply) => {
     const { filter, tag, search, railLimit } = request.query;
@@ -73,13 +271,34 @@ export async function metricsRoutes(fastify: FastifyTypebox) {
       .orderBy(desc(qualityScoreExpr), desc(searchQueries.updatedAt))
       .limit(120);
 
-    const trustedItems = trustedRows
-      .map((row) => toCommunityItem(row as CommunityRow))
-      .filter((item) => item.qualityScore >= 1.1);
+    const trustedItems = trustedRows.map((row) => toCommunityItem(row as CommunityRow));
 
-    const allTimeTrusted = trustedItems.slice(0, limit);
+    const trustedHighQualityItems = trustedItems.filter((item) => item.qualityScore >= 1.1);
 
-    const featuredToday = [...trustedItems]
+    const now = new Date();
+    const weeklyPickRows = await fastify.db
+      .select({ queryId: discoverWeeklyPicks.queryId })
+      .from(discoverWeeklyPicks)
+      .where(
+        and(
+          eq(discoverWeeklyPicks.isActive, true),
+          or(isNull(discoverWeeklyPicks.startsAt), lte(discoverWeeklyPicks.startsAt, now)),
+          or(isNull(discoverWeeklyPicks.endsAt), gte(discoverWeeklyPicks.endsAt, now)),
+        ),
+      )
+      .orderBy(asc(discoverWeeklyPicks.displayOrder), desc(discoverWeeklyPicks.updatedAt))
+      .limit(limit);
+
+    const trustedById = new Map(trustedItems.map((item) => [item.id, item]));
+    const weeklyPicks = uniqueById(
+      weeklyPickRows
+        .map((row) => trustedById.get(row.queryId))
+        .filter((item): item is NonNullable<typeof item> => Boolean(item)),
+    );
+
+    const allTimeTrusted = trustedHighQualityItems.slice(0, limit);
+
+    const featuredToday = [...trustedHighQualityItems]
       .sort((a, b) => {
         const hashDiff = stableDailyRank(dateKey, a.id) - stableDailyRank(dateKey, b.id);
         if (hashDiff !== 0) {
@@ -121,6 +340,7 @@ export async function metricsRoutes(fastify: FastifyTypebox) {
       .slice(0, limit);
 
     return reply.send({
+      weeklyPicks,
       featuredToday,
       allTimeTrusted,
       contextualPicks,
@@ -181,13 +401,8 @@ export async function metricsRoutes(fastify: FastifyTypebox) {
     "/surfacing/metrics",
     { preHandler: [fastify.authenticate], schema: MetricsSchema },
     async (request, reply) => {
-      const [trainer] = await fastify.db
-        .select({ role: trainers.role })
-        .from(trainers)
-        .where(eq(trainers.userId, request.user.id))
-        .limit(1);
-
-      if (!trainer || trainer.role !== "admin") {
+      const isAdmin = await isAdminRequest(fastify, request.user.id);
+      if (!isAdmin) {
         return reply.code(403).send({ error: "Admin access required" });
       }
 

@@ -24,6 +24,8 @@ import { Route as ModerationRouteImport } from './routes/moderation'
 import { Route as NotificationsRouteImport } from './routes/notifications'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as AdminDiscoverPerformanceRouteImport } from './routes/admin.discover-performance'
+import { Route as AdminWeeklyPicksRouteImport } from './routes/admin.weekly-picks'
 import { Route as ForksQueryIdRouteImport } from './routes/forks.$queryId'
 import { Route as LibraryNewRouteImport } from './routes/library.new'
 import { Route as QueriesQueryIdRouteImport } from './routes/queries.$queryId'
@@ -106,6 +108,17 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminDiscoverPerformanceRoute =
+  AdminDiscoverPerformanceRouteImport.update({
+    id: '/admin/discover-performance',
+    path: '/admin/discover-performance',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AdminWeeklyPicksRoute = AdminWeeklyPicksRouteImport.update({
+  id: '/admin/weekly-picks',
+  path: '/admin/weekly-picks',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ForksQueryIdRoute = ForksQueryIdRouteImport.update({
   id: '/$queryId',
   path: '/$queryId',
@@ -153,6 +166,8 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof NotificationsRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/admin/discover-performance': typeof AdminDiscoverPerformanceRoute
+  '/admin/weekly-picks': typeof AdminWeeklyPicksRoute
   '/forks/$queryId': typeof ForksQueryIdRouteWithChildren
   '/library/new': typeof LibraryNewRoute
   '/queries/$queryId': typeof QueriesQueryIdRoute
@@ -176,6 +191,8 @@ export interface FileRoutesByTo {
   '/notifications': typeof NotificationsRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/admin/discover-performance': typeof AdminDiscoverPerformanceRoute
+  '/admin/weekly-picks': typeof AdminWeeklyPicksRoute
   '/forks/$queryId': typeof ForksQueryIdRouteWithChildren
   '/library/new': typeof LibraryNewRoute
   '/queries/$queryId': typeof QueriesQueryIdRoute
@@ -200,6 +217,8 @@ export interface FileRoutesById {
   '/notifications': typeof NotificationsRoute
   '/privacy': typeof PrivacyRoute
   '/terms': typeof TermsRoute
+  '/admin/discover-performance': typeof AdminDiscoverPerformanceRoute
+  '/admin/weekly-picks': typeof AdminWeeklyPicksRoute
   '/forks/$queryId': typeof ForksQueryIdRouteWithChildren
   '/library/new': typeof LibraryNewRoute
   '/queries/$queryId': typeof QueriesQueryIdRoute
@@ -225,6 +244,8 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/privacy'
     | '/terms'
+    | '/admin/discover-performance'
+    | '/admin/weekly-picks'
     | '/forks/$queryId'
     | '/library/new'
     | '/queries/$queryId'
@@ -248,6 +269,8 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/privacy'
     | '/terms'
+    | '/admin/discover-performance'
+    | '/admin/weekly-picks'
     | '/forks/$queryId'
     | '/library/new'
     | '/queries/$queryId'
@@ -271,6 +294,8 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/privacy'
     | '/terms'
+    | '/admin/discover-performance'
+    | '/admin/weekly-picks'
     | '/forks/$queryId'
     | '/library/new'
     | '/queries/$queryId'
@@ -295,6 +320,8 @@ export interface RootRouteChildren {
   NotificationsRoute: typeof NotificationsRoute
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
+  AdminDiscoverPerformanceRoute: typeof AdminDiscoverPerformanceRoute
+  AdminWeeklyPicksRoute: typeof AdminWeeklyPicksRoute
   QueriesQueryIdRoute: typeof QueriesQueryIdRoute
   TrainersUsernameRoute: typeof TrainersUsernameRoute
 }
@@ -406,6 +433,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/discover-performance': {
+      id: '/admin/discover-performance'
+      path: '/admin/discover-performance'
+      fullPath: '/admin/discover-performance'
+      preLoaderRoute: typeof AdminDiscoverPerformanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/weekly-picks': {
+      id: '/admin/weekly-picks'
+      path: '/admin/weekly-picks'
+      fullPath: '/admin/weekly-picks'
+      preLoaderRoute: typeof AdminWeeklyPicksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/forks/$queryId': {
       id: '/forks/$queryId'
       path: '/$queryId'
@@ -502,6 +543,8 @@ const rootRouteChildren: RootRouteChildren = {
   NotificationsRoute: NotificationsRoute,
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
+  AdminDiscoverPerformanceRoute: AdminDiscoverPerformanceRoute,
+  AdminWeeklyPicksRoute: AdminWeeklyPicksRoute,
   QueriesQueryIdRoute: QueriesQueryIdRoute,
   TrainersUsernameRoute: TrainersUsernameRoute,
 }

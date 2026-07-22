@@ -83,7 +83,11 @@ type DiscoverSearch = {
 }
 
 type DiscoverRail =
-  'featured_today' | 'all_time_trusted' | 'contextual_picks' | 'default'
+  | 'weekly_picks'
+  | 'featured_today'
+  | 'all_time_trusted'
+  | 'contextual_picks'
+  | 'default'
 
 const DISCOVER_SESSION_STORAGE_KEY = 'poke-query:discover-session-key'
 const FEATURED_PAGE_SIZE = 3
@@ -421,6 +425,12 @@ function DiscoverPage() {
   const railSections = useMemo(
     () => [
       {
+        key: 'weekly_picks' as const,
+        title: 'Weekly Picks',
+        subtitle: 'Hand-picked highlights for the current raid rotation.',
+        items: surfacingData?.weeklyPicks ?? [],
+      },
+      {
         key: 'featured_today' as const,
         title: 'Featured Today',
         subtitle:
@@ -625,7 +635,7 @@ function DiscoverPage() {
       <PageShell
         headerPrefix={user ? undefined : 'PokeQuery'}
         title="Discover"
-        subtitle="Explore featured quality picks and trusted all-time strings."
+        subtitle="Explore weekly picks, featured quality strings, and trusted all-time favorites."
         contentHeaderVariant="floating"
         outsideCardContent={
           pagedRailSections.some((section) => section.items.length > 0) ? (
@@ -635,9 +645,11 @@ function DiscoverPage() {
                   <section
                     key={section.key}
                     className={`rounded-3xl border px-6 py-6 shadow-sm ${
-                      section.key === 'featured_today'
-                        ? 'border-sky-300/70 bg-linear-to-br from-sky-50/80 via-card/95 to-card/95 dark:border-sky-700/50 dark:from-sky-950/25'
-                        : 'border-border/70 bg-card/95'
+                      section.key === 'weekly_picks'
+                        ? 'border-amber-300/70 bg-linear-to-br from-amber-50/90 via-card/95 to-card/95 dark:border-amber-700/50 dark:from-amber-950/25'
+                        : section.key === 'featured_today'
+                          ? 'border-sky-300/70 bg-linear-to-br from-sky-50/80 via-card/95 to-card/95 dark:border-sky-700/50 dark:from-sky-950/25'
+                          : 'border-border/70 bg-card/95'
                     }`}
                   >
                     <div className="space-y-3">
@@ -645,14 +657,20 @@ function DiscoverPage() {
                         <div>
                           <h2
                             className={`font-semibold tracking-tight ${
-                              section.key === 'featured_today'
-                                ? 'text-2xl text-sky-900 dark:text-sky-100'
-                                : 'text-lg'
+                              section.key === 'weekly_picks'
+                                ? 'text-2xl text-amber-900 dark:text-amber-100'
+                                : section.key === 'featured_today'
+                                  ? 'text-2xl text-sky-900 dark:text-sky-100'
+                                  : 'text-lg'
                             }`}
                           >
                             {section.title}
                           </h2>
-                          {section.key === 'featured_today' ? (
+                          {section.key === 'weekly_picks' ? (
+                            <p className="mt-1 inline-flex items-center rounded-full border border-amber-300/70 bg-amber-100/90 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200">
+                              Hand-picked
+                            </p>
+                          ) : section.key === 'featured_today' ? (
                             <p className="mt-1 inline-flex items-center rounded-full border border-sky-300/70 bg-sky-100/90 px-2 py-0.5 text-xs font-semibold text-sky-800 dark:border-sky-700/60 dark:bg-sky-950/40 dark:text-sky-200">
                               Daily rotation
                             </p>
@@ -696,7 +714,8 @@ function DiscoverPage() {
                       </div>
                       <div
                         className={`grid gap-4 transition-all duration-300 ease-out will-change-transform motion-reduce:transform-none motion-reduce:transition-none ${
-                          section.key === 'featured_today'
+                          section.key === 'featured_today' ||
+                          section.key === 'weekly_picks'
                             ? 'md:grid-cols-3'
                             : 'md:grid-cols-2 xl:grid-cols-3'
                         } ${

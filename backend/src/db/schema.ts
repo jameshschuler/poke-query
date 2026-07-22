@@ -8,6 +8,7 @@ import {
   boolean,
   jsonb,
   foreignKey,
+  index,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
@@ -273,5 +274,30 @@ export const discoverEventRollups = pokeSchema.table(
       t.sessionKey,
       t.eventBucket,
     ),
+  }),
+);
+
+// --- DISCOVER WEEKLY PICKS ---
+export const discoverWeeklyPicks = pokeSchema.table(
+  "discover_weekly_picks",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    queryId: uuid("query_id")
+      .references(() => searchQueries.id, { onDelete: "cascade" })
+      .notNull()
+      .unique(),
+    displayOrder: integer("display_order").default(0).notNull(),
+    isActive: boolean("is_active").default(true).notNull(),
+    startsAt: timestamp("starts_at"),
+    endsAt: timestamp("ends_at"),
+    notes: text("notes"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => ({
+    activeOrderIdx: index("discover_weekly_picks_active_order_idx").on(t.isActive, t.displayOrder),
   }),
 );

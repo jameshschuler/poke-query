@@ -163,12 +163,40 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const navMainItems = useMemo(() => {
     const baseItems = [...data.navMain]
+    const adminItems = [] as {
+      title: string
+      url: string
+      icon?: React.ReactNode
+    }[]
+
+    if (me?.role === 'admin') {
+      adminItems.push({
+        title: 'Discover Performance',
+        url: '/admin/discover-performance',
+        icon: <SearchIcon />,
+      })
+
+      adminItems.push({
+        title: 'Weekly Picks',
+        url: '/admin/weekly-picks',
+      })
+    }
 
     if (moderationAccess?.isReviewer) {
-      baseItems.splice(baseItems.length - 1, 0, {
+      adminItems.push({
         title: 'Moderation',
         url: '/moderation',
         icon: <ShieldAlertIcon />,
+      })
+    }
+
+    if (adminItems.length > 0) {
+      baseItems.splice(baseItems.length - 1, 0, {
+        title: 'Admin',
+        url: '/dashboard',
+        icon: <ShieldAlertIcon />,
+        collapsible: false,
+        items: adminItems,
       })
     }
 
@@ -178,7 +206,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         pathname === item.url ||
         Boolean(item.items?.some((subItem) => subItem.url === pathname)),
     }))
-  }, [moderationAccess?.isReviewer, pathname])
+  }, [me?.role, moderationAccess?.isReviewer, pathname])
 
   return (
     <Sidebar collapsible="icon" {...props}>

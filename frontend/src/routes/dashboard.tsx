@@ -20,7 +20,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '#/components/ui/avatar'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { PageShell } from '#/components/page-shell'
-import { DashboardDiscoverMetricsCard } from '#/components/dashboard-discover-metrics-card'
 import {
   ApiRequestError,
   getMe,
@@ -167,8 +166,6 @@ function DashboardRoute() {
     isMeLoading || isQueriesLoading || isForksLoading || isActivityLoading
   const hasLatestQuery = queries.length > 0
 
-  const isAdmin = me?.role === 'admin'
-
   return (
     <PageShell
       title="Dashboard"
@@ -278,8 +275,6 @@ function DashboardRoute() {
                 ))}
               </div>
             </section>
-
-            <DashboardDiscoverMetricsCard isAdmin={isAdmin} />
 
             <section className="rounded-2xl border border-border/70 bg-card/95 p-5 shadow-sm">
               <div className="flex items-start justify-between gap-3">
