@@ -82,7 +82,8 @@ type DiscoverSearch = {
   filter?: string
 }
 
-type DiscoverRail = 'featured_today' | 'all_time_trusted' | 'default'
+type DiscoverRail =
+  'featured_today' | 'all_time_trusted' | 'contextual_picks' | 'default'
 
 const DISCOVER_SESSION_STORAGE_KEY = 'poke-query:discover-session-key'
 const FEATURED_PAGE_SIZE = 3
@@ -633,14 +634,29 @@ function DiscoverPage() {
                 section.items.length > 0 ? (
                   <section
                     key={section.key}
-                    className="rounded-3xl border border-border/70 bg-card/95 px-6 py-6 shadow-sm"
+                    className={`rounded-3xl border px-6 py-6 shadow-sm ${
+                      section.key === 'featured_today'
+                        ? 'border-sky-300/70 bg-linear-to-br from-sky-50/80 via-card/95 to-card/95 dark:border-sky-700/50 dark:from-sky-950/25'
+                        : 'border-border/70 bg-card/95'
+                    }`}
                   >
                     <div className="space-y-3">
                       <div className="flex items-baseline justify-between gap-3">
                         <div>
-                          <h2 className="text-lg font-semibold tracking-tight">
+                          <h2
+                            className={`font-semibold tracking-tight ${
+                              section.key === 'featured_today'
+                                ? 'text-2xl text-sky-900 dark:text-sky-100'
+                                : 'text-lg'
+                            }`}
+                          >
                             {section.title}
                           </h2>
+                          {section.key === 'featured_today' ? (
+                            <p className="mt-1 inline-flex items-center rounded-full border border-sky-300/70 bg-sky-100/90 px-2 py-0.5 text-xs font-semibold text-sky-800 dark:border-sky-700/60 dark:bg-sky-950/40 dark:text-sky-200">
+                              Daily rotation
+                            </p>
+                          ) : null}
                           <p className="text-sm text-muted-foreground">
                             {section.subtitle}
                           </p>
@@ -679,7 +695,11 @@ function DiscoverPage() {
                         </div>
                       </div>
                       <div
-                        className={`grid gap-4 transition-all duration-300 ease-out will-change-transform motion-reduce:transform-none motion-reduce:transition-none md:grid-cols-2 xl:grid-cols-3 ${
+                        className={`grid gap-4 transition-all duration-300 ease-out will-change-transform motion-reduce:transform-none motion-reduce:transition-none ${
+                          section.key === 'featured_today'
+                            ? 'md:grid-cols-3'
+                            : 'md:grid-cols-2 xl:grid-cols-3'
+                        } ${
                           railTransitionByKey[section.key] === 'next'
                             ? 'translate-x-3 opacity-0 motion-reduce:opacity-100'
                             : railTransitionByKey[section.key] === 'prev'

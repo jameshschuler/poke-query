@@ -4,10 +4,6 @@ See `ROADMAP.md` for longer-term product initiatives.
 
 ## Feature Work
 
-- [ ] Prompt-Based Query Creation
-  - [ ] Allow users to create a search query from a prompt.
-  - [ ] Define the first supported prompt flows and the resulting review/edit UX.
-
 - [ ] Trade Request String Support
   - [ ] Allow users to create a trade request string.
   - [ ] Decide whether trade requests use a dedicated type, template, or metadata-driven variant.
