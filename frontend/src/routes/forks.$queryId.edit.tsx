@@ -197,8 +197,8 @@ function EditForkPage() {
             Could not load this fork.
           </div>
         ) : !currentFork ? null : (
-          <div className="space-y-5">
-            <label className="space-y-2">
+          <div className="flex flex-col gap-8">
+            <label className="flex flex-col gap-2">
               <span className="text-sm font-medium">Name</span>
               <input
                 value={title}
@@ -215,7 +215,7 @@ function EditForkPage() {
               ) : null}
             </label>
 
-            <label className="space-y-2">
+            <label className="flex flex-col gap-2">
               <span className="text-sm font-medium">Search string</span>
               <textarea
                 value={query}
@@ -225,7 +225,7 @@ function EditForkPage() {
               />
             </label>
 
-            <label className="space-y-2">
+            <label className="flex flex-col gap-2">
               <span className="text-sm font-medium">Description</span>
               <textarea
                 value={description}
@@ -241,7 +241,7 @@ function EditForkPage() {
               ) : null}
             </label>
 
-            <label className="space-y-2">
+            <label className="flex flex-col gap-2">
               <span className="text-sm font-medium">
                 Reference link (optional)
               </span>
@@ -265,7 +265,7 @@ function EditForkPage() {
               helperText="Update tags to keep this fork easy to filter and revisit."
             />
 
-            <div className="space-y-2">
+            <div className="flex flex-col gap-2">
               <span className="text-sm font-medium">Visibility</span>
               <div className="grid grid-cols-2 gap-2">
                 <button

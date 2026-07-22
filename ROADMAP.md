@@ -17,13 +17,6 @@ This file is for broader product initiatives that are worth tracking, but do not
   - Show badges on profile and relevant community surfaces.
   - Add tests for badge awarding rules and badge rendering.
 
-- Discoverability and Quality Surfacing
-  - Add a daily rotating featured section so valuable strings do not get buried by recency alone.
-  - Build a hybrid surfacing model with three rails: Featured Today, All-Time Trusted, and Contextual Picks.
-  - Use a quality score that blends favorites, forks, copies, engagement quality, and metadata completeness.
-  - Add anti-gaming protections to reduce manipulation via low-quality repeated actions.
-  - Track success with discover-to-detail CTR, copy conversion, and impression distribution across unique strings.
-
 ## Product Extensions
 
 - Pokemon GO Stats Import

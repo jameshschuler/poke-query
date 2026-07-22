@@ -92,6 +92,20 @@
       "when": 1784589760816,
       "tag": "0012_profile_view_count",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1784678400000,
+      "tag": "0013_discover_event_rollups",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1784679300000,
+      "tag": "0014_trainers_role",
+      "breakpoints": true
     }
   ]
 }

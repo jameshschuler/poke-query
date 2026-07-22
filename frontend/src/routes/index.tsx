@@ -1,16 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useAuth } from '#/lib/auth-context'
-import {
-  ArrowRightIcon,
-  BookOpenTextIcon,
-  CompassIcon,
-  SparklesIcon,
-  SwordsIcon,
-  UsersIcon,
-  ZapIcon,
-} from 'lucide-react'
+import { BookOpenTextIcon, CompassIcon } from 'lucide-react'
 
-import { PublicInfoLinks } from '#/components/public-info-links'
 import { Button } from '#/components/ui/button'
 import { requireGuest } from '#/lib/route-auth'
 
@@ -54,25 +45,6 @@ function LandingPage() {
             </p>
             <div className="flex flex-wrap items-center gap-3 text-sm">
               <a
-                href={docsUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-muted-foreground transition-colors hover:text-foreground"
-              >
-                <span className="inline-flex items-center gap-1.5">
-                  <BookOpenTextIcon className="size-3.5" />
-                  Documentation
-                </span>
-              </a>
-              <a
-                href={repoUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-muted-foreground transition-colors hover:text-foreground"
-              >
-                GitHub
-              </a>
-              <a
                 href="/discover"
                 className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-muted-foreground transition-colors hover:text-foreground"
               >
@@ -85,22 +57,10 @@ function LandingPage() {
                 About
               </a>
               <a
-                href="/privacy"
-                className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Privacy
-              </a>
-              <a
-                href="/terms"
-                className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Terms
-              </a>
-              <a
                 href={user ? '/discover' : '/login'}
                 className="rounded-full border border-[#f59e0b]/45 bg-[#f59e0b]/18 px-3 py-1 font-medium text-foreground transition-colors hover:bg-[#f59e0b]/28"
               >
-                {user ? 'Open Workspace' : 'Log in to save'}
+                {user ? 'Open Workspace' : 'Log in'}
               </a>
             </div>
           </div>
@@ -113,24 +73,22 @@ function LandingPage() {
               </p>
 
               <h1 className="max-w-3xl text-3xl font-semibold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-                Build, share, and fork
+                Find, save, and share
                 <span className="bg-linear-to-r from-[#38bdf8] via-[#22c55e] to-[#f59e0b] bg-clip-text text-transparent">
                   {' '}
-                  Pokemon GO raid and PvP strings
+                  Pokemon GO search strings
                 </span>
                 .
               </h1>
 
               <p className="mt-5 max-w-2xl text-base text-muted-foreground sm:mt-6 sm:text-lg">
-                PokeQuery helps you discover proven search strings for PvP,
-                raids, and events, then remix them into your own repeatable
-                playbook. Keep your strings organized, share what works, and
-                make raid and PvP knowledge easier for everyone to use.
+                Browse community strings for raids, PvP, and events. Fork what
+                works, make it your own, and keep your best versions organized.
               </p>
 
               <p className="mt-3 max-w-2xl text-sm font-medium text-foreground/85 sm:text-base">
-                You can start in Discover right now. Create an account later if
-                you want to save favorites, fork strings, and publish your own.
+                Start in Discover with no account. Sign in when you want to
+                save, fork, or publish.
               </p>
 
               <div className="mt-7 flex flex-wrap items-center gap-3 sm:mt-9 sm:gap-4">
@@ -143,219 +101,115 @@ function LandingPage() {
               </div>
             </div>
 
-            <div className="grid gap-3 rounded-3xl border border-border/60 bg-background/80 p-4 sm:gap-4 sm:p-6">
-              <div className="rounded-2xl border border-[#38bdf8]/35 bg-[#38bdf8]/10 p-4 sm:p-5">
-                <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                  Why PokeQuery
-                </p>
-                <p className="mt-2 text-lg font-semibold leading-tight">
-                  Keep your best strings organized and easy to share.
-                </p>
+            <div className="flex flex-col gap-3 rounded-3xl border border-border/60 bg-background/80 p-4 sm:gap-4 sm:p-6">
+              <div className="rounded-2xl border border-border/70 bg-card/90 p-4 shadow-sm sm:p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                    Sample String
+                  </p>
+                  <span className="rounded-full border border-emerald-300/70 bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-200">
+                    Public
+                  </span>
+                </div>
+
+                <h2 className="mt-2 text-lg font-semibold leading-tight">
+                  Quick Daily Trash Filter
+                </h2>
+
+                <pre className="mt-3 overflow-x-auto rounded-xl border border-border/70 bg-background px-3 py-2 text-xs text-foreground/90">
+                  0*,1*,2*&!shiny&!legendary&!mythical&!shadow&!purified&!costume&!#
+                </pre>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs text-sky-800 dark:border-sky-700 dark:bg-sky-950/40 dark:text-sky-200">
+                    pvp
+                  </span>
+                  <span className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs text-sky-800 dark:border-sky-700 dark:bg-sky-950/40 dark:text-sky-200">
+                    great-league
+                  </span>
+                  <span className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs text-sky-800 dark:border-sky-700 dark:bg-sky-950/40 dark:text-sky-200">
+                    ranked
+                  </span>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
+                  <span>1.8k copies</span>
+                  <span>236 forks</span>
+                  <span>Updated 2d ago</span>
+                </div>
               </div>
-              <div className="rounded-2xl border border-border/60 bg-card/80 p-4 sm:p-5">
-                <p className="text-sm font-semibold">Start in Discover first</p>
-                <p className="mt-3 text-sm text-muted-foreground sm:mt-4">
-                  Explore community strings immediately with no sign-up. Log in
-                  only when you are ready to save favorites, fork, or publish.
-                </p>
+
+              <div className="rounded-2xl border border-border/70 bg-card/90 p-4 shadow-sm sm:p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                    Sample String
+                  </p>
+                  <span className="rounded-full border border-amber-300/70 bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:border-amber-700 dark:bg-amber-950/50 dark:text-amber-200">
+                    Draft
+                  </span>
+                </div>
+
+                <h2 className="mt-2 text-lg font-semibold leading-tight">
+                  Potential Great / Ultra League PvP Candidates
+                </h2>
+
+                <pre className="mt-3 overflow-x-auto rounded-xl border border-border/70 bg-background px-3 py-2 text-xs text-foreground/90">
+                  0-1attack&3-4defense&3-4hp&!#
+                </pre>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs text-sky-800 dark:border-sky-700 dark:bg-sky-950/40 dark:text-sky-200">
+                    raid
+                  </span>
+                  <span className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs text-sky-800 dark:border-sky-700 dark:bg-sky-950/40 dark:text-sky-200">
+                    shadow
+                  </span>
+                  <span className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs text-sky-800 dark:border-sky-700 dark:bg-sky-950/40 dark:text-sky-200">
+                    event
+                  </span>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Private workspace</span>
+                  <span>Saved in library</span>
+                  <span>Edited 6h ago</span>
+                </div>
               </div>
             </div>
           </div>
 
-          <a
-            href="#social-proof"
-            className="mt-6 inline-flex w-fit items-center gap-2 self-center rounded-full border border-border/70 bg-background/70 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground sm:mt-8"
-          >
-            <SparklesIcon className="size-3.5" />
-            Scroll to see how it works
-          </a>
-        </section>
-
-        <section
-          id="social-proof"
-          className="rounded-3xl border border-border/60 bg-card/80 p-5 shadow-sm backdrop-blur sm:p-10 md:p-12"
-        >
-          <p className="mb-5 text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-            Community Benefits
-          </p>
-          <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
-            <div className="rounded-2xl border border-[#38bdf8]/35 bg-[#38bdf8]/10 px-4 py-3 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 sm:px-5 sm:py-4">
-              <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                Trusted workflow
-              </p>
-              <p className="mt-1 text-sm font-medium">
-                Organize your raid and PvP strings in one place.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-border/60 border-t-4 border-t-[#22c55e] bg-card/90 px-4 py-3 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 sm:px-5 sm:py-4">
-              <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                Community-first
-              </p>
-              <p className="mt-1 text-sm font-medium">
-                Discover, fork, and improve top trainer strings.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-border/60 border-t-4 border-t-[#f59e0b] bg-card/90 px-4 py-3 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 sm:px-5 sm:py-4">
-              <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                Shared knowledge
-              </p>
-              <p className="mt-1 text-sm font-medium">
-                Share reliable strings so others can use them right away.
-              </p>
-            </div>
-          </div>
-
-          <PublicInfoLinks className="pt-6" />
-        </section>
-
-        <section className="rounded-3xl border border-border/60 bg-card/80 p-5 shadow-sm backdrop-blur sm:p-10 md:p-12">
-          <p className="inline-flex items-center gap-2 text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-            <SparklesIcon className="size-4" />
-            How It Works
-          </p>
-          <div className="mt-3 max-w-3xl text-sm text-muted-foreground sm:text-base">
-            Start with a string you trust, shape it for the moment, then share
-            the final version so the next trainer does not need to start from
-            zero.
-          </div>
-          <div className="mt-6 grid gap-3 sm:grid-cols-3 sm:gap-4">
-            <div className="rounded-2xl border border-[#22c55e]/35 bg-[#22c55e]/10 p-4 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 sm:p-5">
-              <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                Step 1
-              </p>
-              <p className="mt-1 text-sm font-semibold">Discover</p>
-              <p className="mt-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                You do
-              </p>
-              <p className="mt-1 text-sm text-foreground/90">
-                Browse tags, favorites, and forks until you find a string that
-                matches your raid or PvP use case.
-              </p>
-              <p className="mt-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                PokeQuery does
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Surfaces the most relevant community strings and keeps them easy
-                to scan.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-border/60 border-t-4 border-t-[#22c55e] bg-card/90 p-4 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 sm:p-5">
-              <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                Step 2
-              </p>
-              <p className="mt-1 text-sm font-semibold">Adapt</p>
-              <p className="mt-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                You do
-              </p>
-              <p className="mt-1 text-sm text-foreground/90">
-                Fork the string, adjust the filters, and organize it for your
-                local raid group, league, or event prep.
-              </p>
-              <p className="mt-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                PokeQuery does
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Keeps your edits connected to the original so you can compare
-                versions and revisit them later.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-border/60 border-t-4 border-t-[#22c55e] bg-card/90 p-4 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 sm:p-5">
-              <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                Step 3
-              </p>
-              <p className="mt-1 text-sm font-semibold">Share</p>
-              <p className="mt-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                You do
-              </p>
-              <p className="mt-1 text-sm text-foreground/90">
-                Publish the finished string with notes so other trainers can use
-                it, improve it, or fork it again.
-              </p>
-              <p className="mt-3 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                PokeQuery does
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Makes the shared version easy to find and easy to reuse.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-6 rounded-2xl border border-border/60 bg-background/80 p-4 sm:p-5">
-            <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-              Typical flow
-            </p>
-            <p className="mt-2 text-sm text-foreground/90">
-              Discover a raid or PvP string → fork it for your group → organize
-              your notes → share the final version back to the community.
-            </p>
-          </div>
-        </section>
-
-        <section className="rounded-3xl border border-border/60 bg-card/80 p-5 shadow-sm backdrop-blur sm:p-10 md:p-12">
-          <p className="mb-5 text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-            Feature Highlights
-          </p>
-          <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
-            <div className="rounded-2xl border border-[#f59e0b]/35 bg-[#f59e0b]/10 p-4 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 sm:p-5">
-              <p className="flex items-center gap-2 text-sm font-semibold">
-                <SwordsIcon className="size-4" />
-                PvP-ready filters
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Keep league-specific strings organized so your best setups are
-                easy to revisit and share.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-border/60 border-t-4 border-t-[#f59e0b] bg-card/90 p-4 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 sm:p-5">
-              <p className="flex items-center gap-2 text-sm font-semibold">
-                <ZapIcon className="size-4" />
-                Raid and event organization
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Save event-focused strings for legendary, mega, and shadow
-                rotations so your community has one source of truth.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-border/60 border-t-4 border-t-[#f59e0b] bg-card/90 p-4 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 sm:p-5">
-              <p className="flex items-center gap-2 text-sm font-semibold">
-                <UsersIcon className="size-4" />
-                Community collaboration
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Copy, fork, and improve what works. Shared knowledge gets
-                stronger when trainers build together.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section className="rounded-3xl border border-dashed border-border/70 bg-card/60 p-5 shadow-sm backdrop-blur sm:p-10 md:p-12">
-          <p className="mb-5 text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-            Coming Soon
-          </p>
-          <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
-            <div className="rounded-2xl border border-border/60 bg-background/80 p-4 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 sm:p-5">
-              <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                Developer platform
-              </p>
-              <p className="mt-1 text-lg font-semibold">Direct API access</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                A developer page with API access, docs, and examples for tools
-                built around raids, PvP strings, and community workflows.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-border/60 bg-background/80 p-4 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 sm:p-5">
-              <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                Community rewards
-              </p>
-              <p className="mt-1 text-lg font-semibold">
-                Badges and achievements
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Lightweight badges for sharing, forking, and contributing useful
-                strings to the community.
-              </p>
-            </div>
+          <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-border/60 pt-6 text-sm">
+            <a
+              href={docsUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <span className="inline-flex items-center gap-1.5">
+                <BookOpenTextIcon className="size-3.5" />
+                Documentation
+              </span>
+            </a>
+            <a
+              href={repoUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-muted-foreground transition-colors hover:text-foreground"
+            >
+              GitHub
+            </a>
+            <a
+              href="/privacy"
+              className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Privacy
+            </a>
+            <a
+              href="/terms"
+              className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Terms
+            </a>
           </div>
         </section>
       </div>

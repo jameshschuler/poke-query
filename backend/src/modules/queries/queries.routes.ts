@@ -74,6 +74,60 @@ function isValidReferenceUrl(value: string): boolean {
   }
 }
 
+function getReferenceDomainTag(referenceUrl: string | undefined): string | undefined {
+  if (!referenceUrl) {
+    return undefined;
+  }
+
+  try {
+    const hostname = new URL(referenceUrl).hostname.toLowerCase();
+    if (!hostname || hostname === "localhost") {
+      return undefined;
+    }
+
+    if (/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname) || hostname.includes(":")) {
+      return undefined;
+    }
+
+    const normalizedHost = hostname.replace(/^www\d*\./, "");
+    const labels = normalizedHost.split(".").filter(Boolean);
+    if (labels.length === 0) {
+      return undefined;
+    }
+
+    const secondLevelTlds = new Set([
+      "ac.uk",
+      "co.jp",
+      "co.nz",
+      "co.uk",
+      "com.au",
+      "com.br",
+      "gov.uk",
+      "net.au",
+      "org.au",
+      "org.uk",
+    ]);
+
+    let candidate = labels[0] ?? "";
+    if (labels.length >= 2) {
+      const suffix = `${labels[labels.length - 2]}.${labels[labels.length - 1]}`;
+      candidate =
+        labels.length >= 3 && secondLevelTlds.has(suffix)
+          ? (labels[labels.length - 3] ?? "")
+          : (labels[labels.length - 2] ?? "");
+    }
+
+    if (!candidate) {
+      return undefined;
+    }
+
+    const cleaned = candidate.replace(/[^a-z0-9-]/g, "").trim();
+    return cleaned || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function resolveDisplayName(row: {
   username: string;
   pogoUsername: string | null;
@@ -353,19 +407,32 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
           return reply.code(400).send({ error: "Reference URL must be a valid http(s) URL" });
         }
 
+        const referenceDomainTag = getReferenceDomainTag(normalizedReferenceUrl);
+
         // Generate the "Extensible Brain" data and mark user-created strings as community
         const normalizedUserTags = Array.from(
           new Set(userTags.map((tag) => tag.trim().toLowerCase()).filter(Boolean)),
         );
+        const generatedMetadata = generateMetadata(query);
+        const generatedAutoTags = Array.isArray(generatedMetadata.autoTags)
+          ? generatedMetadata.autoTags
+          : [];
+        const autoTags = Array.from(
+          new Set(
+            [...generatedAutoTags, ...(referenceDomainTag ? [referenceDomainTag] : [])]
+              .map((tag) => tag.trim().toLowerCase())
+              .filter(Boolean),
+          ),
+        );
         const metadata = {
-          ...generateMetadata(query),
+          ...generatedMetadata,
           source: "community" as const,
           userTags: normalizedUserTags,
+          autoTags,
           ...(normalizedReferenceUrl ? { referenceUrl: normalizedReferenceUrl } : {}),
         };
 
         // Deduplicate and normalize tags (case-insensitive), including autoTags
-        const autoTags = Array.isArray(metadata.autoTags) ? metadata.autoTags : [];
         const allTags = [...normalizedUserTags, ...autoTags];
         const uniqueTags = Array.from(new Set(allTags.map((t) => t.trim().toLowerCase())));
 
@@ -770,10 +837,24 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
           ? normalizedReferenceUrlInput
           : existingReferenceUrl;
 
+        const referenceDomainTag = getReferenceDomainTag(nextReferenceUrl);
+        const generatedMetadata = generateMetadata(query);
+        const generatedAutoTags = Array.isArray(generatedMetadata.autoTags)
+          ? generatedMetadata.autoTags
+          : [];
+        const autoTags = Array.from(
+          new Set(
+            [...generatedAutoTags, ...(referenceDomainTag ? [referenceDomainTag] : [])]
+              .map((tag) => tag.trim().toLowerCase())
+              .filter(Boolean),
+          ),
+        );
+
         const metadata = {
-          ...generateMetadata(query),
+          ...generatedMetadata,
           source: resolveMetadataSource(existingMetadata?.source),
           userTags: normalizedUserTags,
+          autoTags,
           ...(nextReferenceUrl ? { referenceUrl: nextReferenceUrl } : {}),
         };
 
@@ -794,7 +875,6 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
         }
 
         // Deduplicate and normalize tags (case-insensitive), including autoTags
-        const autoTags = Array.isArray(metadata.autoTags) ? metadata.autoTags : [];
         const allTags = [...normalizedUserTags, ...autoTags];
         const uniqueTags = Array.from(new Set(allTags.map((t) => t.trim().toLowerCase())));
 

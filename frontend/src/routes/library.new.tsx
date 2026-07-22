@@ -96,7 +96,7 @@ function NewLibraryQueryPage() {
       showSidebar
       showHeaderSearch={false}
     >
-      <div className="space-y-5">
+      <div className="flex flex-col gap-8">
         <div className="flex items-start gap-4">
           <nav className="flex items-center gap-2 text-sm text-muted-foreground">
             <Link
@@ -136,7 +136,7 @@ function NewLibraryQueryPage() {
           </div>
         </div>
 
-        <label className="space-y-2">
+        <label className="flex flex-col gap-2">
           <span className="text-sm font-medium">Name</span>
           <input
             value={title}
@@ -153,7 +153,7 @@ function NewLibraryQueryPage() {
           ) : null}
         </label>
 
-        <label className="space-y-2">
+        <label className="flex flex-col gap-2">
           <span className="text-sm font-medium">Search string</span>
           <textarea
             value={query}
@@ -163,7 +163,7 @@ function NewLibraryQueryPage() {
           />
         </label>
 
-        <label className="space-y-2">
+        <label className="flex flex-col gap-2">
           <span className="text-sm font-medium">Description</span>
           <textarea
             value={description}
@@ -179,7 +179,7 @@ function NewLibraryQueryPage() {
           ) : null}
         </label>
 
-        <label className="space-y-2">
+        <label className="flex flex-col gap-2">
           <span className="text-sm font-medium">Reference link (optional)</span>
           <input
             type="url"
@@ -201,7 +201,7 @@ function NewLibraryQueryPage() {
           helperText="Add your own tags to improve discovery for this string."
         />
 
-        <div className="space-y-2">
+        <div className="flex flex-col gap-2">
           <span className="text-sm font-medium">Visibility</span>
           <div className="grid grid-cols-2 gap-2">
             <button

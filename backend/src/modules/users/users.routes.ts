@@ -318,6 +318,7 @@ export async function userRoutes(fastify: FastifyTypebox) {
         .select({
           id: trainers.id,
           username: trainers.username,
+          role: trainers.role,
           pogoUsername: trainers.pogoUsername,
           visibleUsername: trainers.visibleUsername,
           team: trainers.team,
@@ -359,6 +360,7 @@ export async function userRoutes(fastify: FastifyTypebox) {
           email,
           username: request.user.email?.split("@")[0] ?? `trainer_${userId.slice(0, 4)}`,
           displayName: request.user.email?.split("@")[0] ?? `trainer_${userId.slice(0, 4)}`,
+          role: "member",
           pogoUsername: null,
           visibleUsername: "pokequery",
           team: null,
@@ -388,6 +390,7 @@ export async function userRoutes(fastify: FastifyTypebox) {
         email,
         ...row,
         displayName: resolveDisplayName(row),
+        role: row.role === "admin" ? ("admin" as const) : ("member" as const),
         team: row.team as "mystic" | "valor" | "instinct" | null,
         trainerCode: row.trainerCode,
         visibleUsername: row.visibleUsername as VisibleUsername,

@@ -640,7 +640,7 @@ function AccountPage() {
               </div>
 
               <div className="mt-5 grid gap-5 md:grid-cols-2">
-                <label className="space-y-1.5">
+                <label className="flex flex-col gap-1.5">
                   <span className="text-sm font-medium">
                     PokeQuery Username
                   </span>
@@ -666,7 +666,7 @@ function AccountPage() {
                   ) : null}
                 </label>
 
-                <div className="space-y-1.5">
+                <div className="flex flex-col gap-1.5">
                   <label className="text-sm font-medium" htmlFor="avatar-url">
                     Avatar URL
                   </label>
@@ -752,7 +752,7 @@ function AccountPage() {
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2">
-                    <label className="space-y-1.5 md:col-span-2">
+                    <label className="flex flex-col gap-1.5 md:col-span-2">
                       <span className="text-sm font-medium">
                         Pokemon GO Username
                       </span>
@@ -779,7 +779,7 @@ function AccountPage() {
                       ) : null}
                     </label>
 
-                    <label className="space-y-1.5">
+                    <label className="flex flex-col gap-1.5">
                       <span className="text-sm font-medium">Level</span>
                       <Input
                         type="number"
@@ -802,7 +802,7 @@ function AccountPage() {
                       ) : null}
                     </label>
 
-                    <label className="space-y-1.5">
+                    <label className="flex flex-col gap-1.5">
                       <span className="text-sm font-medium">Team</span>
                       <select
                         value={formState.team}
@@ -826,7 +826,7 @@ function AccountPage() {
                       ) : null}
                     </label>
 
-                    <label className="space-y-1.5 md:col-span-2">
+                    <label className="flex flex-col gap-1.5 md:col-span-2">
                       <span className="text-sm font-medium">Trainer Code</span>
                       <Input
                         value={formState.trainerCode}

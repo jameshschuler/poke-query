@@ -38,6 +38,7 @@ export const GetMeSchema = {
       email: Type.Union([Type.String({ format: "email" }), Type.Null()]),
       username: Type.String(),
       displayName: Type.String(),
+      role: Type.Union([Type.Literal("member"), Type.Literal("admin")]),
       pogoUsername: Type.Union([Type.String(), Type.Null()]),
       visibleUsername: visibleUsernameSchema,
       team: Type.Union([

@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { buildApp } from "../../src/app.js";
-import { searchQueries, trainers } from "../../src/db/schema.js";
-import { eq } from "drizzle-orm";
+import { discoverEventRollups, searchQueries, trainers } from "../../src/db/schema.js";
+import { and, eq, sql } from "drizzle-orm";
 import { OTHER_TEST_USER_ID, TEST_USER_ID } from "./setup.js";
 import { supabase } from "../../src/lib/supabase.js";
 
@@ -263,5 +263,77 @@ integrationDescribe("Community Search Integration", () => {
     expect(ids).toContain(firstId);
     expect(ids).toContain(secondId);
     expect(ids.indexOf(firstId)).toBeLessThan(ids.indexOf(secondId));
+  });
+
+  it("returns surfacing rails and caps repeated telemetry actions", async () => {
+    const searchKey = `surfacing-${Date.now()}`;
+
+    const created = await app.inject({
+      method: "POST",
+      url: "/api/v1/queries",
+      cookies: { "sb-access-token": "integration-token" },
+      payload: {
+        title: `${searchKey} Candidate`,
+        query: "cp-1500&!traded",
+        description: "High quality surfacing candidate",
+        isPublic: true,
+        tags: ["great-league"],
+      },
+    });
+
+    expect(created.statusCode).toBe(201);
+    const queryId = created.json().id;
+
+    const surfacingRes = await app.inject({
+      method: "GET",
+      url: `/api/v1/metrics/surfacing?search=${encodeURIComponent(searchKey)}`,
+    });
+
+    expect(surfacingRes.statusCode).toBe(200);
+
+    const payload: {
+      featuredToday: Array<{ id: string; qualityScore: number }>;
+      allTimeTrusted: Array<{ id: string; qualityScore: number }>;
+      contextualPicks: Array<{ id: string; qualityScore: number }>;
+    } = surfacingRes.json();
+
+    expect(Array.isArray(payload.featuredToday)).toBe(true);
+    expect(Array.isArray(payload.allTimeTrusted)).toBe(true);
+    expect(Array.isArray(payload.contextualPicks)).toBe(true);
+    expect(payload.contextualPicks.some((item) => item.id === queryId)).toBe(true);
+    expect(typeof payload.contextualPicks[0]?.qualityScore).toBe("number");
+
+    const burstEvents = Array.from({ length: 12 }, () => ({
+      queryId,
+      rail: "featured_today",
+      eventType: "impression",
+    }));
+
+    const trackRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/metrics/surfacing/events",
+      payload: {
+        sessionKey: `integration-session-${Date.now()}`,
+        events: burstEvents,
+      },
+    });
+
+    expect(trackRes.statusCode).toBe(202);
+
+    const [rollup] = await app.db
+      .select({
+        impressions: sql<number>`COALESCE(SUM(${discoverEventRollups.eventCount}), 0)::int`,
+      })
+      .from(discoverEventRollups)
+      .where(
+        and(
+          eq(discoverEventRollups.queryId, queryId),
+          eq(discoverEventRollups.eventType, "impression"),
+        ),
+      );
+
+    // Impression caps should prevent a single repeated burst from dominating counts.
+    expect((rollup?.impressions ?? 0) > 0).toBe(true);
+    expect(rollup?.impressions ?? 0).toBeLessThanOrEqual(4);
   });
 });

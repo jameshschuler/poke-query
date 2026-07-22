@@ -73,7 +73,7 @@ export function ReportTargetDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3">
+        <div className="flex flex-col gap-3">
           <label
             className="block text-sm font-medium text-foreground"
             htmlFor="report-reason"

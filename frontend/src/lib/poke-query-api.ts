@@ -226,6 +226,7 @@ export type GetTrainerResponse = TrainerSummary & {
 export type GetMeResponse = TrainerSummary & {
   hasTrainer: boolean
   profileCompleted: boolean
+  role: 'member' | 'admin'
   email: string | null
   pogoUsername: string | null
   visibleUsername: VisibleUsername
@@ -290,6 +291,7 @@ export type CommunityQuery = {
   viewCount: number
   favoriteCount: number
   forkCount: number
+  qualityScore: number
   source: 'official' | 'community' | null
   referenceUrl: string | null
   userTags: string[]
@@ -585,6 +587,44 @@ export type CommunityQueryParams = {
   search?: string
 }
 
+export type DiscoverRail =
+  'featured_today' | 'all_time_trusted' | 'contextual_picks' | 'default'
+
+export type CommunitySurfacingParams = {
+  tag?: string
+  filter?: 'all' | 'new' | 'popular' | 'official'
+  search?: string
+  railLimit?: number
+}
+
+export type CommunitySurfacingResponse = {
+  featuredToday: CommunityQuery[]
+  allTimeTrusted: CommunityQuery[]
+  contextualPicks: CommunityQuery[]
+  generatedAt: string
+  dateKey: string
+}
+
+export type CommunitySurfacingMetrics = {
+  windowDays: number
+  discoverToDetailCtr: number
+  copyConversion: number
+  impressionDistributionUniqueStrings: number
+  totals: {
+    impressions: number
+    detailClicks: number
+    copyActions: number
+    uniqueImpressionStrings: number
+  }
+}
+
+export type TrackDiscoverEvent = {
+  queryId: string
+  rail: DiscoverRail
+  eventType: 'impression' | 'detail_click' | 'copy_action'
+  occurredAt?: string
+}
+
 export type CommunityQueriesPage = {
   items: CommunityQuery[]
   pagination: {
@@ -750,6 +790,64 @@ export function getCommunityQueriesPage(
 
     throw error
   })
+}
+
+export function getCommunitySurfacing(
+  params: CommunitySurfacingParams = {},
+): Promise<CommunitySurfacingResponse> {
+  const search = new URLSearchParams()
+
+  if (params.tag) {
+    search.set('tag', params.tag)
+  }
+
+  if (params.filter) {
+    search.set('filter', params.filter)
+  }
+
+  if (params.search) {
+    search.set('search', params.search)
+  }
+
+  if (typeof params.railLimit === 'number') {
+    search.set('railLimit', String(params.railLimit))
+  }
+
+  const queryString = search.toString()
+  const path = queryString
+    ? `/api/v1/metrics/surfacing?${queryString}`
+    : '/api/v1/metrics/surfacing'
+
+  return apiRequest<CommunitySurfacingResponse>(path)
+}
+
+export function trackDiscoverEvents(
+  sessionKey: string,
+  events: TrackDiscoverEvent[],
+): Promise<void> {
+  if (events.length === 0) {
+    return Promise.resolve()
+  }
+
+  return apiRequest<void>('/api/v1/metrics/surfacing/events', {
+    method: 'POST',
+    body: {
+      sessionKey,
+      events,
+    },
+    parseAs: 'void',
+  })
+}
+
+export function getCommunitySurfacingMetrics(
+  days = 14,
+): Promise<CommunitySurfacingMetrics> {
+  const search = new URLSearchParams()
+  search.set('days', String(days))
+
+  return apiRequest<CommunitySurfacingMetrics>(
+    `/api/v1/metrics/surfacing/metrics?${search.toString()}`,
+  )
 }
 
 export async function getCommunityQueries(

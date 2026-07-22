@@ -8,6 +8,7 @@ import {
   boolean,
   jsonb,
   foreignKey,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 const authSchema = pgSchema("auth");
@@ -27,6 +28,7 @@ export const trainers = pokeSchema.table("trainers", {
   username: text("username").notNull().unique(),
   pogoUsername: text("pogo_username"),
   visibleUsername: text("visible_username").default("pokequery").notNull(),
+  role: text("role").default("member").notNull(),
   team: text("team"),
   level: integer("level").default(1),
   trainerCode: text("trainer_code"),
@@ -241,3 +243,35 @@ export const notificationPreferences = pokeSchema.table("notification_preference
     .notNull()
     .$onUpdate(() => new Date()),
 });
+
+// --- DISCOVER EVENT ROLLUPS ---
+export const discoverEventRollups = pokeSchema.table(
+  "discover_event_rollups",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    eventDate: timestamp("event_date", { mode: "date" }).notNull(),
+    eventType: text("event_type").notNull(),
+    rail: text("rail").notNull(),
+    queryId: uuid("query_id")
+      .references(() => searchQueries.id, { onDelete: "cascade" })
+      .notNull(),
+    sessionKey: text("session_key").notNull(),
+    eventBucket: timestamp("event_bucket").notNull(),
+    eventCount: integer("event_count").default(1).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => ({
+    dedupe: uniqueIndex("discover_event_rollups_dedupe_idx").on(
+      t.eventDate,
+      t.eventType,
+      t.rail,
+      t.queryId,
+      t.sessionKey,
+      t.eventBucket,
+    ),
+  }),
+);

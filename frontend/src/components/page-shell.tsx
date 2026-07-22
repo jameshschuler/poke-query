@@ -19,6 +19,7 @@ type PageShellProps = {
   title: string
   subtitle: string
   children: ReactNode
+  outsideCardContent?: ReactNode
   headerControls?: ReactNode
   contentHeaderVariant?: 'inline' | 'floating' | 'none'
   showSidebar?: boolean
@@ -30,6 +31,7 @@ export function PageShell({
   title,
   subtitle,
   children,
+  outsideCardContent,
   headerControls,
   contentHeaderVariant = 'inline',
   showSidebar,
@@ -106,6 +108,10 @@ export function PageShell({
             <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
             <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
           </div>
+        ) : null}
+
+        {outsideCardContent ? (
+          <div className="mb-6">{outsideCardContent}</div>
         ) : null}
 
         <section className="rounded-3xl border border-border/70 bg-card/95 p-6 text-foreground shadow-sm backdrop-blur dark:bg-card">

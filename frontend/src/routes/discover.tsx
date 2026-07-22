@@ -6,8 +6,10 @@ import {
   useQueryClient,
 } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
   ChevronsUpDownIcon,
   HeartIcon,
   Loader2Icon,
@@ -18,9 +20,9 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '#/components/ui/button'
-import type { CommunityQuery } from '#/lib/poke-query-api'
 import {
   getCommunityQueriesPage,
+  getCommunitySurfacing,
   favoriteGuestQuery,
   favoriteQuery,
   getMyFavoriteIds,
@@ -29,6 +31,7 @@ import {
   getQueryTags,
   unfavoriteQuery,
   unfavoriteGuestQuery,
+  trackDiscoverEvents,
   ApiRequestError,
 } from '#/lib/poke-query-api'
 import { getMutationErrorMessage } from '#/lib/mutation-toast'
@@ -79,6 +82,30 @@ type DiscoverSearch = {
   filter?: string
 }
 
+type DiscoverRail = 'featured_today' | 'all_time_trusted' | 'default'
+
+const DISCOVER_SESSION_STORAGE_KEY = 'poke-query:discover-session-key'
+const FEATURED_PAGE_SIZE = 3
+
+function getDiscoverSessionKey() {
+  if (typeof window === 'undefined') {
+    return 'discover-server-session'
+  }
+
+  const existing = window.localStorage.getItem(DISCOVER_SESSION_STORAGE_KEY)
+  if (existing) {
+    return existing
+  }
+
+  const generated =
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `discover_${Date.now()}_${Math.random().toString(36).slice(2)}`
+
+  window.localStorage.setItem(DISCOVER_SESSION_STORAGE_KEY, generated)
+  return generated
+}
+
 export const Route = createFileRoute('/discover')({
   ssr: false,
   validateSearch: (search): DiscoverSearch => {
@@ -111,6 +138,12 @@ function DiscoverPage() {
   const [searchTerm, setSearchTerm] = useState(routeSearch.q ?? '')
   const [debouncedSearch, setDebouncedSearch] = useState(routeSearch.q ?? '')
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [railPageByKey, setRailPageByKey] = useState<Record<string, number>>({})
+  const [railTransitionByKey, setRailTransitionByKey] = useState<
+    Record<string, 'prev' | 'next' | null>
+  >({})
+  const discoverSessionKey = useMemo(() => getDiscoverSessionKey(), [])
+  const sentImpressionKeysRef = useRef(new Set<string>())
 
   const { data: availableTags = [] } = useQuery({
     queryKey: ['query-tags'],
@@ -345,6 +378,23 @@ function DiscoverPage() {
       lastPage.pagination.hasMore ? lastPage.pagination.nextOffset : undefined,
   })
 
+  const { data: surfacingData } = useQuery({
+    queryKey: [
+      'community-surfacing',
+      activeFilter.filter,
+      activeFilter.tag,
+      debouncedSearch,
+    ],
+    queryFn: () =>
+      getCommunitySurfacing({
+        filter: activeFilter.filter,
+        tag: activeFilter.tag,
+        search: debouncedSearch.trim() || undefined,
+        railLimit: 6,
+      }),
+    staleTime: 2 * 60_000,
+  })
+
   const rows = useMemo(
     () => data?.pages.flatMap((page) => page.items) ?? [],
     [data],
@@ -366,6 +416,143 @@ function DiscoverPage() {
   // Server-side search, so just use rows
   const filteredRows = rows
   const resultsCount = filteredRows.length
+
+  const railSections = useMemo(
+    () => [
+      {
+        key: 'featured_today' as const,
+        title: 'Featured Today',
+        subtitle:
+          'Daily rotating picks selected from trusted high-quality strings.',
+        items: surfacingData?.featuredToday ?? [],
+      },
+      {
+        key: 'all_time_trusted' as const,
+        title: 'All-Time Trusted',
+        subtitle:
+          'Most reliable strings by quality score and durable engagement.',
+        items: surfacingData?.allTimeTrusted ?? [],
+      },
+    ],
+    [surfacingData],
+  )
+
+  useEffect(() => {
+    setRailPageByKey((current) => {
+      let changed = false
+      const next = { ...current }
+
+      for (const section of railSections) {
+        const maxPage = Math.max(
+          0,
+          Math.ceil(section.items.length / FEATURED_PAGE_SIZE) - 1,
+        )
+        const currentPage = current[section.key] ?? 0
+
+        if (currentPage > maxPage) {
+          next[section.key] = maxPage
+          changed = true
+        }
+      }
+
+      return changed ? next : current
+    })
+  }, [railSections])
+
+  const pagedRailSections = useMemo(
+    () =>
+      railSections.map((section) => {
+        const totalPages = Math.max(
+          1,
+          Math.ceil(section.items.length / FEATURED_PAGE_SIZE),
+        )
+        const maxPage = totalPages - 1
+        const currentPage = Math.min(railPageByKey[section.key] ?? 0, maxPage)
+        const start = currentPage * FEATURED_PAGE_SIZE
+        const end = start + FEATURED_PAGE_SIZE
+
+        return {
+          ...section,
+          totalPages,
+          currentPage,
+          pageItems: section.items.slice(start, end),
+          shownStart: section.items.length > 0 ? start + 1 : 0,
+          shownEnd: Math.min(end, section.items.length),
+        }
+      }),
+    [railPageByKey, railSections],
+  )
+
+  useEffect(() => {
+    const events = pagedRailSections.flatMap((section) =>
+      section.pageItems.map((item) => ({
+        queryId: item.id,
+        rail: section.key,
+        eventType: 'impression' as const,
+      })),
+    )
+
+    const unsent = events.filter((event) => {
+      const key = `${event.rail}:${event.queryId}`
+      if (sentImpressionKeysRef.current.has(key)) {
+        return false
+      }
+
+      sentImpressionKeysRef.current.add(key)
+      return true
+    })
+
+    if (unsent.length === 0) {
+      return
+    }
+
+    void trackDiscoverEvents(discoverSessionKey, unsent).catch(() => {
+      // Telemetry failures should never block discover browsing.
+    })
+  }, [discoverSessionKey, pagedRailSections])
+
+  function handleRailPageChange(railKey: string, direction: 'prev' | 'next') {
+    const section = pagedRailSections.find((item) => item.key === railKey)
+    if (!section) {
+      return
+    }
+
+    const currentPage = railPageByKey[railKey] ?? 0
+    const nextPage =
+      direction === 'prev'
+        ? Math.max(0, currentPage - 1)
+        : Math.min(section.totalPages - 1, currentPage + 1)
+
+    if (nextPage === currentPage) {
+      return
+    }
+
+    setRailTransitionByKey((current) => ({
+      ...current,
+      [railKey]: direction,
+    }))
+
+    setRailPageByKey((current) => ({
+      ...current,
+      [railKey]: nextPage,
+    }))
+
+    const clearTransition = () => {
+      setRailTransitionByKey((current) => ({
+        ...current,
+        [railKey]: null,
+      }))
+    }
+
+    if (typeof window !== 'undefined') {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(clearTransition)
+      })
+      return
+    }
+
+    setTimeout(clearTransition, 0)
+  }
 
   function handleToggleFavorite(queryId: string, isFavorited: boolean) {
     if (user) {
@@ -416,13 +603,131 @@ function DiscoverPage() {
     }
   }
 
+  function trackDiscoverEvent(
+    queryId: string,
+    rail: DiscoverRail,
+    eventType: 'detail_click' | 'copy_action',
+  ) {
+    void trackDiscoverEvents(discoverSessionKey, [
+      {
+        queryId,
+        rail,
+        eventType,
+      },
+    ]).catch(() => {
+      // Ignore telemetry failure.
+    })
+  }
+
   return (
     <>
       <PageShell
         headerPrefix={user ? undefined : 'PokeQuery'}
         title="Discover"
-        subtitle="Browse the newest community search strings first."
+        subtitle="Explore featured quality picks and trusted all-time strings."
         contentHeaderVariant="floating"
+        outsideCardContent={
+          pagedRailSections.some((section) => section.items.length > 0) ? (
+            <div className="space-y-4">
+              {pagedRailSections.map((section) =>
+                section.items.length > 0 ? (
+                  <section
+                    key={section.key}
+                    className="rounded-3xl border border-border/70 bg-card/95 px-6 py-6 shadow-sm"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <div>
+                          <h2 className="text-lg font-semibold tracking-tight">
+                            {section.title}
+                          </h2>
+                          <p className="text-sm text-muted-foreground">
+                            {section.subtitle}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">
+                            {section.shownStart}-{section.shownEnd} of{' '}
+                            {section.items.length}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="icon-sm"
+                            className="rounded-xl"
+                            aria-label={`Previous ${section.title} cards`}
+                            disabled={section.currentPage === 0}
+                            onClick={() =>
+                              handleRailPageChange(section.key, 'prev')
+                            }
+                          >
+                            <ChevronLeftIcon className="size-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon-sm"
+                            className="rounded-xl"
+                            aria-label={`Next ${section.title} cards`}
+                            disabled={
+                              section.currentPage >= section.totalPages - 1
+                            }
+                            onClick={() =>
+                              handleRailPageChange(section.key, 'next')
+                            }
+                          >
+                            <ChevronRightIcon className="size-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div
+                        className={`grid gap-4 transition-all duration-300 ease-out will-change-transform motion-reduce:transform-none motion-reduce:transition-none md:grid-cols-2 xl:grid-cols-3 ${
+                          railTransitionByKey[section.key] === 'next'
+                            ? 'translate-x-3 opacity-0 motion-reduce:opacity-100'
+                            : railTransitionByKey[section.key] === 'prev'
+                              ? '-translate-x-3 opacity-0 motion-reduce:opacity-100'
+                              : 'translate-x-0 opacity-100'
+                        }`}
+                      >
+                        {section.pageItems.map((card) => (
+                          <SearchStringCard
+                            key={`${section.key}:${card.id}`}
+                            card={card}
+                            variant="discover"
+                            isAuthenticated={Boolean(user)}
+                            discoverRail={section.key}
+                            onOpenDetail={(queryId, rail) =>
+                              trackDiscoverEvent(queryId, rail, 'detail_click')
+                            }
+                            onCopyTracked={(queryId, rail) =>
+                              trackDiscoverEvent(queryId, rail, 'copy_action')
+                            }
+                            isFavorited={
+                              user
+                                ? myFavoriteIdSet.has(card.id)
+                                : guestFavoriteIds.has(card.id)
+                            }
+                            isFavoritePending={
+                              favoriteMutation.isPending ||
+                              unfavoriteMutation.isPending ||
+                              guestFavoriteMutation.isPending ||
+                              guestUnfavoriteMutation.isPending
+                            }
+                            onToggleFavorite={handleToggleFavorite}
+                            onFork={
+                              user && card.creator?.id === user.id
+                                ? undefined
+                                : handleFork
+                            }
+                            isForkPending={forkMutation.isPending}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </section>
+                ) : null,
+              )}
+            </div>
+          ) : null
+        }
         headerControls={
           <div className="flex w-full min-w-0 items-center gap-2 md:ml-auto md:max-w-xl">
             <div className="relative min-w-0 flex-1">
@@ -510,7 +815,7 @@ function DiscoverPage() {
           </div>
         }
       >
-        <section className="-mx-6 -mt-5 border-b border-border/60 px-6 py-4 md:-mx-6 lg:-mx-6">
+        <section className="-mx-6 -mt-6 rounded-t-3xl border-b border-border/70 bg-card/95 px-6 py-4 md:-mx-6 lg:-mx-6">
           <div className="flex flex-wrap items-center gap-2">
             {visibleFilters.map((filter) => (
               <Button
@@ -574,7 +879,7 @@ function DiscoverPage() {
           </div>
         </section>
 
-        <div className="pt-7">
+        <div className="pt-6">
           <div className="mb-6 flex flex-wrap items-center justify-between gap-4 sm:flex-nowrap">
             <p
               className="text-sm text-muted-foreground whitespace-nowrap"
@@ -621,12 +926,19 @@ function DiscoverPage() {
           ) : null}
 
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {filteredRows.map((card: CommunityQuery) => (
+            {filteredRows.map((card) => (
               <SearchStringCard
                 key={card.id}
                 card={card}
                 variant="discover"
+                discoverRail="default"
                 isAuthenticated={Boolean(user)}
+                onOpenDetail={(queryId, rail) =>
+                  trackDiscoverEvent(queryId, rail, 'detail_click')
+                }
+                onCopyTracked={(queryId, rail) =>
+                  trackDiscoverEvent(queryId, rail, 'copy_action')
+                }
                 isFavorited={
                   user
                     ? myFavoriteIdSet.has(card.id)
