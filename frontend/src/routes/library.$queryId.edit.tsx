@@ -161,8 +161,8 @@ function EditLibraryQueryPage() {
             Could not load this string.
           </div>
         ) : !currentQuery ? null : (
-          <div className="space-y-5">
-            <label className="space-y-2">
+          <div className="flex flex-col gap-8">
+            <label className="flex flex-col gap-2">
               <span className="text-sm font-medium">Name</span>
               <input
                 value={title}
@@ -179,7 +179,7 @@ function EditLibraryQueryPage() {
               ) : null}
             </label>
 
-            <label className="space-y-2">
+            <label className="flex flex-col gap-2">
               <span className="text-sm font-medium">Search string</span>
               <textarea
                 value={query}
@@ -189,7 +189,7 @@ function EditLibraryQueryPage() {
               />
             </label>
 
-            <label className="space-y-2">
+            <label className="flex flex-col gap-2">
               <span className="text-sm font-medium">Description</span>
               <textarea
                 value={description}
@@ -205,7 +205,7 @@ function EditLibraryQueryPage() {
               ) : null}
             </label>
 
-            <label className="space-y-2">
+            <label className="flex flex-col gap-2">
               <span className="text-sm font-medium">
                 Reference link (optional)
               </span>
@@ -229,7 +229,7 @@ function EditLibraryQueryPage() {
               helperText="Update tags to keep this string easy to find later."
             />
 
-            <div className="space-y-2">
+            <div className="flex flex-col gap-2">
               <span className="text-sm font-medium">Visibility</span>
               <div className="grid grid-cols-2 gap-2">
                 <button

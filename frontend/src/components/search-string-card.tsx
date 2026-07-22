@@ -19,7 +19,11 @@ import {
 } from '#/components/ui/tooltip'
 import { OfficialTrainerBadge } from '#/components/official-trainer-badge'
 import { copyQuery } from '#/lib/poke-query-api'
-import type { CommunityQuery, TrainerPublicQuery } from '#/lib/poke-query-api'
+import type {
+  CommunityQuery,
+  DiscoverRail,
+  TrainerPublicQuery,
+} from '#/lib/poke-query-api'
 import {
   formatCompactNumber,
   formatFullNumber,
@@ -35,6 +39,9 @@ type SearchStringCardProps = {
   onToggleFavorite?: (queryId: string, isFavorited: boolean) => void
   onFork?: (queryId: string) => void
   isForkPending?: boolean
+  discoverRail?: DiscoverRail
+  onOpenDetail?: (queryId: string, rail: DiscoverRail) => void
+  onCopyTracked?: (queryId: string, rail: DiscoverRail) => void
 }
 
 function isCommunityQuery(
@@ -75,6 +82,9 @@ export function SearchStringCard({
   onToggleFavorite,
   onFork,
   isForkPending = false,
+  discoverRail = 'default',
+  onOpenDetail,
+  onCopyTracked,
 }: SearchStringCardProps) {
   const dateFormatter = useMemo(
     () =>
@@ -116,6 +126,7 @@ export function SearchStringCard({
       .then(async () => {
         setDisplayCopyCount((current) => current + 1)
         toast.success('Copied to clipboard!')
+        onCopyTracked?.(card.id, discoverRail)
 
         try {
           await copyQuery(card.id)
@@ -144,6 +155,11 @@ export function SearchStringCard({
               to="/queries/$queryId"
               params={{ queryId: card.id }}
               className="hover:underline"
+              onClick={() => {
+                if (variant === 'discover') {
+                  onOpenDetail?.(card.id, discoverRail)
+                }
+              }}
             >
               <h3 className="truncate text-lg font-semibold leading-tight">
                 {card.title}

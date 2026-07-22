@@ -65,6 +65,7 @@ describe("Authentication Flow", () => {
     const mockRow = {
       id: "uuid-123",
       username: "AshKetchum",
+      role: "member",
       pogoUsername: null,
       visibleUsername: "pokequery",
       team: null,

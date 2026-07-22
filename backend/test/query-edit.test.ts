@@ -67,36 +67,22 @@ describe("Edit Query Endpoint", () => {
   });
 
   it("allows creators to edit their own queries", async () => {
-    app.db.select = vi
-      .fn()
-      .mockImplementationOnce(() => ({
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn(() => Promise.resolve([{ metadata: { source: "community" } }])),
-          })),
+    let selectCallCount = 0;
+    app.db.select = vi.fn().mockImplementation(() => ({
+      from: vi.fn(() => ({
+        where: vi.fn(() => ({
+          limit: vi.fn(() => {
+            selectCallCount += 1;
+
+            if (selectCallCount === 1) {
+              return Promise.resolve([{ metadata: { source: "community" } }]);
+            }
+
+            return Promise.resolve([]);
+          }),
         })),
-      }))
-      .mockImplementationOnce(() => ({
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn(() => Promise.resolve([{ id: "tag-high-iv", name: "high-iv" }])),
-          })),
-        })),
-      }))
-      .mockImplementationOnce(() => ({
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn(() => Promise.resolve([{ id: "tag-pvp", name: "pvp" }])),
-          })),
-        })),
-      }))
-      .mockImplementationOnce(() => ({
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn(() => Promise.resolve([{ id: "tag-great-league", name: "great-league" }])),
-          })),
-        })),
-      }));
+      })),
+    }));
 
     const returning = vi.fn().mockResolvedValue([{ id: queryId }]);
     const where = vi.fn(() => ({ returning }));
@@ -105,7 +91,9 @@ describe("Edit Query Endpoint", () => {
 
     app.db.insert = vi.fn(() => ({
       values: vi.fn(() => ({
-        onConflictDoNothing: vi.fn().mockResolvedValue([]),
+        onConflictDoNothing: vi.fn(() => ({
+          returning: vi.fn().mockResolvedValue([{ id: "tag-generated" }]),
+        })),
       })),
     }));
 
@@ -119,12 +107,20 @@ describe("Edit Query Endpoint", () => {
         title: "Updated Title",
         query: "4*&cp-1500",
         description: "Updated description",
+        referenceUrl: "https://pvpoke.com/rankings/",
         isPublic: true,
       },
     });
 
     expect(response.statusCode).toBe(200);
     expect(JSON.parse(response.body)).toEqual({ id: queryId });
+    expect(set).toHaveBeenCalled();
+
+    const updatePayload = set.mock.calls[0]?.[0] as {
+      metadata?: { autoTags?: string[] };
+    };
+
+    expect(updatePayload.metadata?.autoTags).toContain("pvpoke");
   });
 
   it("returns 404 when a different user tries to edit the query", async () => {

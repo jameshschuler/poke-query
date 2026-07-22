@@ -29,7 +29,7 @@ function AboutPage() {
           </h1>
           <p className="max-w-3xl text-sm text-muted-foreground sm:text-base">
             PokeQuery helps Pokemon GO trainers discover, fork, and share search
-            strings for raids, PvP, events, and local community workflows.
+            strings for raids, PvP, and events.
           </p>
         </header>
 
@@ -44,8 +44,7 @@ function AboutPage() {
           <article className="rounded-2xl border border-border/70 bg-background/80 p-4">
             <p className="text-sm font-semibold">Adapt</p>
             <p className="mt-2 text-sm text-muted-foreground">
-              Fork strings and tune them for your local raid group, event prep,
-              or PvP lineup.
+              Fork strings and tune them for your event prep or PvP lineup.
             </p>
           </article>
           <article className="rounded-2xl border border-border/70 bg-background/80 p-4">
@@ -60,17 +59,23 @@ function AboutPage() {
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">Who It Is For</h2>
           <p className="text-sm text-muted-foreground sm:text-base">
-            PokeQuery is designed for individual trainers, local community
-            organizers, PvP players, and raid coordinators who want a reliable
-            way to manage search strings over time.
+            PokeQuery is designed for individual trainers and PvP players who
+            want a reliable way to manage search strings over time.
           </p>
         </section>
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">Questions?</h2>
           <p className="text-sm text-muted-foreground sm:text-base">
-            If you are evaluating PokeQuery for your group, start by visiting
-            Discover to see how community-shared strings are organized.
+            If you are new to PokeQuery, start in Discover to see how shared
+            strings are organized. Questions or feedback? Email{' '}
+            <a
+              href="mailto:contact@pokequery.app"
+              className="font-medium underline underline-offset-2"
+            >
+              contact@pokequery.app
+            </a>
+            .
           </p>
         </section>
 

@@ -9,6 +9,7 @@ const { mockSelect, mockAdminDeleteUser } = vi.hoisted(() => ({
 const mockRow = {
   id: "uuid-123",
   username: "AshKetchum",
+  role: "member",
   pogoUsername: null,
   visibleUsername: "pokequery",
   team: "mystic",
@@ -123,6 +124,7 @@ describe("GET /api/v1/users/me", () => {
     expect(body.id).toBe("uuid-123");
     expect(body.email).toBe("ash@example.com");
     expect(body.username).toBe("AshKetchum");
+    expect(body.role).toBe("member");
     expect(body.displayName).toBe("AshKetchum");
     expect(body.pogoUsername).toBeNull();
     expect(body.visibleUsername).toBe("pokequery");
@@ -147,6 +149,7 @@ describe("GET /api/v1/users/me", () => {
     expect(res.statusCode).toBe(200);
     expect(res.json()).toMatchObject({
       hasTrainer: false,
+      role: "member",
       id: "uuid-123",
       email: "ash@example.com",
       team: null,
