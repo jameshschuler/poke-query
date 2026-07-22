@@ -15,6 +15,7 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar'
 import {
+  ArrowLeftRightIcon,
   SearchIcon,
   LayoutDashboardIcon,
   BookOpenIcon,
@@ -27,7 +28,6 @@ import {
   ApiRequestError,
   getModerationAccess,
   getMe,
-  getUnreadNotificationCount,
   logout,
 } from '#/lib/poke-query-api'
 import { setCachedUser } from '#/lib/route-auth'
@@ -50,7 +50,6 @@ const data = {
       title: 'Discover',
       url: '/discover',
       icon: <SearchIcon />,
-      isActive: true,
     },
     {
       title: 'My Library',
@@ -71,6 +70,18 @@ const data = {
       title: 'Following',
       url: '/following',
       icon: <UsersIcon />,
+    },
+    {
+      title: 'Tools',
+      url: '/tools',
+      icon: <ArrowLeftRightIcon />,
+      collapsible: false,
+      items: [
+        {
+          title: 'Dex Converter',
+          url: '/dex-converter',
+        },
+      ],
     },
   ],
 }
@@ -154,7 +165,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const baseItems = [...data.navMain]
 
     if (moderationAccess?.isReviewer) {
-      baseItems.push({
+      baseItems.splice(baseItems.length - 1, 0, {
         title: 'Moderation',
         url: '/moderation',
         icon: <ShieldAlertIcon />,
@@ -163,7 +174,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
     return baseItems.map((item) => ({
       ...item,
-      isActive: pathname === item.url,
+      isActive:
+        pathname === item.url ||
+        Boolean(item.items?.some((subItem) => subItem.url === pathname)),
     }))
   }, [moderationAccess?.isReviewer, pathname])
 

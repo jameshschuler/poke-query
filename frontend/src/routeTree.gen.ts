@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as DexConverterRouteImport } from './routes/dex-converter'
 import { Route as DiscoverRouteImport } from './routes/discover'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as FollowingRouteImport } from './routes/following'
@@ -48,6 +49,11 @@ const AccountRoute = AccountRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DexConverterRoute = DexConverterRouteImport.update({
+  id: '/dex-converter',
+  path: '/dex-converter',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DiscoverRoute = DiscoverRouteImport.update({
@@ -136,6 +142,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/account': typeof AccountRoute
   '/dashboard': typeof DashboardRoute
+  '/dex-converter': typeof DexConverterRoute
   '/discover': typeof DiscoverRoute
   '/favorites': typeof FavoritesRoute
   '/following': typeof FollowingRoute
@@ -158,6 +165,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/account': typeof AccountRoute
   '/dashboard': typeof DashboardRoute
+  '/dex-converter': typeof DexConverterRoute
   '/discover': typeof DiscoverRoute
   '/favorites': typeof FavoritesRoute
   '/following': typeof FollowingRoute
@@ -181,6 +189,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/account': typeof AccountRoute
   '/dashboard': typeof DashboardRoute
+  '/dex-converter': typeof DexConverterRoute
   '/discover': typeof DiscoverRoute
   '/favorites': typeof FavoritesRoute
   '/following': typeof FollowingRoute
@@ -205,6 +214,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/account'
     | '/dashboard'
+    | '/dex-converter'
     | '/discover'
     | '/favorites'
     | '/following'
@@ -227,6 +237,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/account'
     | '/dashboard'
+    | '/dex-converter'
     | '/discover'
     | '/favorites'
     | '/following'
@@ -249,6 +260,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/account'
     | '/dashboard'
+    | '/dex-converter'
     | '/discover'
     | '/favorites'
     | '/following'
@@ -272,6 +284,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AccountRoute: typeof AccountRoute
   DashboardRoute: typeof DashboardRoute
+  DexConverterRoute: typeof DexConverterRoute
   DiscoverRoute: typeof DiscoverRoute
   FavoritesRoute: typeof FavoritesRoute
   FollowingRoute: typeof FollowingRoute
@@ -314,6 +327,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dex-converter': {
+      id: '/dex-converter'
+      path: '/dex-converter'
+      fullPath: '/dex-converter'
+      preLoaderRoute: typeof DexConverterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/discover': {
@@ -471,6 +491,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AccountRoute: AccountRoute,
   DashboardRoute: DashboardRoute,
+  DexConverterRoute: DexConverterRoute,
   DiscoverRoute: DiscoverRoute,
   FavoritesRoute: FavoritesRoute,
   FollowingRoute: FollowingRoute,
