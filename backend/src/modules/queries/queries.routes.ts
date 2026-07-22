@@ -108,13 +108,17 @@ function getReferenceDomainTag(referenceUrl: string | undefined): string | undef
       "org.uk",
     ]);
 
-    let candidate = labels[0];
+    let candidate = labels[0] ?? "";
     if (labels.length >= 2) {
       const suffix = `${labels[labels.length - 2]}.${labels[labels.length - 1]}`;
       candidate =
         labels.length >= 3 && secondLevelTlds.has(suffix)
-          ? labels[labels.length - 3]
-          : labels[labels.length - 2];
+          ? (labels[labels.length - 3] ?? "")
+          : (labels[labels.length - 2] ?? "");
+    }
+
+    if (!candidate) {
+      return undefined;
     }
 
     const cleaned = candidate.replace(/[^a-z0-9-]/g, "").trim();
