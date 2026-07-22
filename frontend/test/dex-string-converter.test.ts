@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest'
 import {
   convertDexString,
   convertDexStringWithStats,
-  type DexPokemonEntry,
 } from '#/lib/dex-string-converter'
+import type { DexPokemonEntry } from '#/lib/dex-string-converter'
 
 const pokemon: DexPokemonEntry[] = [
   { id: 1, name: 'bulbasaur' },

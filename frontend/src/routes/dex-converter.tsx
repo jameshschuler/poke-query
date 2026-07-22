@@ -4,10 +4,10 @@ import { useMemo, useState } from 'react'
 
 import { PageShell } from '#/components/page-shell'
 import { Button } from '#/components/ui/button'
-import {
-  convertDexStringWithStats,
-  type DexConversionDirection,
-  type DexPokemonEntry,
+import { convertDexStringWithStats } from '#/lib/dex-string-converter'
+import type {
+  DexConversionDirection,
+  DexPokemonEntry,
 } from '#/lib/dex-string-converter'
 
 type PokeApiPokemonListResponse = {
