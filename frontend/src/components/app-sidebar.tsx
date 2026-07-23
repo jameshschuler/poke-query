@@ -163,40 +163,52 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const navMainItems = useMemo(() => {
     const baseItems = [...data.navMain]
-    const adminItems = [] as {
+    const adminOnlyItems = [] as {
       title: string
       url: string
       icon?: React.ReactNode
     }[]
+    const isReviewer = Boolean(moderationAccess?.isReviewer)
 
     if (me?.role === 'admin') {
-      adminItems.push({
+      adminOnlyItems.push({
         title: 'Discover Performance',
         url: '/admin/discover-performance',
         icon: <SearchIcon />,
       })
 
-      adminItems.push({
+      adminOnlyItems.push({
         title: 'Weekly Picks',
         url: '/admin/weekly-picks',
       })
     }
 
-    if (moderationAccess?.isReviewer) {
-      adminItems.push({
-        title: 'Moderation',
-        url: '/moderation',
-        icon: <ShieldAlertIcon />,
-      })
-    }
+    const insertBeforeToolsIndex = Math.max(0, baseItems.length - 1)
 
-    if (adminItems.length > 0) {
-      baseItems.splice(baseItems.length - 1, 0, {
+    if (adminOnlyItems.length > 0) {
+      const adminItems = isReviewer
+        ? [
+            ...adminOnlyItems,
+            {
+              title: 'Moderation',
+              url: '/moderation',
+              icon: <ShieldAlertIcon />,
+            },
+          ]
+        : adminOnlyItems
+
+      baseItems.splice(insertBeforeToolsIndex, 0, {
         title: 'Admin',
         url: '/dashboard',
         icon: <ShieldAlertIcon />,
         collapsible: false,
         items: adminItems,
+      })
+    } else if (isReviewer) {
+      baseItems.splice(insertBeforeToolsIndex, 0, {
+        title: 'Moderation',
+        url: '/moderation',
+        icon: <ShieldAlertIcon />,
       })
     }
 

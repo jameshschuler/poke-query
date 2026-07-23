@@ -190,7 +190,7 @@ integrationDescribe("Community Search Integration", () => {
     expect(ids).toContain(secondId);
     expect(ids.indexOf(secondId)).toBeLessThan(ids.indexOf(firstId));
 
-    const topRow = rows[0];
+    const topRow = rows[0]!;
     expect(topRow.creator).toBeTruthy();
     expect(topRow.creator?.username).toBe("integration_trainer");
   });
@@ -407,5 +407,64 @@ integrationDescribe("Community Search Integration", () => {
 
     expect(deleteRes.statusCode).toBe(200);
     expect(deleteRes.json().removedQueryId).toBe(queryId);
+  });
+
+  it("returns configured active weekly picks even when not in trusted top-120", async () => {
+    const searchKey = `weekly-picks-top120-${Date.now()}`;
+
+    await app.db.update(trainers).set({ role: "admin" }).where(eq(trainers.userId, TEST_USER_ID));
+
+    const lowQualityRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/queries",
+      cookies: { "sb-access-token": "integration-token" },
+      payload: {
+        title: `${searchKey} Low Quality Pick`,
+        query: "cp-1500",
+        isPublic: true,
+      },
+    });
+
+    expect(lowQualityRes.statusCode).toBe(201);
+    const lowQualityQueryId = lowQualityRes.json().id as string;
+
+    for (let i = 0; i < 130; i += 1) {
+      const noisyRes = await app.inject({
+        method: "POST",
+        url: "/api/v1/queries",
+        cookies: { "sb-access-token": "integration-token" },
+        payload: {
+          title: `${searchKey} Trusted Candidate ${i}`,
+          query: `cp-${1500 + (i % 200)}&!shadow&!traded`,
+          description: "High-quality candidate with richer metadata",
+          isPublic: true,
+          tags: ["great-league"],
+        },
+      });
+
+      expect(noisyRes.statusCode).toBe(201);
+    }
+
+    const upsertRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/metrics/surfacing/weekly-picks",
+      cookies: { "sb-access-token": "integration-token" },
+      payload: {
+        queryId: lowQualityQueryId,
+        displayOrder: 0,
+        isActive: true,
+      },
+    });
+
+    expect(upsertRes.statusCode).toBe(200);
+
+    const surfacingRes = await app.inject({
+      method: "GET",
+      url: "/api/v1/metrics/surfacing?railLimit=10",
+    });
+
+    expect(surfacingRes.statusCode).toBe(200);
+    const surfacingPayload: { weeklyPicks: Array<{ id: string }> } = surfacingRes.json();
+    expect(surfacingPayload.weeklyPicks.some((item) => item.id === lowQualityQueryId)).toBe(true);
   });
 });

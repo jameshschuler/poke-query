@@ -277,11 +277,14 @@ export async function metricsRoutes(fastify: FastifyTypebox) {
 
     const now = new Date();
     const weeklyPickRows = await fastify.db
-      .select({ queryId: discoverWeeklyPicks.queryId })
+      .select(selectCommunityFields)
       .from(discoverWeeklyPicks)
+      .innerJoin(searchQueries, eq(searchQueries.id, discoverWeeklyPicks.queryId))
+      .leftJoin(trainers, eq(searchQueries.creatorId, trainers.id))
       .where(
         and(
           eq(discoverWeeklyPicks.isActive, true),
+          eq(searchQueries.isPublic, true),
           or(isNull(discoverWeeklyPicks.startsAt), lte(discoverWeeklyPicks.startsAt, now)),
           or(isNull(discoverWeeklyPicks.endsAt), gte(discoverWeeklyPicks.endsAt, now)),
         ),
@@ -289,11 +292,8 @@ export async function metricsRoutes(fastify: FastifyTypebox) {
       .orderBy(asc(discoverWeeklyPicks.displayOrder), desc(discoverWeeklyPicks.updatedAt))
       .limit(limit);
 
-    const trustedById = new Map(trustedItems.map((item) => [item.id, item]));
     const weeklyPicks = uniqueById(
-      weeklyPickRows
-        .map((row) => trustedById.get(row.queryId))
-        .filter((item): item is NonNullable<typeof item> => Boolean(item)),
+      weeklyPickRows.map((row) => toCommunityItem(row as CommunityRow)),
     );
 
     const allTimeTrusted = trustedHighQualityItems.slice(0, limit);

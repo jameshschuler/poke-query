@@ -268,10 +268,14 @@ function WeeklyPicksAdminPage() {
             onSubmit={handleSubmit}
           >
             <div className="md:col-span-2">
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">
+              <label
+                htmlFor="weekly-pick-query-search"
+                className="mb-1 block text-xs font-medium text-muted-foreground"
+              >
                 Find public query
               </label>
               <Input
+                id="weekly-pick-query-search"
                 value={querySearch}
                 onChange={(event) => setQuerySearch(event.target.value)}
                 placeholder="Search by title, tags, or query text"
@@ -316,10 +320,14 @@ function WeeklyPicksAdminPage() {
             </div>
 
             <div className="md:col-span-2">
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">
+              <label
+                htmlFor="weekly-pick-query-id"
+                className="mb-1 block text-xs font-medium text-muted-foreground"
+              >
                 Query ID
               </label>
               <Input
+                id="weekly-pick-query-id"
                 value={queryId}
                 onChange={(event) => setQueryId(event.target.value)}
                 placeholder="UUID of public query"
@@ -328,10 +336,14 @@ function WeeklyPicksAdminPage() {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">
+              <label
+                htmlFor="weekly-pick-display-order"
+                className="mb-1 block text-xs font-medium text-muted-foreground"
+              >
                 Display order
               </label>
               <Input
+                id="weekly-pick-display-order"
                 value={displayOrder}
                 onChange={(event) => setDisplayOrder(event.target.value)}
                 inputMode="numeric"
@@ -351,10 +363,14 @@ function WeeklyPicksAdminPage() {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">
+              <label
+                htmlFor="weekly-pick-starts-at"
+                className="mb-1 block text-xs font-medium text-muted-foreground"
+              >
                 Starts at (optional)
               </label>
               <Input
+                id="weekly-pick-starts-at"
                 type="datetime-local"
                 value={startsAt}
                 onChange={(event) => setStartsAt(event.target.value)}
@@ -362,10 +378,14 @@ function WeeklyPicksAdminPage() {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">
+              <label
+                htmlFor="weekly-pick-ends-at"
+                className="mb-1 block text-xs font-medium text-muted-foreground"
+              >
                 Ends at (optional)
               </label>
               <Input
+                id="weekly-pick-ends-at"
                 type="datetime-local"
                 value={endsAt}
                 onChange={(event) => setEndsAt(event.target.value)}
@@ -373,10 +393,14 @@ function WeeklyPicksAdminPage() {
             </div>
 
             <div className="md:col-span-2">
-              <label className="mb-1 block text-xs font-medium text-muted-foreground">
+              <label
+                htmlFor="weekly-pick-notes"
+                className="mb-1 block text-xs font-medium text-muted-foreground"
+              >
                 Notes (optional)
               </label>
               <textarea
+                id="weekly-pick-notes"
                 value={notes}
                 onChange={(event) => setNotes(event.target.value)}
                 placeholder="Why this pick is featured"
