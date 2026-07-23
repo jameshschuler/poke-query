@@ -1,6 +1,11 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { buildApp } from "../../src/app.js";
-import { discoverEventRollups, searchQueries, trainers } from "../../src/db/schema.js";
+import {
+  discoverEventRollups,
+  discoverWeeklyPicks,
+  searchQueries,
+  trainers,
+} from "../../src/db/schema.js";
 import { and, eq, sql } from "drizzle-orm";
 import { OTHER_TEST_USER_ID, TEST_USER_ID } from "./setup.js";
 import { supabase } from "../../src/lib/supabase.js";
@@ -41,6 +46,7 @@ integrationDescribe("Community Search Integration", () => {
   });
 
   beforeEach(async () => {
+    await app.db.delete(discoverWeeklyPicks);
     await app.db.delete(searchQueries).where(eq(searchQueries.creatorId, TEST_USER_ID));
     await app.db.delete(searchQueries).where(eq(searchQueries.creatorId, OTHER_USER_ID));
 
@@ -184,7 +190,7 @@ integrationDescribe("Community Search Integration", () => {
     expect(ids).toContain(secondId);
     expect(ids.indexOf(secondId)).toBeLessThan(ids.indexOf(firstId));
 
-    const topRow = rows[0];
+    const topRow = rows[0]!;
     expect(topRow.creator).toBeTruthy();
     expect(topRow.creator?.username).toBe("integration_trainer");
   });
@@ -292,11 +298,13 @@ integrationDescribe("Community Search Integration", () => {
     expect(surfacingRes.statusCode).toBe(200);
 
     const payload: {
+      weeklyPicks: Array<{ id: string; qualityScore: number }>;
       featuredToday: Array<{ id: string; qualityScore: number }>;
       allTimeTrusted: Array<{ id: string; qualityScore: number }>;
       contextualPicks: Array<{ id: string; qualityScore: number }>;
     } = surfacingRes.json();
 
+    expect(Array.isArray(payload.weeklyPicks)).toBe(true);
     expect(Array.isArray(payload.featuredToday)).toBe(true);
     expect(Array.isArray(payload.allTimeTrusted)).toBe(true);
     expect(Array.isArray(payload.contextualPicks)).toBe(true);
@@ -335,5 +343,128 @@ integrationDescribe("Community Search Integration", () => {
     // Impression caps should prevent a single repeated burst from dominating counts.
     expect((rollup?.impressions ?? 0) > 0).toBe(true);
     expect(rollup?.impressions ?? 0).toBeLessThanOrEqual(4);
+  });
+
+  it("allows admins to manage weekly picks via API", async () => {
+    const searchKey = `weekly-picks-${Date.now()}`;
+
+    await app.db.update(trainers).set({ role: "admin" }).where(eq(trainers.userId, TEST_USER_ID));
+
+    const created = await app.inject({
+      method: "POST",
+      url: "/api/v1/queries",
+      cookies: { "sb-access-token": "integration-token" },
+      payload: {
+        title: `${searchKey} Candidate`,
+        query: "cp-1500&!traded&!shadow",
+        isPublic: true,
+        tags: ["raid"],
+      },
+    });
+
+    expect(created.statusCode).toBe(201);
+    const queryId = created.json().id;
+
+    const upsertRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/metrics/surfacing/weekly-picks",
+      cookies: { "sb-access-token": "integration-token" },
+      payload: {
+        queryId,
+        displayOrder: 1,
+        isActive: true,
+        notes: "Mega and legendary spotlight",
+      },
+    });
+
+    expect(upsertRes.statusCode).toBe(200);
+    expect(upsertRes.json().item.queryId).toBe(queryId);
+
+    const listRes = await app.inject({
+      method: "GET",
+      url: "/api/v1/metrics/surfacing/weekly-picks",
+      cookies: { "sb-access-token": "integration-token" },
+    });
+
+    expect(listRes.statusCode).toBe(200);
+    const listedItems: Array<{ queryId: string }> = listRes.json().items;
+    expect(listedItems.some((item) => item.queryId === queryId)).toBe(true);
+
+    const surfacingRes = await app.inject({
+      method: "GET",
+      url: `/api/v1/metrics/surfacing?search=${encodeURIComponent(searchKey)}`,
+    });
+
+    expect(surfacingRes.statusCode).toBe(200);
+    const surfacingPayload: { weeklyPicks: Array<{ id: string }> } = surfacingRes.json();
+    expect(surfacingPayload.weeklyPicks.some((item) => item.id === queryId)).toBe(true);
+
+    const deleteRes = await app.inject({
+      method: "DELETE",
+      url: `/api/v1/metrics/surfacing/weekly-picks/${queryId}`,
+      cookies: { "sb-access-token": "integration-token" },
+    });
+
+    expect(deleteRes.statusCode).toBe(200);
+    expect(deleteRes.json().removedQueryId).toBe(queryId);
+  });
+
+  it("returns configured active weekly picks even when not in trusted top-120", async () => {
+    const searchKey = `weekly-picks-top120-${Date.now()}`;
+
+    await app.db.update(trainers).set({ role: "admin" }).where(eq(trainers.userId, TEST_USER_ID));
+
+    const lowQualityRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/queries",
+      cookies: { "sb-access-token": "integration-token" },
+      payload: {
+        title: `${searchKey} Low Quality Pick`,
+        query: "cp-1500",
+        isPublic: true,
+      },
+    });
+
+    expect(lowQualityRes.statusCode).toBe(201);
+    const lowQualityQueryId = lowQualityRes.json().id as string;
+
+    for (let i = 0; i < 130; i += 1) {
+      const noisyRes = await app.inject({
+        method: "POST",
+        url: "/api/v1/queries",
+        cookies: { "sb-access-token": "integration-token" },
+        payload: {
+          title: `${searchKey} Trusted Candidate ${i}`,
+          query: `cp-${1500 + (i % 200)}&!shadow&!traded`,
+          description: "High-quality candidate with richer metadata",
+          isPublic: true,
+          tags: ["great-league"],
+        },
+      });
+
+      expect(noisyRes.statusCode).toBe(201);
+    }
+
+    const upsertRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/metrics/surfacing/weekly-picks",
+      cookies: { "sb-access-token": "integration-token" },
+      payload: {
+        queryId: lowQualityQueryId,
+        displayOrder: 0,
+        isActive: true,
+      },
+    });
+
+    expect(upsertRes.statusCode).toBe(200);
+
+    const surfacingRes = await app.inject({
+      method: "GET",
+      url: "/api/v1/metrics/surfacing?railLimit=10",
+    });
+
+    expect(surfacingRes.statusCode).toBe(200);
+    const surfacingPayload: { weeklyPicks: Array<{ id: string }> } = surfacingRes.json();
+    expect(surfacingPayload.weeklyPicks.some((item) => item.id === lowQualityQueryId)).toBe(true);
   });
 });

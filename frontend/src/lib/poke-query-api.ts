@@ -588,7 +588,11 @@ export type CommunityQueryParams = {
 }
 
 export type DiscoverRail =
-  'featured_today' | 'all_time_trusted' | 'contextual_picks' | 'default'
+  | 'weekly_picks'
+  | 'featured_today'
+  | 'all_time_trusted'
+  | 'contextual_picks'
+  | 'default'
 
 export type CommunitySurfacingParams = {
   tag?: string
@@ -598,6 +602,7 @@ export type CommunitySurfacingParams = {
 }
 
 export type CommunitySurfacingResponse = {
+  weeklyPicks: CommunityQuery[]
   featuredToday: CommunityQuery[]
   allTimeTrusted: CommunityQuery[]
   contextualPicks: CommunityQuery[]
@@ -616,6 +621,32 @@ export type CommunitySurfacingMetrics = {
     copyActions: number
     uniqueImpressionStrings: number
   }
+}
+
+export type WeeklyPickItem = {
+  queryId: string
+  title: string
+  isPublic: boolean
+  displayOrder: number
+  isActive: boolean
+  startsAt: string | null
+  endsAt: string | null
+  notes: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type WeeklyPicksResponse = {
+  items: WeeklyPickItem[]
+}
+
+export type UpsertWeeklyPickRequest = {
+  queryId: string
+  displayOrder?: number
+  isActive?: boolean
+  startsAt?: string | null
+  endsAt?: string | null
+  notes?: string | null
 }
 
 export type TrackDiscoverEvent = {
@@ -847,6 +878,35 @@ export function getCommunitySurfacingMetrics(
 
   return apiRequest<CommunitySurfacingMetrics>(
     `/api/v1/metrics/surfacing/metrics?${search.toString()}`,
+  )
+}
+
+export function getWeeklyPicks(): Promise<WeeklyPicksResponse> {
+  return apiRequest<WeeklyPicksResponse>(
+    '/api/v1/metrics/surfacing/weekly-picks',
+  )
+}
+
+export function upsertWeeklyPick(
+  body: UpsertWeeklyPickRequest,
+): Promise<{ item: WeeklyPickItem }> {
+  return apiRequest<{ item: WeeklyPickItem }>(
+    '/api/v1/metrics/surfacing/weekly-picks',
+    {
+      method: 'POST',
+      body,
+    },
+  )
+}
+
+export function deleteWeeklyPick(
+  queryId: string,
+): Promise<{ removedQueryId: string }> {
+  return apiRequest<{ removedQueryId: string }>(
+    `/api/v1/metrics/surfacing/weekly-picks/${encodeURIComponent(queryId)}`,
+    {
+      method: 'DELETE',
+    },
   )
 }
 
