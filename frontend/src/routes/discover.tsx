@@ -639,12 +639,12 @@ function DiscoverPage() {
         contentHeaderVariant="floating"
         outsideCardContent={
           pagedRailSections.some((section) => section.items.length > 0) ? (
-            <div className="space-y-4">
+            <div className="flex flex-col gap-8 sm:gap-4">
               {pagedRailSections.map((section) =>
                 section.items.length > 0 ? (
                   <section
                     key={section.key}
-                    className={`rounded-3xl border px-6 py-6 shadow-sm ${
+                    className={`rounded-3xl border px-4 py-5 sm:px-6 sm:py-6 shadow-sm ${
                       section.key === 'weekly_picks'
                         ? 'border-amber-300/70 bg-linear-to-br from-amber-50/90 via-card/95 to-card/95 dark:border-amber-700/50 dark:from-amber-950/25'
                         : section.key === 'featured_today'
@@ -653,8 +653,8 @@ function DiscoverPage() {
                     }`}
                   >
                     <div className="space-y-3">
-                      <div className="flex items-baseline justify-between gap-3">
-                        <div>
+                      <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+                        <div className="min-w-0 flex flex-col items-start gap-3 sm:gap-1.5">
                           <h2
                             className={`font-semibold tracking-tight ${
                               section.key === 'weekly_picks'
@@ -667,11 +667,11 @@ function DiscoverPage() {
                             {section.title}
                           </h2>
                           {section.key === 'weekly_picks' ? (
-                            <p className="mt-1 inline-flex items-center rounded-full border border-amber-300/70 bg-amber-100/90 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200">
+                            <p className="inline-flex w-fit items-center rounded-full border border-amber-300/70 bg-amber-100/90 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200">
                               Hand-picked
                             </p>
                           ) : section.key === 'featured_today' ? (
-                            <p className="mt-1 inline-flex items-center rounded-full border border-sky-300/70 bg-sky-100/90 px-2 py-0.5 text-xs font-semibold text-sky-800 dark:border-sky-700/60 dark:bg-sky-950/40 dark:text-sky-200">
+                            <p className="inline-flex w-fit items-center rounded-full border border-sky-300/70 bg-sky-100/90 px-2 py-0.5 text-xs font-semibold text-sky-800 dark:border-sky-700/60 dark:bg-sky-950/40 dark:text-sky-200">
                               Daily rotation
                             </p>
                           ) : null}
@@ -679,7 +679,7 @@ function DiscoverPage() {
                             {section.subtitle}
                           </p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 sm:shrink-0">
                           <span className="text-xs text-muted-foreground">
                             {section.shownStart}-{section.shownEnd} of{' '}
                             {section.items.length}
@@ -716,8 +716,8 @@ function DiscoverPage() {
                         className={`grid gap-4 transition-all duration-300 ease-out will-change-transform motion-reduce:transform-none motion-reduce:transition-none ${
                           section.key === 'featured_today' ||
                           section.key === 'weekly_picks'
-                            ? 'md:grid-cols-3'
-                            : 'md:grid-cols-2 xl:grid-cols-3'
+                            ? 'sm:grid-cols-2 md:grid-cols-3'
+                            : 'sm:grid-cols-2 xl:grid-cols-3'
                         } ${
                           railTransitionByKey[section.key] === 'next'
                             ? 'translate-x-3 opacity-0 motion-reduce:opacity-100'
