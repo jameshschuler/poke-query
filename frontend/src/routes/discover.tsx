@@ -11,7 +11,6 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronsUpDownIcon,
-  HeartIcon,
   Loader2Icon,
   PlusIcon,
   Share2Icon,
@@ -23,14 +22,11 @@ import { Button } from '#/components/ui/button'
 import {
   getCommunityQueriesPage,
   getCommunitySurfacing,
-  favoriteGuestQuery,
   favoriteQuery,
   getMyFavoriteIds,
   forkQuery,
-  getGuestFavorites,
   getQueryTags,
   unfavoriteQuery,
-  unfavoriteGuestQuery,
   trackDiscoverEvents,
   ApiRequestError,
 } from '#/lib/poke-query-api'
@@ -46,7 +42,6 @@ import {
 } from '#/components/ui/dropdown-menu'
 import { Input } from '#/components/ui/input'
 import { SearchStringCard } from '#/components/search-string-card'
-import { GuestFavoritesDrawer } from '#/components/guest-favorites-drawer'
 import { PageShell } from '#/components/page-shell'
 import {
   Tooltip,
@@ -135,14 +130,15 @@ export const Route = createFileRoute('/discover')({
 function DiscoverPage() {
   const navigate = useNavigate()
   const routeSearch = Route.useSearch()
-  const { user } = useAuth()
+  const { user, startAnonymousSession } = useAuth()
   const queryClient = useQueryClient()
   const [activeFilterKey, setActiveFilterKey] = useState(
     routeSearch.filter ?? 'new',
   )
   const [searchTerm, setSearchTerm] = useState(routeSearch.q ?? '')
   const [debouncedSearch, setDebouncedSearch] = useState(routeSearch.q ?? '')
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [isStartingAnonymousSession, setIsStartingAnonymousSession] =
+    useState(false)
   const [railPageByKey, setRailPageByKey] = useState<Record<string, number>>({})
   const [railTransitionByKey, setRailTransitionByKey] = useState<
     Record<string, 'prev' | 'next' | null>
@@ -154,13 +150,6 @@ function DiscoverPage() {
     queryKey: ['query-tags'],
     queryFn: getQueryTags,
     staleTime: 5 * 60_000,
-  })
-
-  const { data: guestFavorites } = useQuery({
-    queryKey: ['guest-favorites'],
-    queryFn: getGuestFavorites,
-    enabled: !user,
-    staleTime: 60_000,
   })
 
   const { data: myFavoriteIds } = useQuery({
@@ -220,47 +209,6 @@ function DiscoverPage() {
       }
 
       toast.error(getMutationErrorMessage(error, 'Could not fork string.'))
-    },
-  })
-
-  const guestFavoriteMutation = useMutation({
-    mutationFn: favoriteGuestQuery,
-    onSuccess: () => {
-      toast.success('Saved to favorites.')
-      void queryClient.invalidateQueries({ queryKey: ['guest-favorites'] })
-    },
-    onError: (error: unknown) => {
-      if (error instanceof ApiRequestError && error.status === 409) {
-        toast.error(
-          'Guest favorites are limited to 10. Create an account for more.',
-        )
-        return
-      }
-      toast.error(getMutationErrorMessage(error, 'Could not save favorite.'))
-    },
-  })
-
-  const guestUnfavoriteMutation = useMutation({
-    mutationFn: unfavoriteGuestQuery,
-    onSuccess: () => {
-      toast.success('Removed from favorites.')
-      void queryClient.invalidateQueries({ queryKey: ['guest-favorites'] })
-    },
-    onError: (error: unknown) => {
-      toast.error(getMutationErrorMessage(error, 'Could not remove favorite.'))
-    },
-  })
-
-  const clearGuestFavoritesMutation = useMutation({
-    mutationFn: async (ids: string[]) => {
-      await Promise.allSettled(ids.map((id) => unfavoriteGuestQuery(id)))
-    },
-    onSuccess: () => {
-      toast.success('Cleared favorites.')
-      void queryClient.invalidateQueries({ queryKey: ['guest-favorites'] })
-    },
-    onError: (error: unknown) => {
-      toast.error(getMutationErrorMessage(error, 'Could not clear favorites.'))
     },
   })
 
@@ -405,18 +353,10 @@ function DiscoverPage() {
     [data],
   )
 
-  const guestFavoriteIds = useMemo(
-    () => new Set(guestFavorites?.favoriteQueryIds ?? []),
-    [guestFavorites?.favoriteQueryIds],
-  )
   const myFavoriteIdSet = useMemo(
     () => new Set(myFavoriteIds?.favoriteQueryIds ?? []),
     [myFavoriteIds?.favoriteQueryIds],
   )
-  const guestFavoritesCount = guestFavorites?.favoritesCount ?? 0
-  const guestFavoritesBadgeLabel =
-    guestFavoritesCount > 99 ? '99+' : String(guestFavoritesCount)
-  const guestFavoritesMax = guestFavorites?.maxFavorites ?? 10
 
   // Server-side search, so just use rows
   const filteredRows = rows
@@ -565,44 +505,55 @@ function DiscoverPage() {
     setTimeout(clearTransition, 0)
   }
 
-  function handleToggleFavorite(queryId: string, isFavorited: boolean) {
-    if (user) {
-      if (isFavorited) {
-        unfavoriteMutation.mutate(queryId)
+  async function handleToggleFavorite(queryId: string, isFavorited: boolean) {
+    if (!user) {
+      if (isStartingAnonymousSession) {
         return
       }
 
-      favoriteMutation.mutate(queryId)
-      return
+      setIsStartingAnonymousSession(true)
+
+      try {
+        await startAnonymousSession()
+      } catch {
+        toast.error('Could not start your session. Please try again.')
+        return
+      } finally {
+        setIsStartingAnonymousSession(false)
+      }
     }
 
     if (isFavorited) {
-      guestUnfavoriteMutation.mutate(queryId)
+      unfavoriteMutation.mutate(queryId)
       return
     }
 
-    guestFavoriteMutation.mutate(queryId)
+    favoriteMutation.mutate(queryId)
   }
 
-  function handleFork(queryId: string) {
+  async function handleFork(queryId: string) {
+    if (!user) {
+      if (isStartingAnonymousSession) {
+        return
+      }
+
+      setIsStartingAnonymousSession(true)
+
+      try {
+        await startAnonymousSession()
+      } catch {
+        toast.error('Could not start your session. Please try again.')
+        return
+      } finally {
+        setIsStartingAnonymousSession(false)
+      }
+    }
+
     if (forkMutation.isPending) {
       return
     }
 
     forkMutation.mutate(queryId)
-  }
-
-  function handleRemoveGuestFavorite(queryId: string) {
-    guestUnfavoriteMutation.mutate(queryId)
-  }
-
-  function handleClearGuestFavorites() {
-    const ids = Array.from(guestFavoriteIds)
-    if (ids.length === 0) {
-      return
-    }
-
-    clearGuestFavoritesMutation.mutate(ids)
   }
 
   async function handleCopySearchLink() {
@@ -630,6 +581,23 @@ function DiscoverPage() {
     })
   }
 
+  async function handleCreateString() {
+    if (isStartingAnonymousSession) {
+      return
+    }
+
+    setIsStartingAnonymousSession(true)
+
+    try {
+      await startAnonymousSession()
+      await navigate({ to: '/library/new' })
+    } catch {
+      toast.error('Could not start your session. Please try again.')
+    } finally {
+      setIsStartingAnonymousSession(false)
+    }
+  }
+
   return (
     <>
       <PageShell
@@ -639,12 +607,12 @@ function DiscoverPage() {
         contentHeaderVariant="floating"
         outsideCardContent={
           pagedRailSections.some((section) => section.items.length > 0) ? (
-            <div className="space-y-4">
+            <div className="flex flex-col gap-8 sm:gap-4">
               {pagedRailSections.map((section) =>
                 section.items.length > 0 ? (
                   <section
                     key={section.key}
-                    className={`rounded-3xl border px-6 py-6 shadow-sm ${
+                    className={`rounded-3xl border px-4 py-5 sm:px-6 sm:py-6 shadow-sm ${
                       section.key === 'weekly_picks'
                         ? 'border-amber-300/70 bg-linear-to-br from-amber-50/90 via-card/95 to-card/95 dark:border-amber-700/50 dark:from-amber-950/25'
                         : section.key === 'featured_today'
@@ -653,8 +621,8 @@ function DiscoverPage() {
                     }`}
                   >
                     <div className="space-y-3">
-                      <div className="flex items-baseline justify-between gap-3">
-                        <div>
+                      <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+                        <div className="min-w-0 flex flex-col items-start gap-3 sm:gap-1.5">
                           <h2
                             className={`font-semibold tracking-tight ${
                               section.key === 'weekly_picks'
@@ -667,11 +635,11 @@ function DiscoverPage() {
                             {section.title}
                           </h2>
                           {section.key === 'weekly_picks' ? (
-                            <p className="mt-1 inline-flex items-center rounded-full border border-amber-300/70 bg-amber-100/90 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200">
+                            <p className="inline-flex w-fit items-center rounded-full border border-amber-300/70 bg-amber-100/90 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200">
                               Hand-picked
                             </p>
                           ) : section.key === 'featured_today' ? (
-                            <p className="mt-1 inline-flex items-center rounded-full border border-sky-300/70 bg-sky-100/90 px-2 py-0.5 text-xs font-semibold text-sky-800 dark:border-sky-700/60 dark:bg-sky-950/40 dark:text-sky-200">
+                            <p className="inline-flex w-fit items-center rounded-full border border-sky-300/70 bg-sky-100/90 px-2 py-0.5 text-xs font-semibold text-sky-800 dark:border-sky-700/60 dark:bg-sky-950/40 dark:text-sky-200">
                               Daily rotation
                             </p>
                           ) : null}
@@ -679,7 +647,7 @@ function DiscoverPage() {
                             {section.subtitle}
                           </p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 sm:shrink-0">
                           <span className="text-xs text-muted-foreground">
                             {section.shownStart}-{section.shownEnd} of{' '}
                             {section.items.length}
@@ -716,8 +684,8 @@ function DiscoverPage() {
                         className={`grid gap-4 transition-all duration-300 ease-out will-change-transform motion-reduce:transform-none motion-reduce:transition-none ${
                           section.key === 'featured_today' ||
                           section.key === 'weekly_picks'
-                            ? 'md:grid-cols-3'
-                            : 'md:grid-cols-2 xl:grid-cols-3'
+                            ? 'sm:grid-cols-2 md:grid-cols-3'
+                            : 'sm:grid-cols-2 xl:grid-cols-3'
                         } ${
                           railTransitionByKey[section.key] === 'next'
                             ? 'translate-x-3 opacity-0 motion-reduce:opacity-100'
@@ -739,16 +707,10 @@ function DiscoverPage() {
                             onCopyTracked={(queryId, rail) =>
                               trackDiscoverEvent(queryId, rail, 'copy_action')
                             }
-                            isFavorited={
-                              user
-                                ? myFavoriteIdSet.has(card.id)
-                                : guestFavoriteIds.has(card.id)
-                            }
+                            isFavorited={myFavoriteIdSet.has(card.id)}
                             isFavoritePending={
                               favoriteMutation.isPending ||
-                              unfavoriteMutation.isPending ||
-                              guestFavoriteMutation.isPending ||
-                              guestUnfavoriteMutation.isPending
+                              unfavoriteMutation.isPending
                             }
                             onToggleFavorite={handleToggleFavorite}
                             onFork={
@@ -816,20 +778,21 @@ function DiscoverPage() {
                 </Button>
               ) : (
                 <>
-                  {guestFavoritesCount > 0 ? (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="relative cursor-pointer rounded-xl shadow-sm"
-                      onClick={() => setIsDrawerOpen(true)}
-                    >
-                      <HeartIcon className="size-4" />
-                      <span>Favorites</span>
-                      <span className="absolute -right-2 -top-2 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold leading-none text-primary-foreground">
-                        {guestFavoritesBadgeLabel}
-                      </span>
-                    </Button>
-                  ) : null}
+                  <Button
+                    type="button"
+                    className="shrink-0 rounded-full px-3 sm:px-4"
+                    disabled={isStartingAnonymousSession}
+                    onClick={() => {
+                      void handleCreateString()
+                    }}
+                  >
+                    {isStartingAnonymousSession ? (
+                      <Loader2Icon className="size-4 animate-spin" />
+                    ) : (
+                      <PlusIcon className="size-4" />
+                    )}
+                    <span>Create String</span>
+                  </Button>
                   <Tooltip>
                     <TooltipTrigger
                       render={
@@ -978,16 +941,9 @@ function DiscoverPage() {
                 onCopyTracked={(queryId, rail) =>
                   trackDiscoverEvent(queryId, rail, 'copy_action')
                 }
-                isFavorited={
-                  user
-                    ? myFavoriteIdSet.has(card.id)
-                    : guestFavoriteIds.has(card.id)
-                }
+                isFavorited={myFavoriteIdSet.has(card.id)}
                 isFavoritePending={
-                  favoriteMutation.isPending ||
-                  unfavoriteMutation.isPending ||
-                  guestFavoriteMutation.isPending ||
-                  guestUnfavoriteMutation.isPending
+                  favoriteMutation.isPending || unfavoriteMutation.isPending
                 }
                 onToggleFavorite={handleToggleFavorite}
                 onFork={
@@ -1021,19 +977,6 @@ function DiscoverPage() {
           ) : null}
         </div>
       </PageShell>
-
-      <GuestFavoritesDrawer
-        isOpen={isDrawerOpen}
-        onOpenChange={setIsDrawerOpen}
-        favoriteQueryIds={Array.from(guestFavoriteIds)}
-        favoritesCount={guestFavoritesCount}
-        maxFavorites={guestFavoritesMax}
-        isRemovingFavorite={guestUnfavoriteMutation.isPending}
-        removingFavoriteId={guestUnfavoriteMutation.variables ?? null}
-        isClearingFavorites={clearGuestFavoritesMutation.isPending}
-        onRemoveFavorite={handleRemoveGuestFavorite}
-        onClearFavorites={handleClearGuestFavorites}
-      />
     </>
   )
 }

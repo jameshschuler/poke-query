@@ -10,7 +10,7 @@ It provides:
 - Discover feed with search, tags, sorting, and pagination
 - Query detail pages with explicit view tracking
 - Trainer profile pages with follow/report actions and profile view tracking
-- Authenticated library/forks/favorites management
+- Authenticated library/forks/favorites management, including template-based string creation
 - Account, notifications, and moderation screens
 - Legal pages (privacy, terms, about)
 
@@ -58,4 +58,5 @@ Run from `frontend/`:
 - Discover and card-level stats rely on backend aggregate fields.
 - Query views are tracked with `POST /api/v1/queries/:id/views`.
 - Trainer profile views are tracked with `POST /api/v1/users/:id/views`.
+- The new string page includes a template import mode, supports partial template prefill, and provides a clipboard copy action for the starter template.
 - Docs links in the app point to `/docs` unless `VITE_DOCS_URL` is set.

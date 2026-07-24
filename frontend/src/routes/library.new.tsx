@@ -13,6 +13,26 @@ import { getMutationErrorMessage } from '#/lib/mutation-toast'
 import { requireAuthenticated } from '#/lib/route-auth'
 
 type VisibilityMode = 'public' | 'private'
+type EntryMode = 'manual' | 'json'
+
+type TemplateImport = {
+  title?: unknown
+  query?: unknown
+  description?: unknown
+  referenceUrl?: unknown
+  tags?: unknown
+  visibility?: unknown
+  isPublic?: unknown
+}
+
+const JSON_SKELETON = {
+  title: 'Max IV Attackers',
+  query: '4*&!traded&cp2500-',
+  description: 'What this string is for...',
+  referenceUrl: 'https://example.com/source',
+  tags: ['raid', 'master-league'],
+  visibility: 'public',
+} as const
 
 export const Route = createFileRoute('/library/new')({
   ssr: false,
@@ -25,6 +45,9 @@ export const Route = createFileRoute('/library/new')({
 function NewLibraryQueryPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const [entryMode, setEntryMode] = useState<EntryMode>('manual')
+  const [jsonDraft, setJsonDraft] = useState('')
+  const [jsonImportError, setJsonImportError] = useState<string | null>(null)
   const [title, setTitle] = useState('')
   const [query, setQuery] = useState('')
   const [description, setDescription] = useState('')
@@ -76,6 +99,75 @@ function NewLibraryQueryPage() {
     query.trim().length > 0 &&
     !titleBlockedTerm &&
     !descriptionBlockedTerm
+
+  async function copyJsonSkeleton() {
+    try {
+      await navigator.clipboard.writeText(
+        JSON.stringify(JSON_SKELETON, null, 2),
+      )
+      toast.success('Template copied to clipboard.')
+    } catch {
+      toast.error('Could not copy template.')
+    }
+  }
+
+  function applyJsonImport() {
+    try {
+      const parsed: unknown = JSON.parse(jsonDraft)
+
+      if (
+        typeof parsed !== 'object' ||
+        parsed === null ||
+        Array.isArray(parsed)
+      ) {
+        setJsonImportError('Template must be an object.')
+        return
+      }
+
+      const template = parsed as TemplateImport
+
+      if (typeof template.title === 'string') {
+        setTitle(template.title.trim())
+      }
+
+      if (typeof template.query === 'string') {
+        setQuery(template.query.trim())
+      }
+
+      if (typeof template.description === 'string') {
+        setDescription(template.description)
+      }
+
+      if (typeof template.referenceUrl === 'string') {
+        setReferenceUrl(template.referenceUrl)
+      }
+
+      if (Array.isArray(template.tags)) {
+        setTags(
+          template.tags
+            .filter((value): value is string => typeof value === 'string')
+            .map((value) => value.trim())
+            .filter(Boolean),
+        )
+      }
+
+      if (template.visibility === 'private') {
+        setVisibility('private')
+      } else if (template.visibility === 'public') {
+        setVisibility('public')
+      } else if (template.isPublic === false) {
+        setVisibility('private')
+      } else if (template.isPublic === true) {
+        setVisibility('public')
+      }
+
+      setJsonImportError(null)
+      setEntryMode('manual')
+      toast.success('Template imported into the form.')
+    } catch {
+      setJsonImportError('Invalid template. Check formatting and try again.')
+    }
+  }
 
   function handleSubmit(nextVisibility: VisibilityMode) {
     if (!canSubmit || createMutation.isPending) {
@@ -134,6 +226,87 @@ function NewLibraryQueryPage() {
               Publish
             </Button>
           </div>
+        </div>
+
+        <div className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-card/60 p-4">
+          <div
+            className="inline-flex w-fit items-center gap-1 rounded-xl border border-border/60 bg-background p-1"
+            aria-label="Entry mode"
+          >
+            <button
+              type="button"
+              aria-pressed={entryMode === 'manual'}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                entryMode === 'manual'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              }`}
+              onClick={() => setEntryMode('manual')}
+            >
+              Manual
+            </button>
+            <button
+              type="button"
+              aria-pressed={entryMode === 'json'}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                entryMode === 'json'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+              }`}
+              onClick={() => setEntryMode('json')}
+            >
+              Import Template
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-xl"
+              onClick={() => {
+                void copyJsonSkeleton()
+              }}
+            >
+              Copy Template
+            </Button>
+          </div>
+          {entryMode === 'json' ? (
+            <div className="flex flex-col gap-2">
+              <label className="flex flex-col gap-2">
+                <span className="text-sm font-medium">
+                  Search string template
+                </span>
+                <textarea
+                  value={jsonDraft}
+                  onChange={(event) => {
+                    setJsonDraft(event.target.value)
+                    if (jsonImportError) {
+                      setJsonImportError(null)
+                    }
+                  }}
+                  placeholder={JSON.stringify(JSON_SKELETON, null, 2)}
+                  className="min-h-56 w-full resize-y rounded-2xl border border-border/60 bg-background px-3 py-3 font-mono text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/20"
+                  aria-label="Search string template"
+                />
+              </label>
+              {jsonImportError ? (
+                <p className="text-xs text-destructive">{jsonImportError}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Paste a template object and apply it to pre-fill the form.
+                </p>
+              )}
+              <div>
+                <Button
+                  type="button"
+                  className="rounded-xl"
+                  onClick={applyJsonImport}
+                >
+                  Apply
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <label className="flex flex-col gap-2">

@@ -14,7 +14,7 @@ export const Route = createFileRoute('/')({
 })
 
 function LandingPage() {
-  const { user, isLoading } = useAuth()
+  const { isLoading } = useAuth()
   const docsUrl = import.meta.env.VITE_DOCS_URL ?? '/docs'
   const repoUrl = 'https://github.com/jameshschuler/poke-query'
 
@@ -48,7 +48,7 @@ function LandingPage() {
                 href="/discover"
                 className="rounded-full border border-border/70 bg-background/70 px-2 py-1 text-muted-foreground transition-colors hover:text-foreground sm:px-3"
               >
-                Explore
+                Discover
               </a>
               <a
                 href="/about"
@@ -57,10 +57,10 @@ function LandingPage() {
                 About
               </a>
               <a
-                href={user ? '/discover' : '/login'}
+                href="/login"
                 className="rounded-full border border-[#f59e0b]/45 bg-[#f59e0b]/18 px-2 py-1 font-medium text-foreground transition-colors hover:bg-[#f59e0b]/28 sm:px-3"
               >
-                {user ? 'Open' : 'Log in'}
+                Log in
               </a>
             </div>
           </div>
@@ -70,9 +70,9 @@ function LandingPage() {
               <p className="mb-3 inline-flex w-fit items-center gap-2 rounded-full border border-[#22c55e]/45 bg-[#22c55e]/12 px-2 py-0.5 text-xs font-semibold text-foreground sm:mb-5 sm:px-3 sm:py-1">
                 <CompassIcon className="size-3 sm:size-3.5" />
                 <span className="hidden sm:inline">
-                  Browse community strings without an account
+                  No account needed — start sharing right away
                 </span>
-                <span className="sm:hidden">Browse strings free</span>
+                <span className="sm:hidden">No account needed</span>
               </p>
 
               <h1 className="max-w-4xl text-2xl font-semibold leading-snug tracking-tight sm:text-3xl lg:text-6xl">
@@ -90,16 +90,22 @@ function LandingPage() {
               </p>
 
               <p className="mt-2 max-w-2xl text-xs font-medium text-foreground/85 sm:mt-3 sm:text-sm">
-                Start in Discover with no account. Sign in when you want to
-                save, fork, or publish.
+                No sign-up needed now. Add an email later to sign in on any
+                device and keep your saved strings.
               </p>
 
               <div className="mt-5 flex flex-wrap items-center gap-2 sm:mt-7 sm:gap-3">
-                <a href="/discover">
-                  <Button className="rounded-full px-4 text-sm sm:px-6">
+                <a href="/dashboard">
+                  <Button className="rounded-full border border-cyan-300/70 bg-cyan-500 px-4 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(6,182,212,0.35)] transition hover:bg-cyan-400 sm:px-6">
                     <CompassIcon className="size-3.5 sm:size-4" />
-                    Explore
+                    Open App
                   </Button>
+                </a>
+                <a
+                  href="/discover"
+                  className="px-2 text-sm text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
+                >
+                  Get Started
                 </a>
               </div>
             </div>

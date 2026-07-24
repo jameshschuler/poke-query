@@ -21,6 +21,10 @@ const config = defineConfig(({ mode }) => {
     test: {
       environment: 'jsdom',
       setupFiles: ['./vitest.setup.ts'],
+      env: {
+        VITE_SUPABASE_URL: 'http://localhost:54321',
+        VITE_SUPABASE_PUBLISHABLE_KEY: 'test-publishable-key',
+      },
     },
     plugins: isTest
       ? [viteReact()]

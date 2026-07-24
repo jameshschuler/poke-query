@@ -1,5 +1,6 @@
 import { redirect } from '@tanstack/react-router'
 
+import { startAnonymousSession } from '#/lib/auth-context'
 import type { GetMeResponse } from '#/lib/poke-query-api'
 import { ApiRequestError, getMe } from '#/lib/poke-query-api'
 
@@ -13,6 +14,15 @@ export function setCachedUser(user: GetMeResponse | null) {
   cacheTimestamp = Date.now()
 }
 
+function clearCachedUser() {
+  cachedUser = undefined
+  cacheTimestamp = 0
+}
+
+function isRecoverableAuthError(error: unknown): error is ApiRequestError {
+  return error instanceof ApiRequestError && error.status === 401
+}
+
 const PROFILE_REDIRECT_STORAGE_KEY = 'poke-query:profile-redirected:'
 
 function getProfileRedirectKey(userId: string) {
@@ -20,7 +30,7 @@ function getProfileRedirectKey(userId: string) {
 }
 
 function shouldRedirectToProfileOnce(user: GetMeResponse) {
-  if (typeof window === 'undefined' || user.profileCompleted) {
+  if (typeof window === 'undefined' || user.profileCompleted || !user.email) {
     return false
   }
 
@@ -58,16 +68,7 @@ async function getUser() {
 }
 
 export async function requireAuthenticated(redirectPath: string) {
-  try {
-    const user = await getUser()
-
-    if (!user) {
-      throw redirect({
-        to: '/login',
-        search: { redirect: redirectPath },
-      })
-    }
-
+  const maybeRedirectToProfile = (user: GetMeResponse) => {
     clearProfileRedirectMarkerIfCompleted(user)
 
     if (redirectPath !== '/account' && shouldRedirectToProfileOnce(user)) {
@@ -76,8 +77,40 @@ export async function requireAuthenticated(redirectPath: string) {
         search: { redirect: redirectPath },
       })
     }
+  }
+
+  try {
+    const user = await getUser()
+
+    if (!user) {
+      await startAnonymousSession()
+      clearCachedUser()
+      const anonymousUser = await getUser()
+
+      if (!anonymousUser) {
+        throw new ApiRequestError(401, { error: 'Invalid Session' }, null)
+      }
+
+      maybeRedirectToProfile(anonymousUser)
+      return
+    }
+
+    maybeRedirectToProfile(user)
   } catch (error) {
-    if (error instanceof ApiRequestError && error.status === 401) {
+    if (isRecoverableAuthError(error)) {
+      try {
+        await startAnonymousSession()
+        clearCachedUser()
+        const anonymousUser = await getUser()
+
+        if (anonymousUser) {
+          maybeRedirectToProfile(anonymousUser)
+          return
+        }
+      } catch {
+        // Fall through to login redirect if anonymous sign-in is unavailable.
+      }
+
       throw redirect({
         to: '/login',
         search: { redirect: redirectPath },
@@ -92,13 +125,14 @@ export async function requireGuest() {
   try {
     const user = await getUser()
 
-    if (user) {
+    // Keep OTP users out of guest routes, but allow anonymous users so they can upgrade.
+    if (user?.email) {
       throw redirect({ to: '/dashboard' })
     }
 
     return
   } catch (error) {
-    if (error instanceof ApiRequestError && error.status === 401) {
+    if (isRecoverableAuthError(error)) {
       return
     }
 

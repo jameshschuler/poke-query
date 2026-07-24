@@ -101,7 +101,7 @@ const TESTIMONIALS = [
 export function LoginPage() {
   const navigate = useNavigate()
   const search = Route.useSearch()
-  const { signInWithOtp, verifyOtp } = useAuth()
+  const { signInWithOtp, verifyOtp, user } = useAuth()
   const docsUrl = import.meta.env.VITE_DOCS_URL ?? '/docs'
 
   const [identifier, setIdentifier] = useState('')

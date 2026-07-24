@@ -47,6 +47,11 @@ describe("Moderation Routes", () => {
       .fn()
       .mockImplementationOnce(() => ({
         values: vi.fn(() => ({
+          onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
+        })),
+      }))
+      .mockImplementationOnce(() => ({
+        values: vi.fn(() => ({
           returning: vi.fn().mockResolvedValue([
             {
               id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
@@ -79,6 +84,12 @@ describe("Moderation Routes", () => {
   });
 
   it("returns 409 when the same reporter re-submits during cooldown", async () => {
+    app.db.insert = vi.fn(() => ({
+      values: vi.fn(() => ({
+        onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
+      })),
+    }));
+
     app.db.select = vi.fn(() => ({
       from: vi.fn(() => ({
         where: vi.fn(() => ({

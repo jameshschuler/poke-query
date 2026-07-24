@@ -24,6 +24,8 @@ import {
 } from "../notifications/notifications.service.js";
 import { findBlockedTerm } from "../../lib/content-policy.js";
 
+import { ensureTrainerProfileExists } from "../../lib/trainer-bootstrap.js";
+
 const queryMutationRateLimit = {
   config: {
     rateLimit: {
@@ -161,20 +163,6 @@ function getOfficialQueryEditorUserIds(): Set<string> {
 
 function isOfficialQueryEditorUser(userId: string): boolean {
   return getOfficialQueryEditorUserIds().has(userId);
-}
-
-async function ensureTrainerProfileExists(
-  fastify: FastifyTypebox,
-  user: { id: string },
-): Promise<void> {
-  await fastify.db
-    .insert(trainers)
-    .values({
-      id: user.id,
-      userId: user.id,
-      username: `trainer_${user.id.replace(/-/g, "")}`,
-    })
-    .onConflictDoNothing({ target: trainers.userId });
 }
 
 export async function queriesRoutes(fastify: FastifyTypebox) {

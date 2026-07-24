@@ -27,6 +27,10 @@ import { alias } from "drizzle-orm/pg-core";
 import { and, count, desc, eq, isNull, or, sql } from "drizzle-orm";
 import { emitNotification } from "../notifications/notifications.service.js";
 import { findBlockedTerm } from "../../lib/content-policy.js";
+import {
+  ensureTrainerProfileExists,
+  getBootstrapTrainerUsername,
+} from "../../lib/trainer-bootstrap.js";
 
 const socialMutationRateLimit = {
   config: {
@@ -74,6 +78,109 @@ export async function userRoutes(fastify: FastifyTypebox) {
 
     return row.username;
   };
+
+  const normalizeAuthEmail = (value: string | null | undefined) => {
+    if (typeof value !== "string") {
+      return null;
+    }
+
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed) ? trimmed : null;
+  };
+
+  async function loadMeProfile(userId: string, email: string | null) {
+    const [row] = await fastify.db
+      .select({
+        id: trainers.id,
+        username: trainers.username,
+        role: trainers.role,
+        pogoUsername: trainers.pogoUsername,
+        visibleUsername: trainers.visibleUsername,
+        team: trainers.team,
+        level: trainers.level,
+        trainerCode: trainers.trainerCode,
+        isProfilePublic: trainers.isProfilePublic,
+        deactivatedAt: trainers.deactivatedAt,
+        avatarUrl: trainers.avatarUrl,
+        queryCount: sql<number>`(
+          SELECT COUNT(*)::int
+          FROM pokequery.search_queries sq
+          WHERE sq.creator_id = ${trainers.id}
+        )`.as("queryCount"),
+        favoriteCount: sql<number>`(
+          SELECT COUNT(*)::int
+          FROM pokequery.favorites f
+          WHERE f.trainer_id = ${trainers.id}
+        )`.as("favoriteCount"),
+        followerCount: sql<number>`(
+          SELECT COUNT(*)::int
+          FROM pokequery.followers fr
+          WHERE fr.followed_id = ${trainers.id}
+        )`.as("followerCount"),
+        forkCount: sql<number>`(
+          SELECT COUNT(*)::int
+          FROM pokequery.search_queries sq
+          WHERE sq.creator_id = ${trainers.id}
+            AND sq.parent_query_id IS NOT NULL
+        )`.as("forkCount"),
+      })
+      .from(trainers)
+      .where(eq(trainers.userId, userId));
+
+    if (!row) {
+      await ensureTrainerProfileExists(fastify, { id: userId });
+
+      const bootstrapUsername = getBootstrapTrainerUsername(userId);
+
+      return {
+        hasTrainer: true,
+        profileCompleted: false,
+        id: userId,
+        email,
+        username: bootstrapUsername,
+        displayName: bootstrapUsername,
+        role: "member" as const,
+        pogoUsername: null,
+        visibleUsername: "pokequery" as const,
+        team: null,
+        level: null,
+        trainerCode: null,
+        isProfilePublic: false,
+        deactivatedAt: null,
+        avatarUrl: null,
+        queryCount: 0,
+        favoriteCount: 0,
+        followerCount: 0,
+        forkCount: 0,
+      };
+    }
+
+    const profileCompleted = isProfileCompleted({
+      hasTrainer: true,
+      username: row.username,
+      team: row.team,
+      level: row.level,
+      trainerCode: row.trainerCode,
+    });
+
+    return {
+      hasTrainer: true,
+      profileCompleted,
+      email,
+      ...row,
+      displayName: resolveDisplayName(row),
+      role: row.role === "admin" ? ("admin" as const) : ("member" as const),
+      team: row.team as "mystic" | "valor" | "instinct" | null,
+      trainerCode: row.trainerCode,
+      visibleUsername: row.visibleUsername as VisibleUsername,
+      isProfilePublic: row.isProfilePublic,
+      deactivatedAt: row.deactivatedAt?.toISOString() ?? null,
+    };
+  }
 
   const isProfileCompleted = (profile: {
     hasTrainer: boolean;
@@ -312,91 +419,9 @@ export async function userRoutes(fastify: FastifyTypebox) {
     { preHandler: [fastify.authenticate], schema: GetMeSchema },
     async (request, reply) => {
       const userId = request.user.id;
-      const email = request.user.email ?? null;
+      const email = normalizeAuthEmail(request.user.email);
 
-      const [row] = await fastify.db
-        .select({
-          id: trainers.id,
-          username: trainers.username,
-          role: trainers.role,
-          pogoUsername: trainers.pogoUsername,
-          visibleUsername: trainers.visibleUsername,
-          team: trainers.team,
-          level: trainers.level,
-          trainerCode: trainers.trainerCode,
-          isProfilePublic: trainers.isProfilePublic,
-          deactivatedAt: trainers.deactivatedAt,
-          avatarUrl: trainers.avatarUrl,
-          queryCount: sql<number>`(
-            SELECT COUNT(*)::int
-            FROM pokequery.search_queries sq
-            WHERE sq.creator_id = ${trainers.id}
-          )`.as("queryCount"),
-          favoriteCount: sql<number>`(
-            SELECT COUNT(*)::int
-            FROM pokequery.favorites f
-            WHERE f.trainer_id = ${trainers.id}
-          )`.as("favoriteCount"),
-          followerCount: sql<number>`(
-            SELECT COUNT(*)::int
-            FROM pokequery.followers fr
-            WHERE fr.followed_id = ${trainers.id}
-          )`.as("followerCount"),
-          forkCount: sql<number>`(
-            SELECT COUNT(*)::int
-            FROM pokequery.search_queries sq
-            WHERE sq.creator_id = ${trainers.id}
-              AND sq.parent_query_id IS NOT NULL
-          )`.as("forkCount"),
-        })
-        .from(trainers)
-        .where(eq(trainers.userId, userId));
-
-      if (!row) {
-        return reply.code(200).send({
-          hasTrainer: false,
-          profileCompleted: false,
-          id: userId,
-          email,
-          username: request.user.email?.split("@")[0] ?? `trainer_${userId.slice(0, 4)}`,
-          displayName: request.user.email?.split("@")[0] ?? `trainer_${userId.slice(0, 4)}`,
-          role: "member",
-          pogoUsername: null,
-          visibleUsername: "pokequery",
-          team: null,
-          level: null,
-          trainerCode: null,
-          isProfilePublic: false,
-          deactivatedAt: null,
-          avatarUrl: null,
-          queryCount: 0,
-          favoriteCount: 0,
-          followerCount: 0,
-          forkCount: 0,
-        });
-      }
-
-      const profileCompleted = isProfileCompleted({
-        hasTrainer: true,
-        username: row.username,
-        team: row.team,
-        level: row.level,
-        trainerCode: row.trainerCode,
-      });
-
-      return {
-        hasTrainer: true,
-        profileCompleted,
-        email,
-        ...row,
-        displayName: resolveDisplayName(row),
-        role: row.role === "admin" ? ("admin" as const) : ("member" as const),
-        team: row.team as "mystic" | "valor" | "instinct" | null,
-        trainerCode: row.trainerCode,
-        visibleUsername: row.visibleUsername as VisibleUsername,
-        isProfilePublic: row.isProfilePublic,
-        deactivatedAt: row.deactivatedAt?.toISOString() ?? null,
-      };
+      return reply.code(200).send(await loadMeProfile(userId, email));
     },
   );
 
@@ -988,6 +1013,8 @@ export async function userRoutes(fastify: FastifyTypebox) {
       const targetTrainerId = request.params.id;
       const currentTrainerId = request.user.id;
 
+      await ensureTrainerProfileExists(fastify, request.user);
+
       if (targetTrainerId === currentTrainerId) {
         return reply.code(400).send({ error: "You cannot follow yourself" });
       }
@@ -1075,6 +1102,8 @@ export async function userRoutes(fastify: FastifyTypebox) {
     async (request, reply) => {
       const targetTrainerId = request.params.id;
       const currentTrainerId = request.user.id;
+
+      await ensureTrainerProfileExists(fastify, request.user);
 
       await fastify.db
         .delete(followers)

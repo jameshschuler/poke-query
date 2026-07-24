@@ -139,6 +139,11 @@ describe("GET /api/v1/users/me", () => {
 
   it("should return 200 onboarding payload when the trainer record does not exist", async () => {
     mockSelect.mockReturnValueOnce(buildSelectChain([]));
+    app.db.insert = vi.fn(() => ({
+      values: vi.fn(() => ({
+        onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
+      })),
+    }));
 
     const res = await app.inject({
       method: "GET",
@@ -148,7 +153,8 @@ describe("GET /api/v1/users/me", () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.json()).toMatchObject({
-      hasTrainer: false,
+      hasTrainer: true,
+      profileCompleted: false,
       role: "member",
       id: "uuid-123",
       email: "ash@example.com",
@@ -162,6 +168,7 @@ describe("GET /api/v1/users/me", () => {
       followerCount: 0,
       forkCount: 0,
     });
+    expect(res.json().username).toBe("trainer_uuid123");
   });
 });
 
