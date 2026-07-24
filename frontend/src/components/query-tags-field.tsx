@@ -12,6 +12,7 @@ type QueryTagsFieldProps = {
 }
 
 const MAX_TAG_LENGTH = 32
+export const MAX_QUERY_TAGS = 5
 
 function normalizeTag(rawValue: string): string {
   return rawValue.trim().toLowerCase().slice(0, MAX_TAG_LENGTH)
@@ -20,7 +21,7 @@ function normalizeTag(rawValue: string): string {
 export function QueryTagsField({
   tags,
   onChange,
-  helperText = 'Press Enter or comma to add tags. Tags are lowercased automatically.',
+  helperText = `Press Enter or comma to add tags. Up to ${MAX_QUERY_TAGS} tags. Tags are lowercased automatically.`,
 }: QueryTagsFieldProps) {
   const [draftTag, setDraftTag] = useState('')
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1)
@@ -32,11 +33,18 @@ export function QueryTagsField({
 
   const normalizedTags = useMemo(
     () =>
-      Array.from(new Set(tags.map((tag) => normalizeTag(tag)).filter(Boolean))),
+      Array.from(
+        new Set(tags.map((tag) => normalizeTag(tag)).filter(Boolean)),
+      ).slice(0, MAX_QUERY_TAGS),
     [tags],
   )
+  const isAtTagLimit = normalizedTags.length >= MAX_QUERY_TAGS
 
   const suggestions = useMemo(() => {
+    if (isAtTagLimit) {
+      return []
+    }
+
     const drafted = normalizeTag(draftTag)
     if (!drafted) {
       return []
@@ -47,7 +55,7 @@ export function QueryTagsField({
       .map((tag) => normalizeTag(tag.name))
       .filter((tag) => tag.startsWith(drafted) && !usedTags.has(tag))
       .slice(0, 8)
-  }, [availableTags, draftTag, normalizedTags])
+  }, [availableTags, draftTag, isAtTagLimit, normalizedTags])
 
   useEffect(() => {
     if (suggestions.length === 0) {
@@ -71,6 +79,10 @@ export function QueryTagsField({
       return
     }
 
+    if (isAtTagLimit) {
+      return
+    }
+
     onChange([...normalizedTags, normalized])
     setDraftTag('')
   }
@@ -84,66 +96,84 @@ export function QueryTagsField({
       <span className="text-sm font-medium">Tags</span>
 
       <div className="flex gap-2">
-        <input
-          value={draftTag}
-          onChange={(event) => {
-            setDraftTag(event.target.value)
-            setActiveSuggestionIndex(0)
-          }}
-          onKeyDown={(event) => {
-            if (event.key === 'ArrowDown' && suggestions.length > 0) {
-              event.preventDefault()
-              setActiveSuggestionIndex((current) =>
-                current >= suggestions.length - 1 ? 0 : current + 1,
-              )
-              return
-            }
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <input
+            value={draftTag}
+            onChange={(event) => {
+              setDraftTag(event.target.value)
+              setActiveSuggestionIndex(0)
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'ArrowDown' && suggestions.length > 0) {
+                event.preventDefault()
+                setActiveSuggestionIndex((current) =>
+                  current >= suggestions.length - 1 ? 0 : current + 1,
+                )
+                return
+              }
 
-            if (event.key === 'ArrowUp' && suggestions.length > 0) {
-              event.preventDefault()
-              setActiveSuggestionIndex((current) =>
-                current <= 0 ? suggestions.length - 1 : current - 1,
-              )
-              return
-            }
+              if (event.key === 'ArrowUp' && suggestions.length > 0) {
+                event.preventDefault()
+                setActiveSuggestionIndex((current) =>
+                  current <= 0 ? suggestions.length - 1 : current - 1,
+                )
+                return
+              }
 
-            if (event.key === 'Escape' && suggestions.length > 0) {
-              setActiveSuggestionIndex(-1)
-              return
-            }
+              if (event.key === 'Escape' && suggestions.length > 0) {
+                setActiveSuggestionIndex(-1)
+                return
+              }
 
-            if (event.key === 'Enter' || event.key === ',') {
-              event.preventDefault()
-              const activeSuggestion =
-                activeSuggestionIndex >= 0
-                  ? suggestions[activeSuggestionIndex]
-                  : undefined
-              addTag(activeSuggestion ?? draftTag)
-            }
+              if (event.key === 'Enter' || event.key === ',') {
+                event.preventDefault()
+                const activeSuggestion =
+                  activeSuggestionIndex >= 0
+                    ? suggestions[activeSuggestionIndex]
+                    : undefined
+                addTag(activeSuggestion ?? draftTag)
+              }
 
-            if (event.key === 'Tab' && draftTag.trim()) {
-              event.preventDefault()
-              const activeSuggestion =
-                activeSuggestionIndex >= 0
-                  ? suggestions[activeSuggestionIndex]
-                  : undefined
-              addTag(activeSuggestion ?? draftTag)
-            }
-          }}
-          placeholder="great-league"
-          className="h-10 w-full rounded-xl border border-border/60 bg-background px-3 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/20"
-          maxLength={MAX_TAG_LENGTH}
-          autoComplete="off"
-        />
+              if (event.key === 'Tab' && draftTag.trim()) {
+                event.preventDefault()
+                const activeSuggestion =
+                  activeSuggestionIndex >= 0
+                    ? suggestions[activeSuggestionIndex]
+                    : undefined
+                addTag(activeSuggestion ?? draftTag)
+              }
+            }}
+            placeholder="great-league"
+            className="h-10 w-full rounded-xl border border-border/60 bg-background px-3 text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/20"
+            maxLength={MAX_TAG_LENGTH}
+            autoComplete="off"
+            disabled={isAtTagLimit}
+          />
+
+          <div className="flex justify-end pr-1">
+            <span className="text-xs text-muted-foreground">
+              {normalizedTags.length}/{MAX_QUERY_TAGS}
+            </span>
+          </div>
+        </div>
+
         <Button
           type="button"
           variant="outline"
-          className="rounded-xl"
+          className="shrink-0 rounded-xl"
+          disabled={isAtTagLimit || !draftTag.trim()}
           onClick={() => addTag(draftTag)}
         >
           Add
         </Button>
       </div>
+
+      {isAtTagLimit ? (
+        <p className="text-xs text-muted-foreground">
+          Tag limit reached ({MAX_QUERY_TAGS}/{MAX_QUERY_TAGS}). Remove a tag to
+          add another.
+        </p>
+      ) : null}
 
       {suggestions.length > 0 ? (
         <div

@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import { PageShell } from '#/components/page-shell'
-import { QueryTagsField } from '#/components/query-tags-field'
+import { MAX_QUERY_TAGS, QueryTagsField } from '#/components/query-tags-field'
 import { Button } from '#/components/ui/button'
 import { findBlockedTerm } from '#/lib/content-policy'
 import { ApiRequestError, getMyForks, updateQuery } from '#/lib/poke-query-api'
@@ -64,7 +64,7 @@ function EditForkPage() {
     setQuery(currentFork.query)
     setDescription(currentFork.description ?? '')
     setReferenceUrl(currentFork.referenceUrl ?? '')
-    setTags(currentFork.userTags)
+    setTags(currentFork.userTags.slice(0, MAX_QUERY_TAGS))
     setVisibility(currentFork.isPublic ? 'public' : 'private')
   }, [currentFork])
 
