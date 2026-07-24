@@ -62,6 +62,24 @@ vi.mock('#/components/ui/button', () => ({
   ),
 }))
 
+vi.mock('#/components/ui/dialog', () => ({
+  Dialog: ({ children, open }: { children: ReactNode; open?: boolean }) =>
+    open ? <div>{children}</div> : null,
+  DialogContent: ({ children }: { children: ReactNode }) => (
+    <div>{children}</div>
+  ),
+  DialogHeader: ({ children }: { children: ReactNode }) => (
+    <div>{children}</div>
+  ),
+  DialogTitle: ({ children }: { children: ReactNode }) => <h2>{children}</h2>,
+  DialogDescription: ({ children }: { children: ReactNode }) => (
+    <p>{children}</p>
+  ),
+  DialogFooter: ({ children }: { children: ReactNode }) => (
+    <div>{children}</div>
+  ),
+}))
+
 vi.mock('#/lib/content-policy', () => ({
   findBlockedTerm: () => null,
 }))
@@ -180,7 +198,9 @@ describe('NewLibraryQueryPage', () => {
 
     render(<NewLibraryComponent />)
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Copy Template' })[0])
+    fireEvent.click(screen.getByRole('button', { name: 'Import Template' }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Copy Template' }))
 
     await waitFor(() => {
       expect(writeText).toHaveBeenCalledTimes(1)

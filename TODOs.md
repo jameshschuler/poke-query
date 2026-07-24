@@ -4,8 +4,6 @@ See `ROADMAP.md` for longer-term product initiatives.
 
 ## Feature Work
 
-- [ ] Rework with anon accounts (upgrade account later with email otp)
-
 - [ ] Trade Request String Support
   - [ ] Allow users to create a trade request string.
   - [ ] Decide whether trade requests use a dedicated type, template, or metadata-driven variant.
