@@ -15,6 +15,16 @@ import { requireAuthenticated } from '#/lib/route-auth'
 type VisibilityMode = 'public' | 'private'
 type EntryMode = 'manual' | 'json'
 
+type TemplateImport = {
+  title?: unknown
+  query?: unknown
+  description?: unknown
+  referenceUrl?: unknown
+  tags?: unknown
+  visibility?: unknown
+  isPublic?: unknown
+}
+
 const JSON_SKELETON = {
   title: 'Max IV Attackers',
   query: '4*&!traded&cp2500-',
@@ -91,11 +101,6 @@ function NewLibraryQueryPage() {
     !descriptionBlockedTerm
 
   async function copyJsonSkeleton() {
-    if (typeof navigator === 'undefined' || !navigator.clipboard) {
-      toast.error('Clipboard is not available in this browser.')
-      return
-    }
-
     try {
       await navigator.clipboard.writeText(
         JSON.stringify(JSON_SKELETON, null, 2),
@@ -108,45 +113,51 @@ function NewLibraryQueryPage() {
 
   function applyJsonImport() {
     try {
-      const parsed = JSON.parse(jsonDraft) as Record<string, unknown>
+      const parsed: unknown = JSON.parse(jsonDraft)
 
-      if (parsed === null || typeof parsed !== 'object') {
+      if (
+        typeof parsed !== 'object' ||
+        parsed === null ||
+        Array.isArray(parsed)
+      ) {
         setJsonImportError('Template must be an object.')
         return
       }
 
-      if (typeof parsed.title === 'string') {
-        setTitle(parsed.title.trim())
+      const template = parsed as TemplateImport
+
+      if (typeof template.title === 'string') {
+        setTitle(template.title.trim())
       }
 
-      if (typeof parsed.query === 'string') {
-        setQuery(parsed.query.trim())
+      if (typeof template.query === 'string') {
+        setQuery(template.query.trim())
       }
 
-      if (typeof parsed.description === 'string') {
-        setDescription(parsed.description)
+      if (typeof template.description === 'string') {
+        setDescription(template.description)
       }
 
-      if (typeof parsed.referenceUrl === 'string') {
-        setReferenceUrl(parsed.referenceUrl)
+      if (typeof template.referenceUrl === 'string') {
+        setReferenceUrl(template.referenceUrl)
       }
 
-      if (Array.isArray(parsed.tags)) {
+      if (Array.isArray(template.tags)) {
         setTags(
-          parsed.tags
+          template.tags
             .filter((value): value is string => typeof value === 'string')
             .map((value) => value.trim())
             .filter(Boolean),
         )
       }
 
-      if (parsed.visibility === 'private') {
+      if (template.visibility === 'private') {
         setVisibility('private')
-      } else if (parsed.visibility === 'public') {
+      } else if (template.visibility === 'public') {
         setVisibility('public')
-      } else if (parsed.isPublic === false) {
+      } else if (template.isPublic === false) {
         setVisibility('private')
-      } else if (parsed.isPublic === true) {
+      } else if (template.isPublic === true) {
         setVisibility('public')
       }
 

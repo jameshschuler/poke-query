@@ -15,9 +15,10 @@ At a high level, the project lets trainers create, manage, and discover reusable
 ## Current Status
 
 - Backend is fully set up and tested
-- Frontend includes discover, trainer profiles, library/forks/favorites management, and legal pages
+- Frontend includes discover, trainer profiles, library/forks/favorites management, template-based string creation, and legal pages
 - API docs site powered by Scalar
 - Community discovery supports search, tag filters, sort modes, and pagination
+- The new string page supports importing partial templates and copying a starter template to the clipboard
 
 ## Backend Highlights
 
