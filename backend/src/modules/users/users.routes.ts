@@ -92,24 +92,6 @@ export async function userRoutes(fastify: FastifyTypebox) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed) ? trimmed : null;
   };
 
-  type MeProfileRow = {
-    id: string;
-    username: string;
-    role: string;
-    pogoUsername: string | null;
-    visibleUsername: string;
-    team: string | null;
-    level: number | null;
-    trainerCode: string | null;
-    isProfilePublic: boolean;
-    deactivatedAt: Date | null;
-    avatarUrl: string | null;
-    queryCount: number;
-    favoriteCount: number;
-    followerCount: number;
-    forkCount: number;
-  };
-
   async function loadMeProfile(userId: string, email: string | null) {
     const [row] = await fastify.db
       .select({

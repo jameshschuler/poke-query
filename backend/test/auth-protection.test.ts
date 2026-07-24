@@ -97,17 +97,17 @@ describe("Authenticated endpoint protection", () => {
     await app.close();
   });
 
-  it.each(protectedEndpoints)(
-    "$method $url returns 401 without auth",
-    async ({ method, url, payload }) => {
-      const response = await app.inject({
-        method,
-        url,
-        ...(payload !== undefined ? { payload } : {}),
-      });
+  it.each(protectedEndpoints)("$method $url returns 401 without auth", async (endpoint) => {
+    const { method, url } = endpoint;
+    const payload = "payload" in endpoint ? endpoint.payload : undefined;
 
-      expect(response.statusCode).toBe(401);
-      expect(response.json()).toEqual({ error: "Invalid Session" });
-    },
-  );
+    const response = await app.inject({
+      method,
+      url,
+      ...(payload !== undefined ? { payload } : {}),
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toEqual({ error: "Invalid Session" });
+  });
 });

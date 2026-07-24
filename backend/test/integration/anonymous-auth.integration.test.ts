@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { buildApp } from "../../src/app.js";
 import { followers, searchQueries, trainers } from "../../src/db/schema.js";
 import { getBootstrapTrainerUsername } from "../../src/lib/trainer-bootstrap.js";
-import { OTHER_TEST_USER_ID, TEST_USER_ID } from "./setup.js";
+import { TEST_USER_ID } from "./setup.js";
 import { supabase } from "../../src/lib/supabase.js";
 
 /** Stable UUID representing an anonymous guest (no email). */
@@ -234,7 +234,7 @@ integrationDescribe("Anonymous Auth Integration", () => {
     });
 
     expect(meQueriesRes.statusCode).toBe(200);
-    const body = meQueriesRes.json() as { queries: Array<{ id: string }> };
+    const body = meQueriesRes.json();
     expect(body.queries.some((query) => query.id === queryId)).toBe(true);
   });
 
