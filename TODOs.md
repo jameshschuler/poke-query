@@ -3,17 +3,16 @@
 See `ROADMAP.md` for longer-term product initiatives.
 
 - fix account redirect error after upgrading account
-- blog type page for app updates / changeset
 
 ## Feature Work
 
 - [ ] Frontend Cleanup
   - [ ] Break large frontend surfaces into smaller components where ownership is unclear or rendering logic is too dense.
   - [ ] Prioritize pages with heavy route-level UI state such as discover, library, and fork flows.
-
 - [ ] Backend Cleanup
   - [ ] Review large endpoints and split bloated handlers into smaller helpers or service-layer functions.
   - [ ] Prioritize query, user, and community endpoints with mixed validation, persistence, and serialization logic.
+  - [ ] use service files where possible
 
 ## Testing
 
