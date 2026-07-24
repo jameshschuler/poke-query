@@ -2,11 +2,10 @@
 
 See `ROADMAP.md` for longer-term product initiatives.
 
-## Feature Work
+- fix account redirect error after upgrading account
+- blog type page for app updates / changeset
 
-- [ ] Trade Request String Support
-  - [ ] Allow users to create a trade request string.
-  - [ ] Decide whether trade requests use a dedicated type, template, or metadata-driven variant.
+## Feature Work
 
 - [ ] Frontend Cleanup
   - [ ] Break large frontend surfaces into smaller components where ownership is unclear or rendering logic is too dense.

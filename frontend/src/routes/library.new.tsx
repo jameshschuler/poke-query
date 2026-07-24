@@ -1,45 +1,23 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
-import { Loader2Icon } from 'lucide-react'
+import { Loader2Icon, SparklesIcon } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
+import { NewStringAssistantDialog } from '#/components/new-string-assistant-dialog'
+import type { AssistantFormFields } from '#/components/new-string-assistant-dialog'
+import { NewStringTemplateDialog } from '#/components/new-string-template-dialog'
+import type { TemplateFormFields } from '#/components/new-string-template-dialog'
 import { PageShell } from '#/components/page-shell'
 import { MAX_QUERY_TAGS, QueryTagsField } from '#/components/query-tags-field'
 import { Button } from '#/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '#/components/ui/dialog'
 import { findBlockedTerm } from '#/lib/content-policy'
+import { isAiAssistantEnabled } from '#/lib/feature-flags'
 import { createQuery } from '#/lib/poke-query-api'
 import { getMutationErrorMessage } from '#/lib/mutation-toast'
 import { requireAuthenticated } from '#/lib/route-auth'
 
 type VisibilityMode = 'public' | 'private'
-
-type TemplateImport = {
-  title?: unknown
-  query?: unknown
-  description?: unknown
-  referenceUrl?: unknown
-  tags?: unknown
-  visibility?: unknown
-  isPublic?: unknown
-}
-
-const JSON_SKELETON = {
-  title: 'Max IV Attackers',
-  query: '4*&!traded&cp2500-',
-  description: 'What this string is for...',
-  referenceUrl: 'https://example.com/source',
-  tags: ['raid', 'master-league'],
-  visibility: 'public',
-} as const
 
 export const Route = createFileRoute('/library/new')({
   ssr: false,
@@ -52,9 +30,8 @@ export const Route = createFileRoute('/library/new')({
 function NewLibraryQueryPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const [isAssistantModalOpen, setIsAssistantModalOpen] = useState(false)
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false)
-  const [jsonDraft, setJsonDraft] = useState('')
-  const [jsonImportError, setJsonImportError] = useState<string | null>(null)
   const [title, setTitle] = useState('')
   const [query, setQuery] = useState('')
   const [description, setDescription] = useState('')
@@ -107,73 +84,36 @@ function NewLibraryQueryPage() {
     !titleBlockedTerm &&
     !descriptionBlockedTerm
 
-  async function copyJsonSkeleton() {
-    try {
-      await navigator.clipboard.writeText(
-        JSON.stringify(JSON_SKELETON, null, 2),
-      )
-      toast.success('Template copied to clipboard.')
-    } catch {
-      toast.error('Could not copy template.')
-    }
+  function handleAssistantApply(fields: AssistantFormFields) {
+    setTitle(fields.title)
+    setQuery(fields.query)
+    setDescription(fields.description)
+    setTags(fields.tags.slice(0, MAX_QUERY_TAGS))
   }
 
-  function applyJsonImport() {
-    try {
-      const parsed: unknown = JSON.parse(jsonDraft)
+  function handleTemplateApply(fields: TemplateFormFields) {
+    if (typeof fields.title === 'string') {
+      setTitle(fields.title)
+    }
 
-      if (
-        typeof parsed !== 'object' ||
-        parsed === null ||
-        Array.isArray(parsed)
-      ) {
-        setJsonImportError('Template must be an object.')
-        return
-      }
+    if (typeof fields.query === 'string') {
+      setQuery(fields.query)
+    }
 
-      const template = parsed as TemplateImport
+    if (typeof fields.description === 'string') {
+      setDescription(fields.description)
+    }
 
-      if (typeof template.title === 'string') {
-        setTitle(template.title.trim())
-      }
+    if (typeof fields.referenceUrl === 'string') {
+      setReferenceUrl(fields.referenceUrl)
+    }
 
-      if (typeof template.query === 'string') {
-        setQuery(template.query.trim())
-      }
+    if (Array.isArray(fields.tags)) {
+      setTags(fields.tags.slice(0, MAX_QUERY_TAGS))
+    }
 
-      if (typeof template.description === 'string') {
-        setDescription(template.description)
-      }
-
-      if (typeof template.referenceUrl === 'string') {
-        setReferenceUrl(template.referenceUrl)
-      }
-
-      if (Array.isArray(template.tags)) {
-        setTags(
-          template.tags
-            .filter((value): value is string => typeof value === 'string')
-            .map((value) => value.trim())
-            .filter(Boolean)
-            .slice(0, MAX_QUERY_TAGS),
-        )
-      }
-
-      if (template.visibility === 'private') {
-        setVisibility('private')
-      } else if (template.visibility === 'public') {
-        setVisibility('public')
-      } else if (template.isPublic === false) {
-        setVisibility('private')
-      } else if (template.isPublic === true) {
-        setVisibility('public')
-      }
-
-      setJsonImportError(null)
-      setIsTemplateModalOpen(false)
-      toast.success('Template imported into the form.')
-    } catch {
-      setJsonImportError('Invalid template. Check formatting and try again.')
+    if (fields.visibility === 'public' || fields.visibility === 'private') {
+      setVisibility(fields.visibility)
     }
   }
 
@@ -210,14 +150,23 @@ function NewLibraryQueryPage() {
           </nav>
 
           <div className="ml-auto flex flex-row flex-wrap justify-end gap-2">
+            {isAiAssistantEnabled ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="rounded-xl"
+                onClick={() => setIsAssistantModalOpen(true)}
+              >
+                <SparklesIcon className="size-4" />
+                AI Assistant
+              </Button>
+            ) : null}
+
             <Button
               type="button"
               variant="outline"
               className="rounded-xl"
-              onClick={() => {
-                setJsonImportError(null)
-                setIsTemplateModalOpen(true)
-              }}
+              onClick={() => setIsTemplateModalOpen(true)}
             >
               Import Template
             </Button>
@@ -347,74 +296,19 @@ function NewLibraryQueryPage() {
         </div>
       </div>
 
-      <Dialog
+      {isAiAssistantEnabled ? (
+        <NewStringAssistantDialog
+          open={isAssistantModalOpen}
+          onOpenChange={setIsAssistantModalOpen}
+          onApply={handleAssistantApply}
+        />
+      ) : null}
+
+      <NewStringTemplateDialog
         open={isTemplateModalOpen}
-        onOpenChange={(nextOpen) => {
-          setIsTemplateModalOpen(nextOpen)
-          if (!nextOpen) {
-            setJsonImportError(null)
-          }
-        }}
-      >
-        <DialogContent className="sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Import Template</DialogTitle>
-            <DialogDescription>
-              Paste a template object and apply it to pre-fill the form.
-            </DialogDescription>
-          </DialogHeader>
-
-          <label className="flex flex-col gap-2">
-            <span className="text-sm font-medium">Search string template</span>
-            <textarea
-              value={jsonDraft}
-              onChange={(event) => {
-                setJsonDraft(event.target.value)
-                if (jsonImportError) {
-                  setJsonImportError(null)
-                }
-              }}
-              placeholder={JSON.stringify(JSON_SKELETON, null, 2)}
-              className="min-h-56 w-full resize-y rounded-2xl border border-border/60 bg-background px-3 py-3 font-mono text-sm outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/20"
-              aria-label="Search string template"
-            />
-          </label>
-
-          {jsonImportError ? (
-            <p className="text-xs text-destructive">{jsonImportError}</p>
-          ) : null}
-
-          <DialogFooter className="items-center sm:justify-between">
-            <Button
-              type="button"
-              variant="outline"
-              className="rounded-xl"
-              onClick={() => {
-                void copyJsonSkeleton()
-              }}
-            >
-              Copy Template
-            </Button>
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-xl"
-                onClick={() => setIsTemplateModalOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                className="rounded-xl"
-                onClick={applyJsonImport}
-              >
-                Apply
-              </Button>
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        onOpenChange={setIsTemplateModalOpen}
+        onApply={handleTemplateApply}
+      />
     </PageShell>
   )
 }
