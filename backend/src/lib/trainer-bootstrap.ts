@@ -1,4 +1,3 @@
-import { eq } from "drizzle-orm";
 import { trainers } from "../db/schema.js";
 import type { FastifyTypebox } from "../types/fastify.js";
 
@@ -31,6 +30,15 @@ function isUniqueViolation(error: unknown): boolean {
   );
 }
 
+function isNotNullViolation(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === "23502"
+  );
+}
+
 export function getBootstrapTrainerUsername(userId: string) {
   return getBootstrapTrainerUsernameForAttempt(userId, 0);
 }
@@ -39,14 +47,6 @@ export async function ensureTrainerProfileExists(
   fastify: FastifyTypebox,
   user: { id: string },
 ): Promise<void> {
-  const existingTrainer = await fastify.db.query.trainers.findFirst({
-    where: eq(trainers.userId, user.id),
-  });
-
-  if (existingTrainer) {
-    return;
-  }
-
   for (let attempt = 0; attempt < MAX_USERNAME_ATTEMPTS; attempt += 1) {
     try {
       await fastify.db
@@ -59,16 +59,15 @@ export async function ensureTrainerProfileExists(
         })
         .onConflictDoNothing({ target: trainers.userId });
 
-      const createdTrainer = await fastify.db.query.trainers.findFirst({
-        where: eq(trainers.userId, user.id),
-      });
-
-      if (createdTrainer) {
-        return;
-      }
+      return;
     } catch (error) {
       if (isUniqueViolation(error) && attempt < MAX_USERNAME_ATTEMPTS - 1) {
         continue;
+      }
+
+      if (isNotNullViolation(error)) {
+        // Another request likely inserted the same user row concurrently.
+        return;
       }
 
       throw error;
