@@ -59,24 +59,29 @@ const authPlugin: FastifyPluginAsync = async (fastify) => {
       typeof authHeader === "string" ? authHeader.match(/^Bearer\s+(.+)$/i)?.[1] : undefined;
     const token = cookieToken ?? bearerToken;
 
-    if (token) {
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser(token);
+    try {
+      if (token) {
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser(token);
 
-      if (!error && user) {
-        request.user = user;
-        return;
+        if (!error && user) {
+          request.user = user;
+          return;
+        }
       }
-    }
 
-    const refreshedUser = await tryRefreshWithCookie(refreshToken, reply);
-    if (!refreshedUser) {
+      const refreshedUser = await tryRefreshWithCookie(refreshToken, reply);
+      if (!refreshedUser) {
+        return reply.code(401).send({ error: "Invalid Session" });
+      }
+
+      request.user = refreshedUser;
+    } catch (authError) {
+      request.log.warn({ authError }, "Supabase auth check failed");
       return reply.code(401).send({ error: "Invalid Session" });
     }
-
-    request.user = refreshedUser;
   });
 };
 

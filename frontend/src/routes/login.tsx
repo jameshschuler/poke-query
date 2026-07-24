@@ -101,7 +101,8 @@ const TESTIMONIALS = [
 export function LoginPage() {
   const navigate = useNavigate()
   const search = Route.useSearch()
-  const { signInWithOtp, verifyOtp } = useAuth()
+  const { signInWithOtp, verifyOtp, user } = useAuth()
+  const isAnonymousUser = Boolean(user && !user.email)
   const docsUrl = import.meta.env.VITE_DOCS_URL ?? '/docs'
 
   const [identifier, setIdentifier] = useState('')
@@ -186,7 +187,11 @@ export function LoginPage() {
         type: 'email',
       })
 
-      toast.success('Signed in successfully.')
+      toast.success(
+        isAnonymousUser
+          ? 'Account secured. You are now signed in with email.'
+          : 'Signed in successfully.',
+      )
       await navigate({ to: search.redirect || '/dashboard', replace: true })
     } catch (error) {
       const message =
@@ -263,9 +268,13 @@ export function LoginPage() {
 
             <div className="space-y-2">
               <h1 className="text-4xl font-semibold tracking-tight">
-                Welcome back
+                {isAnonymousUser ? 'Secure your account' : 'Welcome back'}
               </h1>
-              <p className="text-muted-foreground">Sign in to your account.</p>
+              <p className="text-muted-foreground">
+                {isAnonymousUser
+                  ? 'Attach an email so you can sign back in and keep your progress across devices.'
+                  : 'Sign in to your account.'}
+              </p>
             </div>
 
             <div className="rounded-3xl border border-border p-4 sm:p-8">

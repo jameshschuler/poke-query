@@ -1,9 +1,9 @@
 import { LoginSchema, LogoutSchema, VerifyRouteSchema } from "./auth.schema.js";
 import type { VerifyRequest } from "./auth.schema.js";
 import { supabase } from "../../lib/supabase.js";
-import { trainers } from "../../db/schema.js";
 import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import type { FastifyTypebox } from "../../types/fastify.js";
+import { ensureTrainerProfileExists } from "../../lib/trainer-bootstrap.js";
 
 const authRateLimit = {
   config: {
@@ -79,14 +79,7 @@ export async function authRoutes(fastify: FastifyTypebox) {
       }
 
       try {
-        await fastify.db
-          .insert(trainers)
-          .values({
-            id: authUserId,
-            userId: authUserId,
-            username: `trainer_${authUserId.replace(/-/g, "")}`,
-          })
-          .onConflictDoNothing({ target: trainers.userId });
+        await ensureTrainerProfileExists(fastify, { id: authUserId });
       } catch (trainerError) {
         request.log.error({ trainerError, authUserId }, "Failed to initialize trainer profile");
         return reply.code(500).send({ error: "Failed to initialize trainer profile" });

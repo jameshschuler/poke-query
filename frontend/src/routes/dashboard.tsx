@@ -5,16 +5,17 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import {
   AlertCircleIcon,
   ArrowRightIcon,
-  CheckCircle2Icon,
   BellIcon,
+  CheckCircle2Icon,
   GitForkIcon,
   HeartIcon,
   Loader2Icon,
   PlusIcon,
+  ShieldCheckIcon,
   SparklesIcon,
   UserPlusIcon,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { Avatar, AvatarFallback, AvatarImage } from '#/components/ui/avatar'
 import { Badge } from '#/components/ui/badge'
@@ -33,6 +34,9 @@ import { OfficialTrainerBadge } from '#/components/official-trainer-badge'
 import { requireAuthenticated, setCachedUser } from '#/lib/route-auth'
 import { formatCompactNumber, formatFullNumber } from '#/lib/utils'
 
+const ACCOUNT_UPGRADE_SUCCESS_STORAGE_KEY =
+  'poke-query:account-upgrade-success-email'
+
 export const Route = createFileRoute('/dashboard')({
   ssr: false,
   beforeLoad: async () => {
@@ -45,6 +49,9 @@ function DashboardRoute() {
   const { user, isLoading, signOut } = useAuth()
   const navigate = useNavigate()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [recentlyUpgradedEmail, setRecentlyUpgradedEmail] = useState<
+    string | null
+  >(null)
 
   const {
     data: me,
@@ -105,6 +112,25 @@ function DashboardRoute() {
   const latestDraft = queries.find((query) => !query.isPublic) ?? null
   const recentDrafts = queries.filter((query) => !query.isPublic).slice(0, 3)
   const isSetupComplete = me?.profileCompleted ?? false
+  const isAnonymousUser = Boolean(user && !user.email)
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || isAnonymousUser) {
+      return
+    }
+
+    const upgradedEmail = window.localStorage.getItem(
+      ACCOUNT_UPGRADE_SUCCESS_STORAGE_KEY,
+    )
+
+    if (!upgradedEmail) {
+      return
+    }
+
+    setRecentlyUpgradedEmail(upgradedEmail)
+    window.localStorage.removeItem(ACCOUNT_UPGRADE_SUCCESS_STORAGE_KEY)
+  }, [isAnonymousUser])
+
   const setupChecklist = [
     {
       label: 'Trainer details are filled out',
@@ -175,6 +201,57 @@ function DashboardRoute() {
       showHeaderSearch={false}
     >
       <div className="space-y-4">
+        {recentlyUpgradedEmail ? (
+          <section className="rounded-2xl border border-emerald-300/70 bg-emerald-50/70 p-5 shadow-sm dark:border-emerald-700/40 dark:bg-emerald-950/20">
+            <div className="flex items-start gap-3">
+              <CheckCircle2Icon className="mt-0.5 size-5 shrink-0 text-emerald-700 dark:text-emerald-300" />
+              <div className="space-y-1">
+                <h2 className="text-base font-semibold text-emerald-950 dark:text-emerald-100">
+                  Account upgrade complete
+                </h2>
+                <p className="text-sm text-emerald-900/80 dark:text-emerald-200/80">
+                  {recentlyUpgradedEmail} is now linked to this account. Your
+                  strings and activity are still here.
+                </p>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {isAnonymousUser ? (
+          <section className="rounded-2xl border border-amber-300/60 bg-amber-50/70 p-5 shadow-sm dark:border-amber-700/40 dark:bg-amber-950/20">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="space-y-2">
+                <Badge
+                  variant="outline"
+                  size="lg"
+                  className="border-amber-300/80 bg-amber-500/10 text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/20 dark:text-amber-200"
+                >
+                  <ShieldCheckIcon />
+                  Guest account
+                </Badge>
+                <h2 className="text-lg font-semibold tracking-tight text-amber-950 dark:text-amber-100">
+                  Add email sign-in before you leave this device.
+                </h2>
+                <p className="max-w-2xl text-sm text-amber-900/80 dark:text-amber-200/80">
+                  Your strings already belong to this guest account. Attach an
+                  email on the account page so you can sign back in later and
+                  keep access on other devices.
+                </p>
+              </div>
+
+              <Button
+                nativeButton={false}
+                className="rounded-xl sm:shrink-0"
+                render={<Link to="/account" search={{ panel: 'profile' }} />}
+              >
+                Secure account
+                <ArrowRightIcon />
+              </Button>
+            </div>
+          </section>
+        ) : null}
+
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {[
             {

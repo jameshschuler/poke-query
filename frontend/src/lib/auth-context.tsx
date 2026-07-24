@@ -6,13 +6,46 @@ import { supabase } from '#/lib/supabase-client'
 
 type SignInWithOtpPayload = Parameters<typeof supabase.auth.signInWithOtp>[0]
 type VerifyOtpPayload = Parameters<typeof supabase.auth.verifyOtp>[0]
+type UpdateUserPayload = Parameters<typeof supabase.auth.updateUser>[0]
+
+let anonymousSessionPromise: Promise<void> | null = null
+
+export async function startAnonymousSession(): Promise<void> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  if (session?.user) {
+    return
+  }
+
+  if (anonymousSessionPromise) {
+    return anonymousSessionPromise
+  }
+
+  anonymousSessionPromise = (async () => {
+    const { error } = await supabase.auth.signInAnonymously()
+    if (error) {
+      throw error
+    }
+  })()
+
+  try {
+    await anonymousSessionPromise
+  } finally {
+    anonymousSessionPromise = null
+  }
+}
 
 type AuthContextValue = {
   user: User | null
   isLoading: boolean
   refreshSession: () => Promise<void>
+  startAnonymousSession: () => Promise<void>
+  requestAccountUpgrade: (payload: UpdateUserPayload) => Promise<void>
   signOut: () => Promise<void>
   signInWithOtp: (payload: SignInWithOtpPayload) => Promise<void>
+  verifyAccountUpgrade: (payload: VerifyOtpPayload) => Promise<void>
   verifyOtp: (payload: VerifyOtpPayload) => Promise<void>
 }
 
@@ -66,6 +99,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
         setUser(refreshedUser)
       },
+      startAnonymousSession,
+      requestAccountUpgrade: async (payload) => {
+        const { error } = await supabase.auth.updateUser(payload)
+        if (error) {
+          throw error
+        }
+      },
       signOut: async () => {
         await supabase.auth.signOut()
         setUser(null)
@@ -77,6 +117,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
         }
       },
       verifyOtp: async (payload) => {
+        const { error } = await supabase.auth.verifyOtp(payload)
+        if (error) {
+          throw error
+        }
+      },
+      verifyAccountUpgrade: async (payload) => {
         const { error } = await supabase.auth.verifyOtp(payload)
         if (error) {
           throw error

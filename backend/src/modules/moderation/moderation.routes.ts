@@ -10,6 +10,7 @@ import {
   SubmitReportSchema,
   UpdateModerationReportStatusSchema,
 } from "./moderation.schema.js";
+import { ensureTrainerProfileExists } from "../../lib/trainer-bootstrap.js";
 
 type ModerationStatus = "open" | "in_review" | "resolved" | "dismissed";
 
@@ -78,6 +79,7 @@ export async function moderationRoutes(fastify: FastifyTypebox) {
     { preHandler: [fastify.authenticate], schema: SubmitReportSchema },
     async (request, reply) => {
       const reporterTrainerId = request.user.id;
+      await ensureTrainerProfileExists(fastify, request.user);
       const { targetType, targetId, reason, details } = request.body;
       const cooldownMinutes = getReportSubmissionCooldownMinutes();
       const cooldownStart = new Date(Date.now() - cooldownMinutes * 60_000);

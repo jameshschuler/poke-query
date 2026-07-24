@@ -1,4 +1,10 @@
 import { useAuth } from '#/lib/auth-context'
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSeparator,
+  InputOTPSlot,
+} from '#/components/ui/input-otp'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
@@ -12,7 +18,7 @@ import {
   Trash2Icon,
   UserXIcon,
 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import { PageShell } from '#/components/page-shell'
@@ -101,6 +107,8 @@ const DICEBEAR_STYLES = [
   'open-peeps',
   'pixel-art',
 ] as const
+const ACCOUNT_UPGRADE_SUCCESS_STORAGE_KEY =
+  'poke-query:account-upgrade-success-email'
 
 export const Route = createFileRoute('/account')({
   ssr: false,
@@ -123,7 +131,8 @@ export const Route = createFileRoute('/account')({
 function AccountPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { signOut } = useAuth()
+  const { signOut, requestAccountUpgrade, user, verifyAccountUpgrade } =
+    useAuth()
   const search = Route.useSearch()
 
   const [formState, setFormState] = useState<FormState>({
@@ -139,6 +148,19 @@ function AccountPage() {
   const [formErrors, setFormErrors] = useState<FormErrors>({})
   const [avatarPreviewFailed, setAvatarPreviewFailed] = useState(false)
   const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false)
+
+  // Email upgrade state (anonymous-to-email flow)
+  const [upgradeEmail, setUpgradeEmail] = useState('')
+  const [upgradeToken, setUpgradeToken] = useState('')
+  const [upgradeStep, setUpgradeStep] = useState<'request' | 'verify'>(
+    'request',
+  )
+  const [upgradeIsPending, setUpgradeIsPending] = useState(false)
+  const [upgradeSuccessEmail, setUpgradeSuccessEmail] = useState<string | null>(
+    null,
+  )
+  const [upgradeResendCountdown, setUpgradeResendCountdown] = useState(0)
+  const upgradeTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleteConfirmation, setDeleteConfirmation] = useState('')
   const [notificationForm, setNotificationForm] =
@@ -439,6 +461,229 @@ function AccountPage() {
     saveMutation.mutate()
   }
 
+  const isAnonymousUser = Boolean(user && !user.email)
+
+  useEffect(() => {
+    if (upgradeStep !== 'verify' || upgradeResendCountdown <= 0) {
+      return
+    }
+
+    upgradeTimerRef.current = setInterval(() => {
+      setUpgradeResendCountdown((n) => (n > 0 ? n - 1 : 0))
+    }, 1000)
+
+    return () => {
+      if (upgradeTimerRef.current) {
+        clearInterval(upgradeTimerRef.current)
+      }
+    }
+  }, [upgradeStep, upgradeResendCountdown])
+
+  async function handleUpgradeRequest() {
+    const email = upgradeEmail.trim()
+    if (!email) {
+      toast.error('Enter your email address.')
+      return
+    }
+
+    setUpgradeIsPending(true)
+    setUpgradeSuccessEmail(null)
+    try {
+      await requestAccountUpgrade({ email })
+      setUpgradeStep('verify')
+      setUpgradeToken('')
+      setUpgradeResendCountdown(50)
+      toast.success('Check your email for the confirmation code.')
+    } catch (err) {
+      toast.error(
+        err instanceof Error && err.message
+          ? err.message
+          : 'Could not send OTP.',
+      )
+    } finally {
+      setUpgradeIsPending(false)
+    }
+  }
+
+  async function handleUpgradeVerify() {
+    const token = upgradeToken.trim()
+    if (!token) {
+      toast.error('Enter the verification code.')
+      return
+    }
+
+    setUpgradeIsPending(true)
+    try {
+      await verifyAccountUpgrade({
+        email: upgradeEmail.trim(),
+        token,
+        type: 'email_change',
+      })
+      // Session is now promoted to email — invalidate /me cache.
+      setCachedUser(null)
+      await queryClient.invalidateQueries({ queryKey: ['me'] })
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(
+          ACCOUNT_UPGRADE_SUCCESS_STORAGE_KEY,
+          upgradeEmail.trim(),
+        )
+      }
+      toast.success('Email attached. Your account is now secured.')
+      setUpgradeSuccessEmail(upgradeEmail.trim())
+      setUpgradeStep('request')
+      setUpgradeEmail('')
+      setUpgradeToken('')
+    } catch (err) {
+      toast.error(
+        err instanceof Error && err.message
+          ? err.message
+          : 'Could not verify OTP.',
+      )
+    } finally {
+      setUpgradeIsPending(false)
+    }
+  }
+
+  async function handleUpgradeResend() {
+    if (upgradeIsPending || upgradeResendCountdown > 0) return
+    const email = upgradeEmail.trim()
+    if (!email) return
+
+    setUpgradeIsPending(true)
+    try {
+      await requestAccountUpgrade({ email })
+      setUpgradeResendCountdown(50)
+      setUpgradeToken('')
+      toast.success('A new confirmation code was sent.')
+    } catch (err) {
+      toast.error(
+        err instanceof Error && err.message
+          ? err.message
+          : 'Could not resend OTP.',
+      )
+    } finally {
+      setUpgradeIsPending(false)
+    }
+  }
+
+  function renderUpgradeSection() {
+    if (!isAnonymousUser) {
+      return null
+    }
+
+    return (
+      <section className="rounded-2xl border border-amber-300/60 bg-amber-50/60 p-5 dark:border-amber-700/40 dark:bg-amber-950/20">
+        <div className="flex items-start gap-3">
+          <ShieldCheckIcon className="mt-0.5 size-5 shrink-0 text-amber-700 dark:text-amber-300" />
+          <div className="min-w-0">
+            <h3 className="text-base font-semibold text-amber-900 dark:text-amber-100">
+              Secure your guest account with email
+            </h3>
+            <p className="mt-1 text-sm text-amber-800/80 dark:text-amber-200/80">
+              Attach an email so you can recover this account on another device
+              and sign back in after your current session ends.
+            </p>
+          </div>
+        </div>
+
+        {upgradeStep === 'request' ? (
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="flex flex-col gap-1.5 sm:flex-1">
+              <label htmlFor="upgrade-email" className="text-sm font-medium">
+                Email address
+              </label>
+              <Input
+                id="upgrade-email"
+                type="email"
+                value={upgradeEmail}
+                onChange={(e) => setUpgradeEmail(e.target.value)}
+                placeholder="you@example.com"
+                autoComplete="email"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void handleUpgradeRequest()
+                }}
+              />
+            </div>
+            <Button
+              type="button"
+              className="rounded-xl sm:shrink-0"
+              disabled={upgradeIsPending}
+              onClick={() => void handleUpgradeRequest()}
+            >
+              {upgradeIsPending ? (
+                <Loader2Icon className="size-4 animate-spin" />
+              ) : null}
+              Send OTP
+            </Button>
+          </div>
+        ) : (
+          <div className="mt-5 flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <p className="text-sm font-medium">
+                Enter the code sent to{' '}
+                <span className="font-semibold">{upgradeEmail}</span>
+              </p>
+              <InputOTP
+                maxLength={6}
+                value={upgradeToken}
+                onChange={setUpgradeToken}
+                onComplete={() => void handleUpgradeVerify()}
+              >
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                </InputOTPGroup>
+                <InputOTPSeparator />
+                <InputOTPGroup>
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                className="rounded-xl"
+                disabled={upgradeIsPending}
+                onClick={() => void handleUpgradeVerify()}
+              >
+                {upgradeIsPending ? (
+                  <Loader2Icon className="size-4 animate-spin" />
+                ) : null}
+                Verify and secure account
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="rounded-xl text-sm"
+                disabled={upgradeIsPending || upgradeResendCountdown > 0}
+                onClick={() => void handleUpgradeResend()}
+              >
+                {upgradeResendCountdown > 0
+                  ? `Resend in ${upgradeResendCountdown}s`
+                  : 'Resend code'}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="rounded-xl text-sm"
+                onClick={() => {
+                  setUpgradeStep('request')
+                  setUpgradeToken('')
+                }}
+              >
+                Change email
+              </Button>
+            </div>
+          </div>
+        )}
+      </section>
+    )
+  }
+
   function handleThemePresetChange(nextPreset: ThemePreset) {
     if (nextPreset === themePreset) {
       return
@@ -501,6 +746,23 @@ function AccountPage() {
         showHeaderSearch={false}
       >
         <div className="space-y-8">
+          {upgradeSuccessEmail ? (
+            <section className="rounded-2xl border border-emerald-300/70 bg-emerald-50/70 p-5 dark:border-emerald-700/40 dark:bg-emerald-950/20">
+              <div className="flex items-start gap-3">
+                <CheckCircle2Icon className="mt-0.5 size-5 shrink-0 text-emerald-700 dark:text-emerald-300" />
+                <div className="min-w-0">
+                  <h3 className="text-base font-semibold text-emerald-900 dark:text-emerald-100">
+                    Account upgraded successfully
+                  </h3>
+                  <p className="mt-1 text-sm text-emerald-900/80 dark:text-emerald-200/80">
+                    {upgradeSuccessEmail} is now linked to this account. Your
+                    existing strings and activity stayed with the same profile.
+                  </p>
+                </div>
+              </div>
+            </section>
+          ) : null}
+
           <div className="rounded-2xl border border-border/70 bg-card/95 p-5">
             <div className="flex flex-wrap items-center gap-2">
               <Badge
@@ -1156,6 +1418,8 @@ function AccountPage() {
               </div>
             </section>
           ) : null}
+
+          {renderUpgradeSection()}
         </div>
       </PageShell>
 
