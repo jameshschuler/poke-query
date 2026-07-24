@@ -14,6 +14,7 @@ const CommunityQueryItem = Type.Object({
   referenceUrl: Type.Union([Type.String(), Type.Null()]),
   userTags: Type.Array(Type.String()),
   autoTags: Type.Array(Type.String()),
+  endsAt: Type.Optional(Type.Union([Type.String(), Type.Null()])),
   createdAt: Type.String(),
   updatedAt: Type.String(),
   creator: Type.Union([

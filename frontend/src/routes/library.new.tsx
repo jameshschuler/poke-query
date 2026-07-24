@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 import { PageShell } from '#/components/page-shell'
-import { QueryTagsField } from '#/components/query-tags-field'
+import { MAX_QUERY_TAGS, QueryTagsField } from '#/components/query-tags-field'
 import { Button } from '#/components/ui/button'
 import { findBlockedTerm } from '#/lib/content-policy'
 import { createQuery } from '#/lib/poke-query-api'
@@ -147,7 +147,8 @@ function NewLibraryQueryPage() {
           template.tags
             .filter((value): value is string => typeof value === 'string')
             .map((value) => value.trim())
-            .filter(Boolean),
+            .filter(Boolean)
+            .slice(0, MAX_QUERY_TAGS),
         )
       }
 

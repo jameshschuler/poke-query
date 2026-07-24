@@ -86,6 +86,7 @@ export function SearchStringCard({
   onOpenDetail,
   onCopyTracked,
 }: SearchStringCardProps) {
+  const MAX_VISIBLE_TAGS = 5
   const dateFormatter = useMemo(
     () =>
       new Intl.DateTimeFormat(undefined, {
@@ -95,9 +96,27 @@ export function SearchStringCard({
       }),
     [],
   )
+  const untilDateFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(undefined, {
+        month: 'long',
+        day: 'numeric',
+      }),
+    [],
+  )
 
-  const visibleTags = Array.from(new Set([...card.userTags, ...card.autoTags]))
+  const visibleTags = useMemo(
+    () =>
+      Array.from(new Set([...card.userTags, ...card.autoTags])).sort((a, b) =>
+        formatTagLabel(a).localeCompare(formatTagLabel(b), undefined, {
+          sensitivity: 'base',
+        }),
+      ),
+    [card.autoTags, card.userTags],
+  )
   const userTagSet = new Set(card.userTags)
+  const visibleTagChips = visibleTags.slice(0, MAX_VISIBLE_TAGS)
+  const hiddenTagCount = Math.max(visibleTags.length - MAX_VISIBLE_TAGS, 0)
   const userTagClassName =
     'border-amber-300/70 bg-amber-100/70 text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/30 dark:text-amber-200'
   const autoTagClassName = 'border-border/70 bg-card text-muted-foreground'
@@ -105,6 +124,10 @@ export function SearchStringCard({
   const discoverSourceBadge =
     variant === 'discover' && isCommunityQuery(card)
       ? getSourceBadge(card.source)
+      : null
+  const untilDateLabel =
+    variant === 'discover' && isCommunityQuery(card) && card.endsAt
+      ? `Until ${untilDateFormatter.format(new Date(card.endsAt))}`
       : null
   const [displayCopyCount, setDisplayCopyCount] = useState(card.copyCount)
   const [isCopyPending, setIsCopyPending] = useState(false)
@@ -173,7 +196,7 @@ export function SearchStringCard({
                     {discoverSourceBadge.label}
                   </Badge>
                 ) : null}
-                {visibleTags.map((tag) => (
+                {visibleTagChips.map((tag) => (
                   <Badge
                     key={tag}
                     variant="outline"
@@ -184,6 +207,11 @@ export function SearchStringCard({
                     {formatTagLabel(tag)}
                   </Badge>
                 ))}
+                {hiddenTagCount > 0 ? (
+                  <Badge variant="outline" className={autoTagClassName}>
+                    +{hiddenTagCount}
+                  </Badge>
+                ) : null}
               </div>
             ) : firstTag ? (
               <div className="mt-1">
@@ -199,6 +227,15 @@ export function SearchStringCard({
               </div>
             ) : null}
           </div>
+
+          {untilDateLabel ? (
+            <Badge
+              variant="outline"
+              className="shrink-0 border-cyan-300/70 bg-cyan-50 text-cyan-800"
+            >
+              {untilDateLabel}
+            </Badge>
+          ) : null}
         </div>
 
         <div className="min-h-24 rounded-xl border border-border/70 bg-card px-4 py-3 font-mono text-lg text-muted-foreground">

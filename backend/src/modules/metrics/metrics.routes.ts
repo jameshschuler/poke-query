@@ -277,7 +277,10 @@ export async function metricsRoutes(fastify: FastifyTypebox) {
 
     const now = new Date();
     const weeklyPickRows = await fastify.db
-      .select(selectCommunityFields)
+      .select({
+        ...selectCommunityFields,
+        weeklyEndsAt: discoverWeeklyPicks.endsAt,
+      })
       .from(discoverWeeklyPicks)
       .innerJoin(searchQueries, eq(searchQueries.id, discoverWeeklyPicks.queryId))
       .leftJoin(trainers, eq(searchQueries.creatorId, trainers.id))
@@ -293,7 +296,13 @@ export async function metricsRoutes(fastify: FastifyTypebox) {
       .limit(limit);
 
     const weeklyPicks = uniqueById(
-      weeklyPickRows.map((row) => toCommunityItem(row as CommunityRow)),
+      weeklyPickRows.map((row) => {
+        const item = toCommunityItem(row);
+        return {
+          ...item,
+          endsAt: row.weeklyEndsAt ? row.weeklyEndsAt.toISOString() : null,
+        };
+      }),
     );
 
     const allTimeTrusted = trustedHighQualityItems.slice(0, limit);

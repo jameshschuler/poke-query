@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import { PageShell } from '#/components/page-shell'
-import { QueryTagsField } from '#/components/query-tags-field'
+import { MAX_QUERY_TAGS, QueryTagsField } from '#/components/query-tags-field'
 import { Button } from '#/components/ui/button'
 import { findBlockedTerm } from '#/lib/content-policy'
 import { getMyQueries, updateQuery } from '#/lib/poke-query-api'
@@ -63,7 +63,7 @@ function EditLibraryQueryPage() {
     setQuery(currentQuery.query)
     setDescription(currentQuery.description ?? '')
     setReferenceUrl(currentQuery.referenceUrl ?? '')
-    setTags(currentQuery.userTags)
+    setTags(currentQuery.userTags.slice(0, MAX_QUERY_TAGS))
     setVisibility(currentQuery.isPublic ? 'public' : 'private')
   }, [currentQuery])
 

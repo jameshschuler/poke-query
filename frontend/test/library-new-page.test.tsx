@@ -52,6 +52,7 @@ vi.mock('#/components/page-shell', () => ({
 }))
 
 vi.mock('#/components/query-tags-field', () => ({
+  MAX_QUERY_TAGS: 5,
   QueryTagsField: () => <div>Tags</div>,
 }))
 

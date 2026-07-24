@@ -296,6 +296,7 @@ export type CommunityQuery = {
   referenceUrl: string | null
   userTags: string[]
   autoTags: string[]
+  endsAt?: string | null
   createdAt: string
   updatedAt: string
   creator: {
