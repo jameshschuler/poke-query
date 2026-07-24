@@ -505,7 +505,24 @@ function DiscoverPage() {
     setTimeout(clearTransition, 0)
   }
 
-  function handleToggleFavorite(queryId: string, isFavorited: boolean) {
+  async function handleToggleFavorite(queryId: string, isFavorited: boolean) {
+    if (!user) {
+      if (isStartingAnonymousSession) {
+        return
+      }
+
+      setIsStartingAnonymousSession(true)
+
+      try {
+        await startAnonymousSession()
+      } catch {
+        toast.error('Could not start your session. Please try again.')
+        return
+      } finally {
+        setIsStartingAnonymousSession(false)
+      }
+    }
+
     if (isFavorited) {
       unfavoriteMutation.mutate(queryId)
       return
@@ -514,7 +531,24 @@ function DiscoverPage() {
     favoriteMutation.mutate(queryId)
   }
 
-  function handleFork(queryId: string) {
+  async function handleFork(queryId: string) {
+    if (!user) {
+      if (isStartingAnonymousSession) {
+        return
+      }
+
+      setIsStartingAnonymousSession(true)
+
+      try {
+        await startAnonymousSession()
+      } catch {
+        toast.error('Could not start your session. Please try again.')
+        return
+      } finally {
+        setIsStartingAnonymousSession(false)
+      }
+    }
+
     if (forkMutation.isPending) {
       return
     }

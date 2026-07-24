@@ -57,7 +57,7 @@ function LandingPage() {
                 About
               </a>
               <a
-                href="/dashboard"
+                href="/login"
                 className="rounded-full border border-[#f59e0b]/45 bg-[#f59e0b]/18 px-2 py-1 font-medium text-foreground transition-colors hover:bg-[#f59e0b]/28 sm:px-3"
               >
                 Log in

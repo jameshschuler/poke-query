@@ -130,7 +130,7 @@ describe('NewLibraryQueryPage', () => {
   it('imports a partial template into the form and saves draft with imported values', async () => {
     render(<NewLibraryComponent />)
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Import Template' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Import Template' }))
 
     const jsonInput = screen.getByLabelText('Search string template')
     fireEvent.change(jsonInput, {

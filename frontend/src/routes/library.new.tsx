@@ -231,13 +231,11 @@ function NewLibraryQueryPage() {
         <div className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-card/60 p-4">
           <div
             className="inline-flex w-fit items-center gap-1 rounded-xl border border-border/60 bg-background p-1"
-            role="tablist"
             aria-label="Entry mode"
           >
             <button
               type="button"
-              role="tab"
-              aria-selected={entryMode === 'manual'}
+              aria-pressed={entryMode === 'manual'}
               className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
                 entryMode === 'manual'
                   ? 'bg-primary text-primary-foreground'
@@ -249,8 +247,7 @@ function NewLibraryQueryPage() {
             </button>
             <button
               type="button"
-              role="tab"
-              aria-selected={entryMode === 'json'}
+              aria-pressed={entryMode === 'json'}
               className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
                 entryMode === 'json'
                   ? 'bg-primary text-primary-foreground'
