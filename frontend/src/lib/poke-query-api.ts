@@ -273,6 +273,28 @@ export type CreateQueryRequest = {
   tags?: string[]
 }
 
+export type AssistantGenerationMode =
+  'raids' | 'pvp' | 'events' | 'cleanup' | 'auto'
+
+export type GenerateAssistantSearchStringRequest = {
+  prompt: string
+  mode?: AssistantGenerationMode
+  context?: Record<string, unknown>
+  previousResultId?: string
+}
+
+export type AssistantSearchStringResult = {
+  resultId: string
+  title: string
+  query: string
+  description: string | null
+  tags: string[]
+  explanation?: string
+  warnings?: string[]
+  provider: 'gemini' | 'openai' | 'claude' | 'hybrid'
+  model: string
+}
+
 export type UpdateQueryRequest = {
   title: string
   query: string
@@ -726,6 +748,18 @@ export function createQuery(body: CreateQueryRequest): Promise<IdResponse> {
     method: 'POST',
     body,
   })
+}
+
+export function generateAssistantSearchString(
+  body: GenerateAssistantSearchStringRequest,
+): Promise<AssistantSearchStringResult> {
+  return apiRequest<AssistantSearchStringResult>(
+    '/api/v1/assistant/search-string/generate',
+    {
+      method: 'POST',
+      body,
+    },
+  )
 }
 
 export function forkQuery(id: string): Promise<IdResponse> {

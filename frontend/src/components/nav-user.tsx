@@ -20,6 +20,7 @@ import {
   BadgeCheckIcon,
   BellIcon,
   LogOutIcon,
+  NewspaperIcon,
   UsersIcon,
 } from 'lucide-react'
 import { useNavigate } from '@tanstack/react-router'
@@ -96,6 +97,14 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
+              <DropdownMenuItem
+                onClick={() => {
+                  void navigate({ to: '/updates' })
+                }}
+              >
+                <NewspaperIcon />
+                Updates
+              </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {
                   void navigate({ to: '/account' })

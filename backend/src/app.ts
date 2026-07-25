@@ -15,6 +15,7 @@ import { communityRoutes } from "./modules/community/community.routes.js";
 import { metricsRoutes } from "./modules/metrics/metrics.routes.js";
 import { notificationsRoutes } from "./modules/notifications/notifications.routes.js";
 import { moderationRoutes } from "./modules/moderation/moderation.routes.js";
+import { assistantRoutes } from "./modules/assistant/assistant.routes.js";
 import { readFile } from "fs/promises";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
@@ -208,6 +209,7 @@ export async function buildApp() {
   await fastify.register(metricsRoutes, { prefix: "/api/v1/metrics" });
   await fastify.register(notificationsRoutes, { prefix: "/api/v1/notifications" });
   await fastify.register(moderationRoutes, { prefix: "/api/v1/moderation" });
+  await fastify.register(assistantRoutes, { prefix: "/api/v1/assistant" });
 
   fastify.get("/health", async () => {
     return {

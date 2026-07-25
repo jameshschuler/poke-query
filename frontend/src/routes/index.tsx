@@ -57,6 +57,12 @@ function LandingPage() {
                 About
               </a>
               <a
+                href="/updates"
+                className="rounded-full border border-sky-300/50 bg-sky-100/60 px-2 py-1 font-medium text-sky-950 transition-colors hover:bg-sky-100 dark:border-sky-700/50 dark:bg-sky-950/30 dark:text-sky-100 sm:px-3"
+              >
+                Updates
+              </a>
+              <a
                 href="/login"
                 className="rounded-full border border-[#f59e0b]/45 bg-[#f59e0b]/18 px-2 py-1 font-medium text-foreground transition-colors hover:bg-[#f59e0b]/28 sm:px-3"
               >

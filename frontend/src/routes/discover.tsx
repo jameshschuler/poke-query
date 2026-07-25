@@ -8,8 +8,6 @@ import {
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useMemo, useState, useEffect, useRef } from 'react'
 import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
   ChevronsUpDownIcon,
   Loader2Icon,
   PlusIcon,
@@ -19,6 +17,9 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '#/components/ui/button'
+import { DiscoverAllTimeTrustedSection } from '#/components/discover-all-time-trusted-section'
+import { DiscoverFeaturedTodaySection } from '#/components/discover-featured-today-section'
+import { DiscoverWeeklyPicksSection } from '#/components/discover-weekly-picks-section'
 import {
   getCommunityQueriesPage,
   getCommunitySurfacing,
@@ -86,6 +87,7 @@ type DiscoverRail =
 
 const DISCOVER_SESSION_STORAGE_KEY = 'poke-query:discover-session-key'
 const FEATURED_PAGE_SIZE = 3
+const MOBILE_RAIL_CARD_WIDTH = 320
 
 function getDiscoverSessionKey() {
   if (typeof window === 'undefined') {
@@ -143,8 +145,12 @@ function DiscoverPage() {
   const [railTransitionByKey, setRailTransitionByKey] = useState<
     Record<string, 'prev' | 'next' | null>
   >({})
+  const [mobileRailIndexByKey, setMobileRailIndexByKey] = useState<
+    Record<string, number>
+  >({})
   const discoverSessionKey = useMemo(() => getDiscoverSessionKey(), [])
   const sentImpressionKeysRef = useRef(new Set<string>())
+  const mobileRailRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
   const { data: availableTags = [] } = useQuery({
     queryKey: ['query-tags'],
@@ -434,6 +440,16 @@ function DiscoverPage() {
     [railPageByKey, railSections],
   )
 
+  const weeklyPicksSection = pagedRailSections.find(
+    (section) => section.key === 'weekly_picks',
+  )
+  const featuredTodaySection = pagedRailSections.find(
+    (section) => section.key === 'featured_today',
+  )
+  const allTimeTrustedSection = pagedRailSections.find(
+    (section) => section.key === 'all_time_trusted',
+  )
+
   useEffect(() => {
     const events = pagedRailSections.flatMap((section) =>
       section.pageItems.map((item) => ({
@@ -503,6 +519,58 @@ function DiscoverPage() {
     }
 
     setTimeout(clearTransition, 0)
+  }
+
+  function handleMobileRailScroll(railKey: string) {
+    const rail = mobileRailRefs.current[railKey]
+    if (!rail) {
+      return
+    }
+
+    const firstCard = rail.firstElementChild as HTMLElement | null
+    if (!firstCard) {
+      return
+    }
+
+    const cardWidth = firstCard.offsetWidth
+    if (cardWidth <= 0) {
+      return
+    }
+
+    const nextIndex = Math.round(rail.scrollLeft / cardWidth)
+    setMobileRailIndexByKey((current) =>
+      current[railKey] === nextIndex
+        ? current
+        : { ...current, [railKey]: nextIndex },
+    )
+  }
+
+  function handleMobileRailStep(railKey: string, direction: 'prev' | 'next') {
+    const rail = mobileRailRefs.current[railKey]
+    if (!rail) {
+      return
+    }
+
+    const firstCard = rail.firstElementChild as HTMLElement | null
+    const cardWidth = firstCard?.offsetWidth ?? MOBILE_RAIL_CARD_WIDTH
+    const gap = 16
+    const delta = direction === 'prev' ? -(cardWidth + gap) : cardWidth + gap
+
+    rail.scrollBy({
+      left: delta,
+      behavior: 'smooth',
+    })
+  }
+
+  function handleMobileRailDotSelect(railKey: string, index: number) {
+    const rail = mobileRailRefs.current[railKey]
+    const cardElement = rail?.children[index] as HTMLElement | undefined
+
+    cardElement?.scrollIntoView({
+      behavior: 'smooth',
+      inline: 'center',
+      block: 'nearest',
+    })
   }
 
   async function handleToggleFavorite(queryId: string, isFavorited: boolean) {
@@ -608,124 +676,115 @@ function DiscoverPage() {
         outsideCardContent={
           pagedRailSections.some((section) => section.items.length > 0) ? (
             <div className="flex flex-col gap-8 sm:gap-4">
-              {pagedRailSections.map((section) =>
-                section.items.length > 0 ? (
-                  <section
-                    key={section.key}
-                    className={`rounded-3xl border px-4 py-5 sm:px-6 sm:py-6 shadow-sm ${
-                      section.key === 'weekly_picks'
-                        ? 'border-amber-300/70 bg-linear-to-br from-amber-50/90 via-card/95 to-card/95 dark:border-amber-700/50 dark:from-amber-950/25'
-                        : section.key === 'featured_today'
-                          ? 'border-sky-300/70 bg-linear-to-br from-sky-50/80 via-card/95 to-card/95 dark:border-sky-700/50 dark:from-sky-950/25'
-                          : 'border-border/70 bg-card/95'
-                    }`}
-                  >
-                    <div className="space-y-3">
-                      <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
-                        <div className="min-w-0 flex flex-col items-start gap-3 sm:gap-1.5">
-                          <h2
-                            className={`font-semibold tracking-tight ${
-                              section.key === 'weekly_picks'
-                                ? 'text-2xl text-amber-900 dark:text-amber-100'
-                                : section.key === 'featured_today'
-                                  ? 'text-2xl text-sky-900 dark:text-sky-100'
-                                  : 'text-lg'
-                            }`}
-                          >
-                            {section.title}
-                          </h2>
-                          {section.key === 'weekly_picks' ? (
-                            <p className="inline-flex w-fit items-center rounded-full border border-amber-300/70 bg-amber-100/90 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200">
-                              Hand-picked
-                            </p>
-                          ) : section.key === 'featured_today' ? (
-                            <p className="inline-flex w-fit items-center rounded-full border border-sky-300/70 bg-sky-100/90 px-2 py-0.5 text-xs font-semibold text-sky-800 dark:border-sky-700/60 dark:bg-sky-950/40 dark:text-sky-200">
-                              Daily rotation
-                            </p>
-                          ) : null}
-                          <p className="text-sm text-muted-foreground">
-                            {section.subtitle}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2 sm:shrink-0">
-                          <span className="text-xs text-muted-foreground">
-                            {section.shownStart}-{section.shownEnd} of{' '}
-                            {section.items.length}
-                          </span>
-                          <Button
-                            variant="outline"
-                            size="icon-sm"
-                            className="rounded-xl"
-                            aria-label={`Previous ${section.title} cards`}
-                            disabled={section.currentPage === 0}
-                            onClick={() =>
-                              handleRailPageChange(section.key, 'prev')
-                            }
-                          >
-                            <ChevronLeftIcon className="size-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon-sm"
-                            className="rounded-xl"
-                            aria-label={`Next ${section.title} cards`}
-                            disabled={
-                              section.currentPage >= section.totalPages - 1
-                            }
-                            onClick={() =>
-                              handleRailPageChange(section.key, 'next')
-                            }
-                          >
-                            <ChevronRightIcon className="size-4" />
-                          </Button>
-                        </div>
-                      </div>
-                      <div
-                        className={`grid gap-4 transition-all duration-300 ease-out will-change-transform motion-reduce:transform-none motion-reduce:transition-none ${
-                          section.key === 'featured_today' ||
-                          section.key === 'weekly_picks'
-                            ? 'sm:grid-cols-2 md:grid-cols-3'
-                            : 'sm:grid-cols-2 xl:grid-cols-3'
-                        } ${
-                          railTransitionByKey[section.key] === 'next'
-                            ? 'translate-x-3 opacity-0 motion-reduce:opacity-100'
-                            : railTransitionByKey[section.key] === 'prev'
-                              ? '-translate-x-3 opacity-0 motion-reduce:opacity-100'
-                              : 'translate-x-0 opacity-100'
-                        }`}
-                      >
-                        {section.pageItems.map((card) => (
-                          <SearchStringCard
-                            key={`${section.key}:${card.id}`}
-                            card={card}
-                            variant="discover"
-                            isAuthenticated={Boolean(user)}
-                            discoverRail={section.key}
-                            onOpenDetail={(queryId, rail) =>
-                              trackDiscoverEvent(queryId, rail, 'detail_click')
-                            }
-                            onCopyTracked={(queryId, rail) =>
-                              trackDiscoverEvent(queryId, rail, 'copy_action')
-                            }
-                            isFavorited={myFavoriteIdSet.has(card.id)}
-                            isFavoritePending={
-                              favoriteMutation.isPending ||
-                              unfavoriteMutation.isPending
-                            }
-                            onToggleFavorite={handleToggleFavorite}
-                            onFork={
-                              user && card.creator?.id === user.id
-                                ? undefined
-                                : handleFork
-                            }
-                            isForkPending={forkMutation.isPending}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </section>
-                ) : null,
-              )}
+              {weeklyPicksSection && weeklyPicksSection.items.length > 0 ? (
+                <DiscoverWeeklyPicksSection
+                  section={weeklyPicksSection}
+                  isAuthenticated={Boolean(user)}
+                  currentUserId={user?.id}
+                  myFavoriteIdSet={myFavoriteIdSet}
+                  isFavoritePending={
+                    favoriteMutation.isPending || unfavoriteMutation.isPending
+                  }
+                  onToggleFavorite={handleToggleFavorite}
+                  onFork={handleFork}
+                  isForkPending={forkMutation.isPending}
+                  onTrackEvent={trackDiscoverEvent}
+                  mobileRailIndex={
+                    mobileRailIndexByKey[weeklyPicksSection.key] ?? 0
+                  }
+                  setMobileRailElement={(element) => {
+                    mobileRailRefs.current[weeklyPicksSection.key] = element
+                  }}
+                  onMobileScroll={() =>
+                    handleMobileRailScroll(weeklyPicksSection.key)
+                  }
+                  onMobileStep={(direction) =>
+                    handleMobileRailStep(weeklyPicksSection.key, direction)
+                  }
+                  onMobileDotSelect={(index) =>
+                    handleMobileRailDotSelect(weeklyPicksSection.key, index)
+                  }
+                  onDesktopPageChange={(direction) =>
+                    handleRailPageChange(weeklyPicksSection.key, direction)
+                  }
+                  transitionDirection={
+                    railTransitionByKey[weeklyPicksSection.key] ?? null
+                  }
+                />
+              ) : null}
+              {featuredTodaySection && featuredTodaySection.items.length > 0 ? (
+                <DiscoverFeaturedTodaySection
+                  section={featuredTodaySection}
+                  isAuthenticated={Boolean(user)}
+                  currentUserId={user?.id}
+                  myFavoriteIdSet={myFavoriteIdSet}
+                  isFavoritePending={
+                    favoriteMutation.isPending || unfavoriteMutation.isPending
+                  }
+                  onToggleFavorite={handleToggleFavorite}
+                  onFork={handleFork}
+                  isForkPending={forkMutation.isPending}
+                  onTrackEvent={trackDiscoverEvent}
+                  mobileRailIndex={
+                    mobileRailIndexByKey[featuredTodaySection.key] ?? 0
+                  }
+                  setMobileRailElement={(element) => {
+                    mobileRailRefs.current[featuredTodaySection.key] = element
+                  }}
+                  onMobileScroll={() =>
+                    handleMobileRailScroll(featuredTodaySection.key)
+                  }
+                  onMobileStep={(direction) =>
+                    handleMobileRailStep(featuredTodaySection.key, direction)
+                  }
+                  onMobileDotSelect={(index) =>
+                    handleMobileRailDotSelect(featuredTodaySection.key, index)
+                  }
+                  onDesktopPageChange={(direction) =>
+                    handleRailPageChange(featuredTodaySection.key, direction)
+                  }
+                  transitionDirection={
+                    railTransitionByKey[featuredTodaySection.key] ?? null
+                  }
+                />
+              ) : null}
+              {allTimeTrustedSection &&
+              allTimeTrustedSection.items.length > 0 ? (
+                <DiscoverAllTimeTrustedSection
+                  section={allTimeTrustedSection}
+                  isAuthenticated={Boolean(user)}
+                  currentUserId={user?.id}
+                  myFavoriteIdSet={myFavoriteIdSet}
+                  isFavoritePending={
+                    favoriteMutation.isPending || unfavoriteMutation.isPending
+                  }
+                  onToggleFavorite={handleToggleFavorite}
+                  onFork={handleFork}
+                  isForkPending={forkMutation.isPending}
+                  onTrackEvent={trackDiscoverEvent}
+                  mobileRailIndex={
+                    mobileRailIndexByKey[allTimeTrustedSection.key] ?? 0
+                  }
+                  setMobileRailElement={(element) => {
+                    mobileRailRefs.current[allTimeTrustedSection.key] = element
+                  }}
+                  onMobileScroll={() =>
+                    handleMobileRailScroll(allTimeTrustedSection.key)
+                  }
+                  onMobileStep={(direction) =>
+                    handleMobileRailStep(allTimeTrustedSection.key, direction)
+                  }
+                  onMobileDotSelect={(index) =>
+                    handleMobileRailDotSelect(allTimeTrustedSection.key, index)
+                  }
+                  onDesktopPageChange={(direction) =>
+                    handleRailPageChange(allTimeTrustedSection.key, direction)
+                  }
+                  transitionDirection={
+                    railTransitionByKey[allTimeTrustedSection.key] ?? null
+                  }
+                />
+              ) : null}
             </div>
           ) : null
         }
