@@ -13,7 +13,7 @@ function formatUpdateDate(date: string) {
 }
 
 export function AppUpdatesPage() {
-  const latestUpdate = appUpdates[0] ?? null
+  const latestUpdate = appUpdates.at(0)
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-14">

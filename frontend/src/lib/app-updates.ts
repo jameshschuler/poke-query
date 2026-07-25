@@ -14,7 +14,7 @@ type RawAppUpdateEntry = {
 }
 
 type FrontmatterResult = {
-  data: Record<string, string>
+  data: Partial<Record<string, string>>
   content: string
 }
 
@@ -29,7 +29,7 @@ function parseFrontmatter(markdown: string): FrontmatterResult {
     }
   }
 
-  const data: Record<string, string> = {}
+  const data: Partial<Record<string, string>> = {}
 
   for (const line of match[1].split(/\r?\n/)) {
     const colonIndex = line.indexOf(':')
@@ -83,10 +83,7 @@ export function parseAppUpdates(
         title,
         date,
         summary,
-        html: marked.parse(parsed.content, {
-          mangle: false,
-          headerIds: false,
-        }) as string,
+        html: marked.parse(parsed.content),
       }
     })
     .sort((left, right) => right.date.localeCompare(left.date))
