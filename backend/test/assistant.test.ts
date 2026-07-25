@@ -47,7 +47,7 @@ describe("Assistant Endpoint", () => {
   });
 
   it("should generate a result payload", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
       ok: true,
       json: async () => ({
         candidates: [
@@ -76,6 +76,11 @@ describe("Assistant Endpoint", () => {
       payload: {
         prompt: "Best counters for shadow groudon?",
         mode: "raids",
+        context: {
+          rosterFocus: "shadow",
+          event: "GO Fest",
+        },
+        previousResultId: "11111111-1111-4111-8111-111111111111",
       },
     });
 
@@ -94,5 +99,14 @@ describe("Assistant Endpoint", () => {
     expect(body.tags).toEqual(["raid", "shadow"]);
     expect(body.provider).toBe("gemini");
     expect(body.model.length).toBeGreaterThan(0);
+
+    const fetchBody = fetchSpy.mock.calls[0]?.[1]?.body;
+    const parsedBody = typeof fetchBody === "string" ? JSON.parse(fetchBody) : null;
+    const parts = parsedBody?.contents?.[0]?.parts as Array<{ text?: string }> | undefined;
+    const promptText = parts?.[2]?.text ?? "";
+
+    expect(promptText).toContain("Mode: raids");
+    expect(promptText).toContain("Previous result id: 11111111-1111-4111-8111-111111111111");
+    expect(promptText).toContain('"rosterFocus": "shadow"');
   });
 });
