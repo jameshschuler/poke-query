@@ -32,10 +32,18 @@ export type GenerateAssistantSearchStringResult = {
 
 const PROVIDER_TIMEOUT_MS = Number(process.env.ASSISTANT_PROVIDER_TIMEOUT_MS ?? "15000");
 const MAX_TAGS = 5;
+const MAX_CONTEXT_CHARS = 4_000;
 const WRITING_STYLE_POLICY =
   'When generating or revising text, write in a way that feels natural, human, and context-aware rather than formulaic or AI-like. Preserve the original meaning, but replace generic, inflated, or promotional wording with clear, specific, and factual language. Avoid vague attributions such as unnamed "experts" or "studies" unless concrete details are provided. Prefer direct, plain phrasing over abstract or filler-heavy expressions, and cut unnecessary phrases like "in order to" or "at this point in time." Reduce excessive hedging and remove stock structures that feel templated, such as predictable intros, summaries, or "challenges/future outlook" sections unless they are genuinely required. Vary sentence length and rhythm so the prose does not sound uniform or mechanical, and add light human texture or perspective only when it fits the intended tone. Avoid overusing em dashes, and remove assistant-style artifacts like sign-offs, disclaimers, or references to being an AI. The final output should read smoothly, sound like it was written by a person, rely on concrete details over generalities, and maintain a consistent tone appropriate for the audience and purpose.';
 const OUTPUT_FORMAT_POLICY =
   "Return only JSON with keys: title (string), query (string), description (string or null), tags (array of strings). Do not include markdown, code fences, labels, or extra prose.";
+const MODE_PROMPT_HINTS: Record<AssistantMode, string> = {
+  auto: "Choose the most appropriate style for the prompt.",
+  raids: "Prioritize raid readiness, counters, and battle utility.",
+  pvp: "Prioritize PvP IV filtering and league-focused candidates.",
+  events: "Prioritize event windows, featured spawns, and seasonal relevance.",
+  cleanup: "Prioritize storage cleanup and transfer-safe filtering.",
+};
 
 function getGeminiModel(): string {
   return process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
@@ -50,6 +58,48 @@ class AssistantProviderError extends Error {
     super(message);
     this.name = "AssistantProviderError";
   }
+}
+
+function stringifyContext(context: Record<string, unknown> | undefined): string | null {
+  if (!context || Object.keys(context).length === 0) {
+    return null;
+  }
+
+  try {
+    const serialized = JSON.stringify(context, null, 2);
+
+    if (serialized.length <= MAX_CONTEXT_CHARS) {
+      return serialized;
+    }
+
+    return `${serialized.slice(0, MAX_CONTEXT_CHARS)}\n... (truncated)`;
+  } catch {
+    return "[context was provided but could not be serialized]";
+  }
+}
+
+function buildProviderPrompt(
+  input: GenerateAssistantSearchStringInput,
+  trimmedPrompt: string,
+): string {
+  const sections: string[] = [`User prompt:\n${trimmedPrompt}`];
+
+  if (input.mode) {
+    sections.push(`Mode: ${input.mode}\nMode guidance: ${MODE_PROMPT_HINTS[input.mode]}`);
+  }
+
+  if (input.previousResultId) {
+    sections.push(
+      `Previous result id: ${input.previousResultId}\nIf this is a revision request, keep continuity with the previous output while applying the new prompt.`,
+    );
+  }
+
+  const serializedContext = stringifyContext(input.context);
+  if (serializedContext) {
+    sections.push(`Additional context (JSON):\n${serializedContext}`);
+  }
+
+  return sections.join("\n\n");
 }
 
 function titleFromPrompt(prompt: string): string {
@@ -93,15 +143,33 @@ function normalizeTags(rawTags: unknown, query: string): string[] {
   return modelTags;
 }
 
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number, providerName: string): Promise<T> {
-  const timeout = new Promise<never>((_, reject) => {
-    const timer = setTimeout(() => {
-      clearTimeout(timer);
-      reject(new AssistantProviderError(`${providerName} timed out after ${timeoutMs}ms`));
-    }, timeoutMs);
-  });
+async function withTimeout<T>(
+  operation: (signal: AbortSignal) => Promise<T>,
+  timeoutMs: number,
+  providerName: string,
+): Promise<T> {
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let didTimeout = false;
 
-  return Promise.race([promise, timeout]);
+  try {
+    timer = setTimeout(() => {
+      didTimeout = true;
+      controller.abort();
+    }, timeoutMs);
+
+    return await operation(controller.signal);
+  } catch (error) {
+    if (didTimeout) {
+      throw new AssistantProviderError(`${providerName} timed out after ${timeoutMs}ms`);
+    }
+
+    throw error;
+  } finally {
+    if (timer !== undefined) {
+      clearTimeout(timer);
+    }
+  }
 }
 
 async function callGemini(prompt: string): Promise<string> {
@@ -113,29 +181,31 @@ async function callGemini(prompt: string): Promise<string> {
   }
 
   const response = await withTimeout(
-    fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
-        geminiModel,
-      )}:generateContent?key=${encodeURIComponent(geminiApiKey)}`,
-      {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
+    (signal) =>
+      fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
+          geminiModel,
+        )}:generateContent?key=${encodeURIComponent(geminiApiKey)}`,
+        {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+          },
+          signal,
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  { text: WRITING_STYLE_POLICY },
+                  { text: OUTPUT_FORMAT_POLICY },
+                  { text: prompt },
+                ],
+              },
+            ],
+          }),
         },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [
-                { text: WRITING_STYLE_POLICY },
-                { text: OUTPUT_FORMAT_POLICY },
-                { text: prompt },
-              ],
-            },
-          ],
-        }),
-      },
-    ),
+      ),
     PROVIDER_TIMEOUT_MS,
     "gemini",
   );
@@ -238,7 +308,8 @@ export async function generateAssistantSearchString(
     throw new AssistantProviderError("Prompt must be at least 3 characters.");
   }
 
-  const geminiText = await callGemini(prompt);
+  const providerPrompt = buildProviderPrompt(input, prompt);
+  const geminiText = await callGemini(providerPrompt);
   const result = parseGeminiResult(prompt, geminiText);
 
   return {

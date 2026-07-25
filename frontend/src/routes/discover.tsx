@@ -87,7 +87,6 @@ type DiscoverRail =
 
 const DISCOVER_SESSION_STORAGE_KEY = 'poke-query:discover-session-key'
 const FEATURED_PAGE_SIZE = 3
-const MOBILE_RAIL_CARD_WIDTH = 320
 
 function getDiscoverSessionKey() {
   if (typeof window === 'undefined') {
@@ -527,21 +526,45 @@ function DiscoverPage() {
       return
     }
 
-    const firstCard = rail.firstElementChild as HTMLElement | null
-    if (!firstCard) {
+    const cards = Array.from(rail.children) as HTMLElement[]
+    if (cards.length === 0) {
       return
     }
 
-    const cardWidth = firstCard.offsetWidth
-    if (cardWidth <= 0) {
-      return
+    const railCenter = rail.scrollLeft + rail.clientWidth / 2
+    let nextIndex = 0
+    let closestDistance = Number.POSITIVE_INFINITY
+
+    for (const [index, card] of cards.entries()) {
+      const cardCenter = card.offsetLeft + card.offsetWidth / 2
+      const distance = Math.abs(cardCenter - railCenter)
+
+      if (distance < closestDistance) {
+        closestDistance = distance
+        nextIndex = index
+      }
     }
 
-    const nextIndex = Math.round(rail.scrollLeft / cardWidth)
     setMobileRailIndexByKey((current) =>
       current[railKey] === nextIndex
         ? current
         : { ...current, [railKey]: nextIndex },
+    )
+
+    const section = pagedRailSections.find((item) => item.key === railKey)
+    if (!section) {
+      return
+    }
+
+    const nextPage = Math.min(
+      section.totalPages - 1,
+      Math.floor(nextIndex / FEATURED_PAGE_SIZE),
+    )
+
+    setRailPageByKey((current) =>
+      current[railKey] === nextPage
+        ? current
+        : { ...current, [railKey]: nextPage },
     )
   }
 
@@ -551,25 +574,77 @@ function DiscoverPage() {
       return
     }
 
-    const firstCard = rail.firstElementChild as HTMLElement | null
-    const cardWidth = firstCard?.offsetWidth ?? MOBILE_RAIL_CARD_WIDTH
-    const gap = 16
-    const delta = direction === 'prev' ? -(cardWidth + gap) : cardWidth + gap
+    const section = pagedRailSections.find((item) => item.key === railKey)
+    if (!section || section.items.length === 0) {
+      return
+    }
 
-    rail.scrollBy({
-      left: delta,
+    const cards = Array.from(rail.children) as HTMLElement[]
+    if (cards.length === 0) {
+      return
+    }
+
+    const railLeft = rail.scrollLeft
+    let currentIndex = 0
+    let closestDistance = Number.POSITIVE_INFINITY
+
+    for (const [index, card] of cards.entries()) {
+      const distance = Math.abs(card.offsetLeft - railLeft)
+
+      if (distance < closestDistance) {
+        closestDistance = distance
+        currentIndex = index
+      }
+    }
+
+    const nextIndex =
+      direction === 'prev'
+        ? Math.max(0, currentIndex - 1)
+        : Math.min(cards.length - 1, currentIndex + 1)
+
+    const nextCard = rail.children.item(nextIndex) as HTMLElement | null
+    if (!nextCard) {
+      return
+    }
+
+    rail.scrollTo({
+      left: nextCard.offsetLeft,
       behavior: 'smooth',
     })
+
+    setMobileRailIndexByKey((current) =>
+      current[railKey] === nextIndex
+        ? current
+        : { ...current, [railKey]: nextIndex },
+    )
+
+    const nextPage = Math.min(
+      section.totalPages - 1,
+      Math.floor(nextIndex / FEATURED_PAGE_SIZE),
+    )
+
+    setRailPageByKey((current) =>
+      current[railKey] === nextPage
+        ? current
+        : { ...current, [railKey]: nextPage },
+    )
   }
 
   function handleMobileRailDotSelect(railKey: string, index: number) {
     const rail = mobileRailRefs.current[railKey]
-    const cardElement = rail?.children[index] as HTMLElement | undefined
+    if (!rail) {
+      return
+    }
 
-    cardElement?.scrollIntoView({
+    const cardElement = rail.children.item(index) as HTMLElement | null
+
+    if (!cardElement) {
+      return
+    }
+
+    rail.scrollTo({
+      left: cardElement.offsetLeft,
       behavior: 'smooth',
-      inline: 'center',
-      block: 'nearest',
     })
   }
 
