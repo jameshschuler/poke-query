@@ -77,13 +77,14 @@ export function parseAppUpdates(
       const date = parsed.data.date?.trim() || '1970-01-01'
       const summary =
         parsed.data.summary?.trim() || formatSummary(parsed.content)
+      const parsedHtml = marked.parse(parsed.content)
 
       return {
         slug,
         title,
         date,
         summary,
-        html: marked.parse(parsed.content),
+        html: typeof parsedHtml === 'string' ? parsedHtml : '',
       }
     })
     .sort((left, right) => right.date.localeCompare(left.date))

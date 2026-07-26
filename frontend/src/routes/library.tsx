@@ -340,7 +340,6 @@ function LibraryPage() {
         subtitle="Manage your personal search strings and draft strings."
         contentHeaderVariant="floating"
         showSidebar
-        showHeaderSearch={false}
       >
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           {[

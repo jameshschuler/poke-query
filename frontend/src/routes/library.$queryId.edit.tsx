@@ -105,7 +105,6 @@ function EditLibraryQueryPage() {
       subtitle="Update the title, string, description, and visibility."
       contentHeaderVariant="floating"
       showSidebar
-      showHeaderSearch={false}
     >
       <div className="space-y-5">
         <div className="flex items-start gap-4">

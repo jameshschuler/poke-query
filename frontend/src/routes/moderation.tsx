@@ -130,7 +130,6 @@ function ModerationPage() {
         subtitle="Review and resolve abuse reports."
         contentHeaderVariant="floating"
         showSidebar
-        showHeaderSearch={false}
       >
         <p className="text-sm text-muted-foreground">
           Loading moderation access...
@@ -146,7 +145,6 @@ function ModerationPage() {
         subtitle="Reviewer workspace"
         contentHeaderVariant="floating"
         showSidebar
-        showHeaderSearch={false}
       >
         <p className="text-sm text-muted-foreground">
           Reviewer access is required to open this page.
@@ -162,7 +160,6 @@ function ModerationPage() {
         subtitle="Reviewer workspace"
         contentHeaderVariant="floating"
         showSidebar
-        showHeaderSearch={false}
       >
         <p className="text-sm text-muted-foreground">
           Reviewer access is required to open this page.
@@ -177,7 +174,6 @@ function ModerationPage() {
       subtitle="Review incoming abuse reports and move them through the queue."
       contentHeaderVariant="floating"
       showSidebar
-      showHeaderSearch={false}
     >
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-2">

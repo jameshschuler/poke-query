@@ -198,7 +198,6 @@ function DashboardRoute() {
       subtitle="Finish onboarding, create your first search string, and keep an eye on recent activity."
       contentHeaderVariant="floating"
       showSidebar
-      showHeaderSearch={false}
     >
       <div className="space-y-4">
         {recentlyUpgradedEmail ? (

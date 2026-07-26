@@ -1,5 +1,6 @@
 import { useAuth } from '#/lib/auth-context'
 import {
+  keepPreviousData,
   useInfiniteQuery,
   useMutation,
   useQuery,
@@ -171,6 +172,8 @@ function DiscoverPage() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['my-favorite-ids'] }),
         queryClient.invalidateQueries({ queryKey: ['my-favorites-page'] }),
+        queryClient.invalidateQueries({ queryKey: ['community-discover'] }),
+        queryClient.invalidateQueries({ queryKey: ['community-surfacing'] }),
       ])
     },
     onError: (error: unknown) => {
@@ -185,6 +188,8 @@ function DiscoverPage() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['my-favorite-ids'] }),
         queryClient.invalidateQueries({ queryKey: ['my-favorites-page'] }),
+        queryClient.invalidateQueries({ queryKey: ['community-discover'] }),
+        queryClient.invalidateQueries({ queryKey: ['community-surfacing'] }),
       ])
     },
     onError: (error: unknown) => {
@@ -244,6 +249,7 @@ function DiscoverPage() {
         filter: activeFilterKey,
       },
       replace: true,
+      resetScroll: false,
     })
   }, [activeFilterKey, debouncedSearch, navigate])
 
@@ -312,6 +318,7 @@ function DiscoverPage() {
   const {
     data,
     isLoading,
+    isFetching,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
@@ -350,6 +357,7 @@ function DiscoverPage() {
         search: debouncedSearch.trim() || undefined,
         railLimit: 6,
       }),
+    placeholderData: keepPreviousData,
     staleTime: 2 * 60_000,
   })
 
@@ -864,154 +872,157 @@ function DiscoverPage() {
           ) : null
         }
         headerControls={
-          <div className="flex w-full min-w-0 items-center gap-2 md:ml-auto md:max-w-xl">
-            <div className="relative min-w-0 flex-1">
-              <SearchIcon className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search strings..."
-                className="h-10 rounded-full pr-10"
-                style={{ paddingLeft: '2.75rem' }}
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                aria-label="Search strings"
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck={false}
-                data-lpignore="true"
-                data-1p-ignore="true"
-                data-bwignore="true"
-                type="text"
-              />
-              {searchTerm && (
-                <button
-                  type="button"
-                  tabIndex={0}
-                  aria-label="Clear search"
-                  className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-muted text-base text-muted-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  onClick={() => setSearchTerm('')}
-                >
-                  <span
-                    className="pointer-events-none select-none"
-                    aria-hidden="true"
-                  >
-                    ×
-                  </span>
-                </button>
-              )}
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              {user ? (
+          <div className="flex shrink-0 items-center gap-2">
+            {user ? (
+              <Button
+                nativeButton={false}
+                className="shrink-0 rounded-full px-3 sm:px-4"
+                render={<Link to="/library/new" />}
+              >
+                <PlusIcon />
+                <span>New String</span>
+              </Button>
+            ) : (
+              <>
                 <Button
-                  nativeButton={false}
+                  type="button"
                   className="shrink-0 rounded-full px-3 sm:px-4"
-                  render={<Link to="/library/new" />}
+                  disabled={isStartingAnonymousSession}
+                  onClick={() => {
+                    void handleCreateString()
+                  }}
                 >
-                  <PlusIcon />
-                  <span>New String</span>
+                  {isStartingAnonymousSession ? (
+                    <Loader2Icon className="size-4 animate-spin" />
+                  ) : (
+                    <PlusIcon className="size-4" />
+                  )}
+                  <span>Create String</span>
                 </Button>
-              ) : (
-                <>
-                  <Button
-                    type="button"
-                    className="shrink-0 rounded-full px-3 sm:px-4"
-                    disabled={isStartingAnonymousSession}
-                    onClick={() => {
-                      void handleCreateString()
-                    }}
-                  >
-                    {isStartingAnonymousSession ? (
-                      <Loader2Icon className="size-4 animate-spin" />
-                    ) : (
-                      <PlusIcon className="size-4" />
-                    )}
-                    <span>Create String</span>
-                  </Button>
-                  <Tooltip>
-                    <TooltipTrigger
-                      render={
-                        <Button
-                          variant="outline"
-                          size="icon-sm"
-                          className="cursor-pointer rounded-xl shadow-sm"
-                          aria-label="Log in"
-                          onClick={() => {
-                            window.location.href = '/login'
-                          }}
-                        >
-                          <UserIcon className="size-4" />
-                        </Button>
-                      }
-                    />
-                    <TooltipContent>Log in</TooltipContent>
-                  </Tooltip>
-                </>
-              )}
-            </div>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <Button
+                        variant="outline"
+                        size="icon-sm"
+                        className="cursor-pointer rounded-xl shadow-sm"
+                        aria-label="Log in"
+                        onClick={() => {
+                          window.location.href = '/login'
+                        }}
+                      >
+                        <UserIcon className="size-4" />
+                      </Button>
+                    }
+                  />
+                  <TooltipContent>Log in</TooltipContent>
+                </Tooltip>
+              </>
+            )}
           </div>
         }
       >
         <section className="-mx-6 -mt-6 rounded-t-3xl border-b border-border/70 bg-card/95 px-6 py-4 md:-mx-6 lg:-mx-6">
-          <div className="flex flex-wrap items-center gap-2">
-            {visibleFilters.map((filter) => (
-              <Button
-                key={filter.key}
-                variant={activeFilterKey === filter.key ? 'outline' : 'ghost'}
-                size="sm"
-                className="rounded-xl px-4"
-                aria-pressed={activeFilterKey === filter.key}
-                aria-label={`Filter by ${filter.label}`}
-                onClick={() => setActiveFilterKey(filter.key)}
-              >
-                {filter.label}
-              </Button>
-            ))}
-            {dropdownFilters.length > 0 ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  render={
-                    <Button
-                      variant={activeDropdownFilter ? 'outline' : 'ghost'}
-                      size="sm"
-                      className="rounded-xl px-4"
-                      aria-label={
-                        activeDropdownLabel
-                          ? `Open additional tag filters. Current: ${activeDropdownLabel}`
-                          : 'Open additional tag filters'
-                      }
-                    >
-                      <span className="truncate">
-                        {activeDropdownLabel
-                          ? `Tags: ${activeDropdownLabel}`
-                          : 'More tags'}
-                      </span>
-                      <ChevronsUpDownIcon className="ml-1" />
-                    </Button>
-                  }
-                />
-                <DropdownMenuContent
-                  align="start"
-                  className="min-w-56 sm:min-w-72"
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              {visibleFilters.map((filter) => (
+                <Button
+                  key={filter.key}
+                  variant={activeFilterKey === filter.key ? 'outline' : 'ghost'}
+                  size="sm"
+                  className="rounded-xl px-4"
+                  aria-pressed={activeFilterKey === filter.key}
+                  aria-label={`Filter by ${filter.label}`}
+                  onClick={() => setActiveFilterKey(filter.key)}
                 >
-                  <DropdownMenuGroup>
-                    <DropdownMenuLabel>More tags</DropdownMenuLabel>
-                  </DropdownMenuGroup>
-                  <DropdownMenuRadioGroup
-                    value={activeDropdownFilter?.key ?? ''}
-                    onValueChange={setActiveFilterKey}
-                  >
-                    {dropdownFilters.map((filter) => (
-                      <DropdownMenuRadioItem
-                        key={filter.key}
-                        value={filter.key}
+                  {filter.label}
+                </Button>
+              ))}
+              {dropdownFilters.length > 0 ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={
+                      <Button
+                        variant={activeDropdownFilter ? 'outline' : 'ghost'}
+                        size="sm"
+                        className="rounded-xl px-4"
+                        aria-label={
+                          activeDropdownLabel
+                            ? `Open additional tag filters. Current: ${activeDropdownLabel}`
+                            : 'Open additional tag filters'
+                        }
                       >
-                        {filter.label}
-                      </DropdownMenuRadioItem>
-                    ))}
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : null}
+                        <span className="truncate">
+                          {activeDropdownLabel
+                            ? `Tags: ${activeDropdownLabel}`
+                            : 'More tags'}
+                        </span>
+                        <ChevronsUpDownIcon className="ml-1" />
+                      </Button>
+                    }
+                  />
+                  <DropdownMenuContent
+                    align="start"
+                    className="min-w-56 sm:min-w-72"
+                  >
+                    <DropdownMenuGroup>
+                      <DropdownMenuLabel>More tags</DropdownMenuLabel>
+                    </DropdownMenuGroup>
+                    <DropdownMenuRadioGroup
+                      value={activeDropdownFilter?.key ?? ''}
+                      onValueChange={setActiveFilterKey}
+                    >
+                      {dropdownFilters.map((filter) => (
+                        <DropdownMenuRadioItem
+                          key={filter.key}
+                          value={filter.key}
+                        >
+                          {filter.label}
+                        </DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : null}
+            </div>
+
+            <div className="flex w-full items-center gap-2 md:max-w-xl">
+              <div className="relative min-w-0 flex-1">
+                <SearchIcon className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search strings..."
+                  className="h-10 rounded-full pr-10"
+                  style={{ paddingLeft: '2.75rem' }}
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  aria-label="Search strings"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                  data-lpignore="true"
+                  data-1p-ignore="true"
+                  data-bwignore="true"
+                  type="text"
+                />
+                {searchTerm ? (
+                  <button
+                    type="button"
+                    tabIndex={0}
+                    aria-label="Clear search"
+                    className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-muted text-base text-muted-foreground hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    onClick={() => setSearchTerm('')}
+                  >
+                    <span
+                      className="pointer-events-none select-none"
+                      aria-hidden="true"
+                    >
+                      ×
+                    </span>
+                  </button>
+                ) : null}
+              </div>
+            </div>
           </div>
         </section>
 
@@ -1026,6 +1037,12 @@ function DiscoverPage() {
               {resultsCount} search strings found
             </p>
             <div className="flex items-center gap-2">
+              {isFetching && !isLoading && !isFetchingNextPage ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2Icon className="size-4 animate-spin" />
+                  Updating...
+                </div>
+              ) : null}
               <Tooltip>
                 <TooltipTrigger
                   render={

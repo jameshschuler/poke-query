@@ -138,7 +138,6 @@ function ForkDetailPage() {
       subtitle="Review source, sync status, and current string before editing or publishing."
       contentHeaderVariant="floating"
       showSidebar
-      showHeaderSearch={false}
     >
       <div className="space-y-7">
         <nav className="flex items-center gap-2 text-sm text-muted-foreground">

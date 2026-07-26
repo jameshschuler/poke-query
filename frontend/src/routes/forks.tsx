@@ -359,7 +359,6 @@ export function ForksPage() {
         subtitle="Track strings you forked from the community and keep them in sync."
         contentHeaderVariant="floating"
         showSidebar
-        showHeaderSearch={false}
       >
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {[
