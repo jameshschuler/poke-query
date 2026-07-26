@@ -55,6 +55,37 @@ vi.mock('sonner', () => ({
   },
 }))
 
+vi.mock('#/components/ui/input-otp', () => ({
+  InputOTP: ({
+    value,
+    onChange,
+    disabled,
+    maxLength,
+  }: {
+    value?: string
+    onChange?: (value: string) => void
+    disabled?: boolean
+    maxLength?: number
+  }) => (
+    <div data-slot="input-otp">
+      <input
+        aria-label="OTP input"
+        value={value ?? ''}
+        disabled={disabled}
+        maxLength={maxLength}
+        onChange={(event) => onChange?.(event.target.value)}
+      />
+    </div>
+  ),
+  InputOTPGroup: ({ children }: { children: ReactNode }) => (
+    <div>{children}</div>
+  ),
+  InputOTPSeparator: () => <div role="separator" aria-hidden="true" />,
+  InputOTPSlot: ({ index }: { index: number }) => (
+    <div aria-label={`OTP digit ${index + 1}`} />
+  ),
+}))
+
 describe('LoginPage', () => {
   afterEach(() => {
     cleanup()
