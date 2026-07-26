@@ -338,7 +338,6 @@ function DiscoverPage() {
         offset: pageParam,
         search: debouncedSearch.trim() || undefined,
       }),
-    placeholderData: keepPreviousData,
     initialPageParam: 0,
     getNextPageParam: (lastPage) =>
       lastPage.pagination.hasMore ? lastPage.pagination.nextOffset : undefined,
@@ -1038,7 +1037,7 @@ function DiscoverPage() {
               {resultsCount} search strings found
             </p>
             <div className="flex items-center gap-2">
-              {isFetching && !isLoading ? (
+              {isFetching && !isLoading && !isFetchingNextPage ? (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2Icon className="size-4 animate-spin" />
                   Updating...
