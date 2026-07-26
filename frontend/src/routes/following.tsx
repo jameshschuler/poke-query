@@ -90,7 +90,6 @@ function FollowingPage() {
       subtitle="Manage the trainers you follow, quickly search them, and unfollow when needed."
       contentHeaderVariant="floating"
       showSidebar
-      showHeaderSearch={false}
     >
       <div className="space-y-4">
         <div className="rounded-2xl border border-border/70 bg-card/95 p-4">

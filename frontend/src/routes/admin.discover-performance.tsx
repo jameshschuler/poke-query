@@ -26,7 +26,6 @@ function DiscoverPerformanceAdminPage() {
       subtitle="Monitor surfacing quality, CTR, and impression spread for Discover."
       contentHeaderVariant="floating"
       showSidebar
-      showHeaderSearch={false}
     >
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card/95 p-4 shadow-sm">

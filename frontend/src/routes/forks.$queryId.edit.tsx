@@ -142,7 +142,6 @@ function EditForkPage() {
       subtitle="Update this fork and choose whether to keep it private or publish it."
       contentHeaderVariant="floating"
       showSidebar
-      showHeaderSearch={false}
     >
       <div className="space-y-5">
         <div className="flex items-start gap-4">

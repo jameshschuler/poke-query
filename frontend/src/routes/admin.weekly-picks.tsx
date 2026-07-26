@@ -229,7 +229,6 @@ function WeeklyPicksAdminPage() {
         subtitle="Admin curation workspace"
         contentHeaderVariant="floating"
         showSidebar
-        showHeaderSearch={false}
       >
         <p className="text-sm text-muted-foreground">Loading access...</p>
       </PageShell>
@@ -243,7 +242,6 @@ function WeeklyPicksAdminPage() {
         subtitle="Admin curation workspace"
         contentHeaderVariant="floating"
         showSidebar
-        showHeaderSearch={false}
       >
         <p className="text-sm text-muted-foreground">
           Admin access is required to open this page.
@@ -258,7 +256,6 @@ function WeeklyPicksAdminPage() {
       subtitle="Hand-pick discover highlights and control rotation windows."
       contentHeaderVariant="floating"
       showSidebar
-      showHeaderSearch={false}
     >
       <div className="space-y-6">
         <section className="rounded-xl border border-border/70 bg-card p-4">

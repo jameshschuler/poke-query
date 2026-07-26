@@ -1,12 +1,8 @@
 import { useAuth } from '#/lib/auth-context'
-import { Link } from '@tanstack/react-router'
-import { PlusIcon, SearchIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { AppSidebar } from '#/components/app-sidebar'
 import { ThemeToggle } from '#/components/theme-toggle'
-import { Button } from '#/components/ui/button'
-import { Input } from '#/components/ui/input'
 import { Separator } from '#/components/ui/separator'
 import {
   SidebarInset,
@@ -23,7 +19,6 @@ type PageShellProps = {
   headerControls?: ReactNode
   contentHeaderVariant?: 'inline' | 'floating' | 'none'
   showSidebar?: boolean
-  showHeaderSearch?: boolean
 }
 
 export function PageShell({
@@ -35,7 +30,6 @@ export function PageShell({
   headerControls,
   contentHeaderVariant = 'inline',
   showSidebar,
-  showHeaderSearch = true,
 }: PageShellProps) {
   const { user } = useAuth()
   const shouldShowSidebar = showSidebar ?? Boolean(user)
@@ -64,35 +58,6 @@ export function PageShell({
         {headerControls ? (
           <div className="ml-auto flex items-center gap-2">
             {headerControls}
-            <ThemeToggle placement="inline" />
-          </div>
-        ) : showHeaderSearch ? (
-          <div className="flex w-full items-center gap-2 md:ml-auto md:max-w-xl">
-            <div className="relative flex-1">
-              <SearchIcon className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search queries..."
-                className="h-10 rounded-full pr-4"
-                style={{ paddingLeft: '2.75rem' }}
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck={false}
-                data-lpignore="true"
-                data-1p-ignore="true"
-                data-bwignore="true"
-              />
-            </div>
-            {user ? (
-              <Button
-                nativeButton={false}
-                className="shrink-0 rounded-full px-3 sm:px-4"
-                render={<Link to="/library/new" />}
-              >
-                <PlusIcon />
-                <span>New String</span>
-              </Button>
-            ) : null}
             <ThemeToggle placement="inline" />
           </div>
         ) : (
