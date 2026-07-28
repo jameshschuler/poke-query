@@ -65,15 +65,17 @@ const baseUser: MockUser = {
   forkCount: 0,
 }
 
-async function loadRouteAuth(options?: {
+async function loadRouteAuth(authOptions?: {
   getMeResults?: Array<MockUser | null | Error>
   startAnonymousSessionImpl?: () => Promise<unknown>
 }) {
   vi.resetModules()
 
-  const redirect = vi.fn((options: unknown) => ({ __redirect: options }))
+  const redirect = vi.fn((redirectOptions: unknown) => ({
+    __redirect: redirectOptions,
+  }))
   const getMe = vi.fn(async () => {
-    const next = options?.getMeResults?.shift()
+    const next = authOptions?.getMeResults?.shift()
 
     if (next instanceof Error) {
       throw next
@@ -82,7 +84,8 @@ async function loadRouteAuth(options?: {
     return next ?? null
   })
   const startAnonymousSession = vi.fn(
-    () => options?.startAnonymousSessionImpl?.() ?? Promise.resolve(undefined),
+    () =>
+      authOptions?.startAnonymousSessionImpl?.() ?? Promise.resolve(undefined),
   )
 
   vi.doMock('@tanstack/react-router', () => ({ redirect }))
@@ -98,6 +101,7 @@ async function loadRouteAuth(options?: {
     redirect,
     getMe,
     startAnonymousSession,
+    normalizeRedirectPath: module.normalizeRedirectPath,
     requireAuthenticated: module.requireAuthenticated,
     requireGuest: module.requireGuest,
   }
@@ -195,5 +199,27 @@ describe('route-auth', () => {
     })
 
     await expect(routeAuth.requireGuest()).resolves.toBeUndefined()
+  })
+
+  it('normalizes safe in-app redirect paths', async () => {
+    const routeAuth = await loadRouteAuth()
+
+    expect(routeAuth.normalizeRedirectPath('/dashboard')).toBe('/dashboard')
+    expect(routeAuth.normalizeRedirectPath(' /library?tab=mine ')).toBe(
+      '/library?tab=mine',
+    )
+  })
+
+  it('rejects malformed or external redirect paths', async () => {
+    const routeAuth = await loadRouteAuth()
+
+    expect(
+      routeAuth.normalizeRedirectPath('https://evil.example'),
+    ).toBeUndefined()
+    expect(
+      routeAuth.normalizeRedirectPath('//evil.example/path'),
+    ).toBeUndefined()
+    expect(routeAuth.normalizeRedirectPath('dashboard')).toBeUndefined()
+    expect(routeAuth.normalizeRedirectPath('')).toBeUndefined()
   })
 })

@@ -29,6 +29,33 @@ function getProfileRedirectKey(userId: string) {
   return `${PROFILE_REDIRECT_STORAGE_KEY}${userId}`
 }
 
+export function normalizeRedirectPath(value: unknown): string | undefined {
+  if (typeof value !== 'string') {
+    return undefined
+  }
+
+  const trimmed = value.trim()
+  if (!trimmed || !trimmed.startsWith('/') || trimmed.startsWith('//')) {
+    return undefined
+  }
+
+  try {
+    const baseOrigin =
+      typeof window !== 'undefined' && window.location.origin
+        ? window.location.origin
+        : 'http://localhost'
+    const parsed = new URL(trimmed, baseOrigin)
+
+    if (parsed.origin !== baseOrigin) {
+      return undefined
+    }
+
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`
+  } catch {
+    return undefined
+  }
+}
+
 function shouldRedirectToProfileOnce(user: GetMeResponse) {
   if (typeof window === 'undefined' || user.profileCompleted || !user.email) {
     return false
@@ -68,13 +95,15 @@ async function getUser() {
 }
 
 export async function requireAuthenticated(redirectPath: string) {
+  const safeRedirectPath = normalizeRedirectPath(redirectPath) ?? '/dashboard'
+
   const maybeRedirectToProfile = (user: GetMeResponse) => {
     clearProfileRedirectMarkerIfCompleted(user)
 
-    if (redirectPath !== '/account' && shouldRedirectToProfileOnce(user)) {
+    if (safeRedirectPath !== '/account' && shouldRedirectToProfileOnce(user)) {
       throw redirect({
         to: '/account',
-        search: { redirect: redirectPath },
+        search: { redirect: safeRedirectPath },
       })
     }
   }
@@ -113,7 +142,7 @@ export async function requireAuthenticated(redirectPath: string) {
 
       throw redirect({
         to: '/login',
-        search: { redirect: redirectPath },
+        search: { redirect: safeRedirectPath },
       })
     }
 

@@ -21,6 +21,7 @@ const config = defineConfig(({ mode }) => {
     test: {
       environment: 'jsdom',
       setupFiles: ['./vitest.setup.ts'],
+      exclude: ['**/e2e/**', '**/node_modules/**'],
       env: {
         VITE_SUPABASE_URL: 'http://localhost:54321',
         VITE_SUPABASE_PUBLISHABLE_KEY: 'test-publishable-key',

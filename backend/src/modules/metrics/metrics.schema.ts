@@ -1,47 +1,5 @@
 import { Type } from "@fastify/type-provider-typebox";
-
-const CommunityQueryItem = Type.Object({
-  id: Type.String(),
-  title: Type.String(),
-  query: Type.String(),
-  description: Type.Union([Type.String(), Type.Null()]),
-  copyCount: Type.Integer(),
-  viewCount: Type.Integer(),
-  favoriteCount: Type.Integer(),
-  forkCount: Type.Integer(),
-  qualityScore: Type.Number(),
-  source: Type.Union([Type.Literal("official"), Type.Literal("community"), Type.Null()]),
-  referenceUrl: Type.Union([Type.String(), Type.Null()]),
-  userTags: Type.Array(Type.String()),
-  autoTags: Type.Array(Type.String()),
-  endsAt: Type.Optional(Type.Union([Type.String(), Type.Null()])),
-  createdAt: Type.String(),
-  updatedAt: Type.String(),
-  creator: Type.Union([
-    Type.Object({
-      id: Type.String(),
-      username: Type.String(),
-      displayName: Type.String(),
-      avatarUrl: Type.Union([Type.String(), Type.Null()]),
-      team: Type.Union([
-        Type.Literal("mystic"),
-        Type.Literal("valor"),
-        Type.Literal("instinct"),
-        Type.Null(),
-      ]),
-      level: Type.Union([Type.Integer(), Type.Null()]),
-      trainerCode: Type.Union([Type.String(), Type.Null()]),
-    }),
-    Type.Null(),
-  ]),
-});
-
-const CommunityFilter = Type.Union([
-  Type.Literal("all"),
-  Type.Literal("new"),
-  Type.Literal("popular"),
-  Type.Literal("official"),
-] as const);
+import { CommunityFilterSchema, CommunityQueryItemSchema } from "../community/community.schema.js";
 
 const DiscoverRail = Type.Union([
   Type.Literal("weekly_picks"),
@@ -54,16 +12,16 @@ const DiscoverRail = Type.Union([
 export const MetricsSurfacingSchema = {
   querystring: Type.Object({
     tag: Type.Optional(Type.String({ minLength: 1, maxLength: 50 })),
-    filter: Type.Optional(CommunityFilter),
+    filter: Type.Optional(CommunityFilterSchema),
     search: Type.Optional(Type.String({ minLength: 1, maxLength: 100 })),
     railLimit: Type.Optional(Type.Integer({ minimum: 1, maximum: 20 })),
   }),
   response: {
     200: Type.Object({
-      weeklyPicks: Type.Array(CommunityQueryItem),
-      featuredToday: Type.Array(CommunityQueryItem),
-      allTimeTrusted: Type.Array(CommunityQueryItem),
-      contextualPicks: Type.Array(CommunityQueryItem),
+      weeklyPicks: Type.Array(CommunityQueryItemSchema),
+      featuredToday: Type.Array(CommunityQueryItemSchema),
+      allTimeTrusted: Type.Array(CommunityQueryItemSchema),
+      contextualPicks: Type.Array(CommunityQueryItemSchema),
       generatedAt: Type.String(),
       dateKey: Type.String(),
     }),

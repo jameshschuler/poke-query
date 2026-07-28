@@ -44,10 +44,10 @@ vi.mock('#/components/page-shell', () => ({
 vi.mock('#/components/ui/button', () => ({
   Button: ({
     children,
-    render,
+    render: renderProp,
     ...props
   }: { render?: ReactNode } & ComponentProps<'button'>) =>
-    render ? <div>{children}</div> : <button {...props}>{children}</button>,
+    renderProp ? <div>{children}</div> : <button {...props}>{children}</button>,
 }))
 
 vi.mock('#/components/ui/badge', () => ({

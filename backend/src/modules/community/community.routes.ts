@@ -1,8 +1,11 @@
 import { type TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
-import type { FastifyTypebox } from "../../types/fastify.js";
-import { eq, and, sql, desc, asc, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, sql, type SQL } from "drizzle-orm";
 import { searchQueries, trainers } from "../../db/schema.js";
+import type { FastifyTypebox } from "../../types/fastify.js";
 import { CommunitySchema } from "./community.schema.js";
+
+type CommunityFilter = "all" | "new" | "popular" | "official";
+type CommunitySort = "created_asc" | "created_desc" | "title_asc" | "title_desc" | "popular";
 
 export type CommunityRow = {
   id: string;
@@ -121,7 +124,7 @@ export const selectCommunityFields = {
 export function buildCommunityConditions(params: {
   search?: string | undefined;
   tag?: string | undefined;
-  filter?: "all" | "new" | "popular" | "official" | undefined;
+  filter?: CommunityFilter | undefined;
 }) {
   const conditions: SQL[] = [eq(searchQueries.isPublic, true)];
   const mode = params.filter ?? "all";
@@ -167,6 +170,40 @@ export function buildCommunityConditions(params: {
   return conditions;
 }
 
+function resolveCommunitySort(sort: CommunitySort | undefined, mode: CommunityFilter) {
+  let sortOrder: SQL;
+
+  switch (sort) {
+    case "created_asc":
+      sortOrder = asc(searchQueries.createdAt);
+      break;
+    case "title_asc":
+      sortOrder = asc(searchQueries.title);
+      break;
+    case "title_desc":
+      sortOrder = desc(searchQueries.title);
+      break;
+    case "popular":
+      sortOrder = desc(qualityScoreExpr);
+      break;
+    case "created_desc":
+    default:
+      sortOrder = desc(searchQueries.createdAt);
+      break;
+  }
+
+  // New filter is always newest-first, regardless of stale/explicit sort params.
+  if (mode === "new") {
+    return desc(searchQueries.createdAt);
+  }
+
+  if (mode === "popular" && !sort) {
+    return desc(qualityScoreExpr);
+  }
+
+  return sortOrder;
+}
+
 export function toCommunityItem(row: CommunityRow) {
   return {
     id: row.id,
@@ -205,39 +242,14 @@ export async function communityRoutes(fastify: FastifyTypebox) {
   const server = fastify.withTypeProvider<TypeBoxTypeProvider>();
 
   server.get("/", { schema: CommunitySchema }, async (request, reply) => {
-    const { tag, sort, filter, limit, offset, search } = request.query;
-    const mode = filter ?? "all";
+    const { sort, filter, limit, offset } = request.query;
+    const tag = request.query.tag?.trim();
+    const search = request.query.search?.trim();
+    const mode: CommunityFilter = filter ?? "all";
     const pageLimit = limit ?? 20;
     const pageOffset = offset ?? 0;
     const conditions = buildCommunityConditions({ search, tag, filter: mode });
-
-    let sortOrder;
-    switch (sort) {
-      case "created_asc":
-        sortOrder = asc(searchQueries.createdAt);
-        break;
-      case "title_asc":
-        sortOrder = asc(searchQueries.title);
-        break;
-      case "title_desc":
-        sortOrder = desc(searchQueries.title);
-        break;
-      case "popular":
-        sortOrder = desc(qualityScoreExpr);
-        break;
-      case "created_desc":
-      default:
-        sortOrder = desc(searchQueries.createdAt);
-        break;
-    }
-
-    // New filter is always newest-first, regardless of stale/explicit sort params.
-    const effectiveSort =
-      mode === "new"
-        ? desc(searchQueries.createdAt)
-        : mode === "popular" && !sort
-          ? desc(qualityScoreExpr)
-          : sortOrder;
+    const effectiveSort = resolveCommunitySort(sort, mode);
 
     const rows = await fastify.db
       .select(selectCommunityFields)

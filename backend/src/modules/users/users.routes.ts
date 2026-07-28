@@ -27,10 +27,26 @@ import { alias } from "drizzle-orm/pg-core";
 import { and, count, desc, eq, isNull, or, sql } from "drizzle-orm";
 import { emitNotification } from "../notifications/notifications.service.js";
 import { findBlockedTerm } from "../../lib/content-policy.js";
+import { ensureTrainerProfileExists } from "../../lib/trainer-bootstrap.js";
 import {
-  ensureTrainerProfileExists,
-  getBootstrapTrainerUsername,
-} from "../../lib/trainer-bootstrap.js";
+  normalizeAuthEmail,
+  normalizeTrainerCode,
+  resolveDisplayName,
+  toPublicTrainerProfile,
+} from "./users-helpers.js";
+import {
+  serializeManagedForkQuery,
+  serializeManagedQuery,
+  serializeMeFavoriteQuery,
+  serializeQuery,
+} from "./users-serializers.js";
+import {
+  getFollowersForTrainer,
+  getFollowingForTrainer,
+  getTrainerIdByUserId,
+  loadMeProfile,
+  type VisibleUsername,
+} from "./users.service.js";
 
 const socialMutationRateLimit = {
   config: {
@@ -46,196 +62,6 @@ export async function userRoutes(fastify: FastifyTypebox) {
   const parentQueries = alias(searchQueries, "parent_queries");
   const sourceCreators = alias(trainers, "source_creators");
 
-  type VisibleUsername = "pokequery" | "pogo";
-
-  const normalizeTrainerCode = (value: string) => {
-    const digits = value.replace(/\D/g, "");
-    if (digits.length !== 12) {
-      return value;
-    }
-    return `${digits.slice(0, 4)} ${digits.slice(4, 8)} ${digits.slice(8, 12)}`;
-  };
-
-  const toPublicTrainerProfile = (row: {
-    team: string | null;
-    level: number | null;
-    trainerCode: string | null;
-    isProfilePublic: boolean;
-  }) => ({
-    team: row.isProfilePublic ? (row.team as "mystic" | "valor" | "instinct" | null) : null,
-    level: row.isProfilePublic ? row.level : null,
-    trainerCode: row.isProfilePublic ? row.trainerCode : null,
-  });
-
-  const resolveDisplayName = (row: {
-    username: string;
-    pogoUsername: string | null;
-    visibleUsername: string | null;
-  }) => {
-    if (row.visibleUsername === "pogo" && row.pogoUsername?.trim()) {
-      return row.pogoUsername.trim();
-    }
-
-    return row.username;
-  };
-
-  const normalizeAuthEmail = (value: string | null | undefined) => {
-    if (typeof value !== "string") {
-      return null;
-    }
-
-    const trimmed = value.trim();
-    if (!trimmed) {
-      return null;
-    }
-
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed) ? trimmed : null;
-  };
-
-  async function loadMeProfile(userId: string, email: string | null) {
-    const [row] = await fastify.db
-      .select({
-        id: trainers.id,
-        username: trainers.username,
-        role: trainers.role,
-        pogoUsername: trainers.pogoUsername,
-        visibleUsername: trainers.visibleUsername,
-        team: trainers.team,
-        level: trainers.level,
-        trainerCode: trainers.trainerCode,
-        isProfilePublic: trainers.isProfilePublic,
-        deactivatedAt: trainers.deactivatedAt,
-        avatarUrl: trainers.avatarUrl,
-        queryCount: sql<number>`(
-          SELECT COUNT(*)::int
-          FROM pokequery.search_queries sq
-          WHERE sq.creator_id = ${trainers.id}
-        )`.as("queryCount"),
-        favoriteCount: sql<number>`(
-          SELECT COUNT(*)::int
-          FROM pokequery.favorites f
-          WHERE f.trainer_id = ${trainers.id}
-        )`.as("favoriteCount"),
-        followerCount: sql<number>`(
-          SELECT COUNT(*)::int
-          FROM pokequery.followers fr
-          WHERE fr.followed_id = ${trainers.id}
-        )`.as("followerCount"),
-        forkCount: sql<number>`(
-          SELECT COUNT(*)::int
-          FROM pokequery.search_queries sq
-          WHERE sq.creator_id = ${trainers.id}
-            AND sq.parent_query_id IS NOT NULL
-        )`.as("forkCount"),
-      })
-      .from(trainers)
-      .where(eq(trainers.userId, userId));
-
-    if (!row) {
-      await ensureTrainerProfileExists(fastify, { id: userId });
-
-      const bootstrapUsername = getBootstrapTrainerUsername(userId);
-
-      return {
-        hasTrainer: true,
-        profileCompleted: false,
-        id: userId,
-        email,
-        username: bootstrapUsername,
-        displayName: bootstrapUsername,
-        role: "member" as const,
-        pogoUsername: null,
-        visibleUsername: "pokequery" as const,
-        team: null,
-        level: null,
-        trainerCode: null,
-        isProfilePublic: false,
-        deactivatedAt: null,
-        avatarUrl: null,
-        queryCount: 0,
-        favoriteCount: 0,
-        followerCount: 0,
-        forkCount: 0,
-      };
-    }
-
-    const profileCompleted = isProfileCompleted({
-      hasTrainer: true,
-      username: row.username,
-      team: row.team,
-      level: row.level,
-      trainerCode: row.trainerCode,
-    });
-
-    return {
-      hasTrainer: true,
-      profileCompleted,
-      email,
-      ...row,
-      displayName: resolveDisplayName(row),
-      role: row.role === "admin" ? ("admin" as const) : ("member" as const),
-      team: row.team as "mystic" | "valor" | "instinct" | null,
-      trainerCode: row.trainerCode,
-      visibleUsername: row.visibleUsername as VisibleUsername,
-      isProfilePublic: row.isProfilePublic,
-      deactivatedAt: row.deactivatedAt?.toISOString() ?? null,
-    };
-  }
-
-  const isProfileCompleted = (profile: {
-    hasTrainer: boolean;
-    username: string;
-    team: string | null;
-    level: number | null;
-    trainerCode: string | null;
-  }) => {
-    return (
-      profile.hasTrainer &&
-      profile.username.trim().length >= 3 &&
-      profile.team !== null &&
-      profile.level !== null &&
-      profile.trainerCode !== null
-    );
-  };
-
-  const selectFollowers = (trainerId: string) =>
-    fastify.db
-      .select({
-        id: trainers.id,
-        username: trainers.username,
-        pogoUsername: trainers.pogoUsername,
-        visibleUsername: trainers.visibleUsername,
-        team: trainers.team,
-        level: trainers.level,
-        trainerCode: trainers.trainerCode,
-        isProfilePublic: trainers.isProfilePublic,
-        avatarUrl: trainers.avatarUrl,
-        followedAt: followers.createdAt,
-      })
-      .from(followers)
-      .innerJoin(trainers, eq(trainers.id, followers.followerId))
-      .where(eq(followers.followedId, trainerId))
-      .orderBy(desc(followers.createdAt));
-
-  const selectFollowing = (trainerId: string) =>
-    fastify.db
-      .select({
-        id: trainers.id,
-        username: trainers.username,
-        pogoUsername: trainers.pogoUsername,
-        visibleUsername: trainers.visibleUsername,
-        team: trainers.team,
-        level: trainers.level,
-        trainerCode: trainers.trainerCode,
-        isProfilePublic: trainers.isProfilePublic,
-        avatarUrl: trainers.avatarUrl,
-        followedAt: followers.createdAt,
-      })
-      .from(followers)
-      .innerJoin(trainers, eq(trainers.id, followers.followedId))
-      .where(eq(followers.followerId, trainerId))
-      .orderBy(desc(followers.createdAt));
-
   const publicQuerySelect = {
     id: searchQueries.id,
     title: searchQueries.title,
@@ -250,168 +76,6 @@ export async function userRoutes(fastify: FastifyTypebox) {
     createdAt: searchQueries.createdAt,
   } as const;
 
-  const serializeQuery = (q: {
-    id: string;
-    title: string;
-    query: string;
-    description: string | null;
-    copyCount: number;
-    favoriteCount: number;
-    forkCount: number;
-    referenceUrl: string | null;
-    userTags: string[];
-    autoTags: string[];
-    createdAt: Date;
-  }) => ({ ...q, createdAt: q.createdAt.toISOString() });
-
-  const serializeManagedQuery = (q: {
-    id: string;
-    title: string;
-    query: string;
-    description: string | null;
-    isPublic: boolean;
-    copyCount: number;
-    viewCount: number;
-    favoriteCount: number;
-    forkCount: number;
-    referenceUrl: string | null;
-    userTags: string[];
-    autoTags: string[];
-    createdAt: Date;
-    updatedAt: Date;
-  }) => ({
-    ...q,
-    createdAt: q.createdAt.toISOString(),
-    updatedAt: q.updatedAt.toISOString(),
-  });
-
-  const serializeMeFavoriteQuery = (q: {
-    id: string;
-    title: string;
-    query: string;
-    description: string | null;
-    isPublic: boolean;
-    copyCount: number;
-    viewCount: number;
-    favoriteCount: number;
-    forkCount: number;
-    referenceUrl: string | null;
-    userTags: string[];
-    autoTags: string[];
-    createdAt: Date;
-    updatedAt: Date;
-    favoritedAt: Date;
-    creatorId: string | null;
-    creatorUsername: string | null;
-    creatorPogoUsername: string | null;
-    creatorVisibleUsername: string | null;
-    creatorAvatarUrl: string | null;
-  }) => ({
-    id: q.id,
-    title: q.title,
-    query: q.query,
-    description: q.description,
-    isPublic: q.isPublic,
-    copyCount: q.copyCount,
-    viewCount: q.viewCount,
-    favoriteCount: q.favoriteCount,
-    forkCount: q.forkCount,
-    referenceUrl: q.referenceUrl,
-    userTags: q.userTags,
-    autoTags: q.autoTags,
-    createdAt: q.createdAt.toISOString(),
-    updatedAt: q.updatedAt.toISOString(),
-    favoritedAt: q.favoritedAt.toISOString(),
-    creator:
-      q.creatorId && q.creatorUsername
-        ? {
-            id: q.creatorId,
-            username: q.creatorUsername,
-            displayName: resolveDisplayName({
-              username: q.creatorUsername,
-              pogoUsername: q.creatorPogoUsername,
-              visibleUsername: q.creatorVisibleUsername,
-            }),
-            avatarUrl: q.creatorAvatarUrl,
-          }
-        : null,
-  });
-
-  const serializeManagedForkQuery = (q: {
-    id: string;
-    title: string;
-    query: string;
-    description: string | null;
-    isPublic: boolean;
-    copyCount: number;
-    viewCount: number;
-    favoriteCount: number;
-    forkCount: number;
-    referenceUrl: string | null;
-    userTags: string[];
-    autoTags: string[];
-    createdAt: Date;
-    updatedAt: Date;
-    parentQueryId: string | null;
-    originalQuerySnapshot: string | null;
-    syncStatus: "up-to-date" | "behind" | "orphaned";
-    sourceId: string | null;
-    sourceTitle: string | null;
-    sourceQuery: string | null;
-    sourceIsPublic: boolean | null;
-    sourceUpdatedAt: Date | null;
-    sourceCreatorId: string | null;
-    sourceCreatorUsername: string | null;
-    sourceCreatorPogoUsername: string | null;
-    sourceCreatorVisibleUsername: string | null;
-    sourceCreatorAvatarUrl: string | null;
-    sourceCreatorTeam: string | null;
-    sourceCreatorLevel: number | null;
-  }) => ({
-    id: q.id,
-    title: q.title,
-    query: q.query,
-    description: q.description,
-    isPublic: q.isPublic,
-    copyCount: q.copyCount,
-    viewCount: q.viewCount,
-    favoriteCount: q.favoriteCount,
-    forkCount: q.forkCount,
-    referenceUrl: q.referenceUrl,
-    userTags: q.userTags,
-    autoTags: q.autoTags,
-    createdAt: q.createdAt.toISOString(),
-    updatedAt: q.updatedAt.toISOString(),
-    parentQueryId: q.parentQueryId,
-    originalQuerySnapshot: q.originalQuerySnapshot,
-    syncStatus: q.syncStatus,
-    sourceQuery:
-      q.sourceId && q.sourceTitle && q.sourceQuery && q.sourceUpdatedAt
-        ? {
-            id: q.sourceId,
-            title: q.sourceTitle,
-            query: q.sourceQuery,
-            isPublic: Boolean(q.sourceIsPublic),
-            updatedAt: q.sourceUpdatedAt.toISOString(),
-            creator:
-              q.sourceCreatorId && q.sourceCreatorUsername
-                ? {
-                    id: q.sourceCreatorId,
-                    username: q.sourceCreatorUsername,
-                    displayName: resolveDisplayName({
-                      username: q.sourceCreatorUsername,
-                      pogoUsername: q.sourceCreatorPogoUsername,
-                      visibleUsername: q.sourceCreatorVisibleUsername,
-                    }),
-                    avatarUrl: q.sourceCreatorAvatarUrl,
-                    team: q.sourceCreatorTeam as "mystic" | "valor" | "instinct" | null,
-                    level: q.sourceCreatorLevel,
-                  }
-                : null,
-          }
-        : null,
-  });
-
   // ── /me ──────────────────────────────────────────────────────────────────
 
   server.get(
@@ -421,7 +85,7 @@ export async function userRoutes(fastify: FastifyTypebox) {
       const userId = request.user.id;
       const email = normalizeAuthEmail(request.user.email);
 
-      return reply.code(200).send(await loadMeProfile(userId, email));
+      return reply.code(200).send(await loadMeProfile(fastify, userId, email));
     },
   );
 
@@ -431,12 +95,9 @@ export async function userRoutes(fastify: FastifyTypebox) {
     async (request, reply) => {
       const userId = request.user.id;
 
-      const [trainer] = await fastify.db
-        .select({ id: trainers.id })
-        .from(trainers)
-        .where(eq(trainers.userId, userId));
+      const trainerId = await getTrainerIdByUserId(fastify, userId);
 
-      if (!trainer) {
+      if (!trainerId) {
         // First-login users can be authenticated before they complete trainer profile setup.
         return reply.send({ queries: [] });
       }
@@ -459,7 +120,7 @@ export async function userRoutes(fastify: FastifyTypebox) {
           updatedAt: searchQueries.updatedAt,
         })
         .from(searchQueries)
-        .where(eq(searchQueries.creatorId, trainer.id))
+        .where(eq(searchQueries.creatorId, trainerId))
         .orderBy(desc(searchQueries.updatedAt))
         .limit(100);
 
@@ -475,12 +136,9 @@ export async function userRoutes(fastify: FastifyTypebox) {
       const limit = Math.min(50, Math.max(1, request.query.limit ?? 20));
       const offset = Math.max(0, request.query.offset ?? 0);
 
-      const [trainer] = await fastify.db
-        .select({ id: trainers.id })
-        .from(trainers)
-        .where(eq(trainers.userId, userId));
+      const trainerId = await getTrainerIdByUserId(fastify, userId);
 
-      if (!trainer) {
+      if (!trainerId) {
         return reply.send({
           favorites: [],
           pagination: {
@@ -494,8 +152,8 @@ export async function userRoutes(fastify: FastifyTypebox) {
       }
 
       const visibilityWhere = and(
-        eq(favorites.trainerId, trainer.id),
-        or(eq(searchQueries.isPublic, true), eq(searchQueries.creatorId, trainer.id)),
+        eq(favorites.trainerId, trainerId),
+        or(eq(searchQueries.isPublic, true), eq(searchQueries.creatorId, trainerId)),
       );
 
       const rows = await fastify.db
@@ -557,12 +215,9 @@ export async function userRoutes(fastify: FastifyTypebox) {
     async (request, reply) => {
       const userId = request.user.id;
 
-      const [trainer] = await fastify.db
-        .select({ id: trainers.id })
-        .from(trainers)
-        .where(eq(trainers.userId, userId));
+      const trainerId = await getTrainerIdByUserId(fastify, userId);
 
-      if (!trainer) {
+      if (!trainerId) {
         return reply.send({
           favoriteQueryIds: [],
           favoritesCount: 0,
@@ -575,8 +230,8 @@ export async function userRoutes(fastify: FastifyTypebox) {
         .innerJoin(searchQueries, eq(searchQueries.id, favorites.queryId))
         .where(
           and(
-            eq(favorites.trainerId, trainer.id),
-            or(eq(searchQueries.isPublic, true), eq(searchQueries.creatorId, trainer.id)),
+            eq(favorites.trainerId, trainerId),
+            or(eq(searchQueries.isPublic, true), eq(searchQueries.creatorId, trainerId)),
           ),
         );
 
@@ -593,12 +248,9 @@ export async function userRoutes(fastify: FastifyTypebox) {
     async (request, reply) => {
       const userId = request.user.id;
 
-      const [trainer] = await fastify.db
-        .select({ id: trainers.id })
-        .from(trainers)
-        .where(eq(trainers.userId, userId));
+      const trainerId = await getTrainerIdByUserId(fastify, userId);
 
-      if (!trainer) {
+      if (!trainerId) {
         return reply.send({ forks: [] });
       }
 
@@ -646,7 +298,7 @@ export async function userRoutes(fastify: FastifyTypebox) {
         .leftJoin(sourceCreators, eq(sourceCreators.id, parentQueries.creatorId))
         .where(
           and(
-            eq(searchQueries.creatorId, trainer.id),
+            eq(searchQueries.creatorId, trainerId),
             sql`${searchQueries.parentQueryId} IS NOT NULL`,
           ),
         )
@@ -663,36 +315,20 @@ export async function userRoutes(fastify: FastifyTypebox) {
     async (request) => {
       const userId = request.user.id;
 
-      const [trainer] = await fastify.db
-        .select({ id: trainers.id })
-        .from(trainers)
-        .where(eq(trainers.userId, userId));
+      const trainerId = await getTrainerIdByUserId(fastify, userId);
 
-      if (!trainer) {
+      if (!trainerId) {
         return {
           total: 0,
           followers: [],
         };
       }
 
-      const rows = await selectFollowers(trainer.id);
+      const followers = await getFollowersForTrainer(fastify, trainerId);
 
       return {
-        total: rows.length,
-        followers: rows.map((row) => {
-          const publicProfile = toPublicTrainerProfile(row);
-
-          return {
-            id: row.id,
-            username: row.username,
-            displayName: resolveDisplayName(row),
-            team: publicProfile.team,
-            level: publicProfile.level,
-            trainerCode: publicProfile.trainerCode,
-            avatarUrl: row.avatarUrl,
-            followedAt: row.followedAt.toISOString(),
-          };
-        }),
+        total: followers.length,
+        followers,
       };
     },
   );
@@ -703,36 +339,20 @@ export async function userRoutes(fastify: FastifyTypebox) {
     async (request) => {
       const userId = request.user.id;
 
-      const [trainer] = await fastify.db
-        .select({ id: trainers.id })
-        .from(trainers)
-        .where(eq(trainers.userId, userId));
+      const trainerId = await getTrainerIdByUserId(fastify, userId);
 
-      if (!trainer) {
+      if (!trainerId) {
         return {
           total: 0,
           following: [],
         };
       }
 
-      const rows = await selectFollowing(trainer.id);
+      const following = await getFollowingForTrainer(fastify, trainerId);
 
       return {
-        total: rows.length,
-        following: rows.map((row) => {
-          const publicProfile = toPublicTrainerProfile(row);
-
-          return {
-            id: row.id,
-            username: row.username,
-            displayName: resolveDisplayName(row),
-            team: publicProfile.team,
-            level: publicProfile.level,
-            trainerCode: publicProfile.trainerCode,
-            avatarUrl: row.avatarUrl,
-            followedAt: row.followedAt.toISOString(),
-          };
-        }),
+        total: following.length,
+        following,
       };
     },
   );
@@ -985,24 +605,11 @@ export async function userRoutes(fastify: FastifyTypebox) {
       return reply.code(404).send({ error: "Trainer not found" });
     }
 
-    const rows = await selectFollowers(id);
+    const followers = await getFollowersForTrainer(fastify, id);
 
     return {
-      total: rows.length,
-      followers: rows.map((row) => {
-        const publicProfile = toPublicTrainerProfile(row);
-
-        return {
-          id: row.id,
-          username: row.username,
-          displayName: resolveDisplayName(row),
-          team: publicProfile.team,
-          level: publicProfile.level,
-          trainerCode: publicProfile.trainerCode,
-          avatarUrl: row.avatarUrl,
-          followedAt: row.followedAt.toISOString(),
-        };
-      }),
+      total: followers.length,
+      followers,
     };
   });
 

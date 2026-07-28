@@ -16,7 +16,7 @@ import {
   ListIcon,
   Trash2Icon,
 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 
 import { ManagedStringCard } from '#/components/managed-string-card'
@@ -48,17 +48,14 @@ import {
 } from '#/lib/poke-query-api'
 import { getMutationErrorMessage } from '#/lib/mutation-toast'
 import type { ManagedForkQuery } from '#/lib/poke-query-api'
+import { useUndoableQueryDelete } from '#/hooks/use-undoable-query-delete'
+import { useForksViewState } from '#/hooks/use-forks-view-state'
+import type {
+  LayoutMode,
+  SyncFilter,
+  VisibilityFilter,
+} from '#/hooks/use-forks-view-state'
 import { requireAuthenticated } from '#/lib/route-auth'
-
-type VisibilityFilter = 'all' | 'draft' | 'public'
-type SyncFilter = 'all' | 'up-to-date' | 'behind' | 'orphaned'
-type LayoutMode = 'list' | 'grid-2' | 'grid-3'
-
-const FORKS_LAYOUT_STORAGE_KEY = 'poke-query:forks-layout'
-
-function isLayoutMode(value: string | null): value is LayoutMode {
-  return value === 'list' || value === 'grid-2' || value === 'grid-3'
-}
 
 function renderRelativeTime(iso: string) {
   const diff = Date.now() - new Date(iso).getTime()
@@ -114,33 +111,18 @@ export function ForksPage() {
   const [forkToDelete, setForkToDelete] = useState<ManagedForkQuery | null>(
     null,
   )
-  const [searchText, setSearchText] = useState('')
-  const [visibilityFilter, setVisibilityFilter] =
-    useState<VisibilityFilter>('all')
-  const [syncFilter, setSyncFilter] = useState<SyncFilter>('all')
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>(() => {
-    if (typeof window === 'undefined') {
-      return 'grid-3'
-    }
 
-    const stored = window.localStorage.getItem(FORKS_LAYOUT_STORAGE_KEY)
-    return isLayoutMode(stored) ? stored : 'grid-3'
+  const { scheduleDelete } = useUndoableQueryDelete<ManagedForkQuery, 'forks'>({
+    queryClient,
+    queryKey: ['my-forks'],
+    itemsKey: 'forks',
+    deleteRemote: deleteQuery,
+    getId: (item) => item.id,
+    getSortValue: (item) => new Date(item.updatedAt).getTime(),
+    invalidateQueryKeys: [['my-forks'], ['my-queries']],
+    deletedToastMessage: 'Fork deleted.',
+    rollbackErrorMessage: 'Could not delete fork.',
   })
-
-  useEffect(() => {
-    window.localStorage.setItem(FORKS_LAYOUT_STORAGE_KEY, layoutMode)
-  }, [layoutMode])
-
-  const pendingDeleteTimeoutsRef = useRef<Map<string, number>>(new Map())
-
-  useEffect(() => {
-    return () => {
-      for (const timeoutId of pendingDeleteTimeoutsRef.current.values()) {
-        window.clearTimeout(timeoutId)
-      }
-      pendingDeleteTimeoutsRef.current.clear()
-    }
-  }, [])
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['my-forks'],
@@ -181,58 +163,23 @@ export function ForksPage() {
   })
 
   const forks = data?.forks ?? []
-  const draftCount = forks.filter((fork) => !fork.isPublic).length
-  const needSyncCount = forks.filter(
-    (fork) => fork.syncStatus === 'behind',
-  ).length
-  const orphanedCount = forks.filter(
-    (fork) => fork.syncStatus === 'orphaned',
-  ).length
-  const lastEdited = forks[0]?.updatedAt ?? null
-  const normalizedSearch = searchText.trim().toLowerCase()
-  const filteredForks = forks.filter((fork) => {
-    if (visibilityFilter === 'draft' && fork.isPublic) {
-      return false
-    }
-
-    if (visibilityFilter === 'public' && !fork.isPublic) {
-      return false
-    }
-
-    if (syncFilter !== 'all' && fork.syncStatus !== syncFilter) {
-      return false
-    }
-
-    if (!normalizedSearch) {
-      return true
-    }
-
-    const searchableText = [
-      fork.title,
-      fork.query,
-      fork.description ?? '',
-      ...fork.userTags,
-      ...fork.autoTags,
-      fork.sourceQuery?.title ?? '',
-      fork.sourceQuery?.query ?? '',
-      fork.sourceQuery?.creator?.username ?? '',
-    ]
-      .join(' ')
-      .toLowerCase()
-
-    return searchableText.includes(normalizedSearch)
-  })
-
-  const resultsLayoutClass =
-    layoutMode === 'list'
-      ? 'mt-4 space-y-3'
-      : layoutMode === 'grid-2'
-        ? 'mt-4 grid gap-3 md:grid-cols-2'
-        : 'mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3'
-  const loadingCardClass =
-    layoutMode === 'list'
-      ? 'h-24 animate-pulse rounded-2xl border border-border/70 bg-card/95 dark:bg-card'
-      : 'h-48 animate-pulse rounded-2xl border border-border/70 bg-card/95 dark:bg-card'
+  const {
+    draftCount,
+    filteredForks,
+    lastEdited,
+    layoutMode,
+    loadingCardClass,
+    needSyncCount,
+    orphanedCount,
+    resultsLayoutClass,
+    searchText,
+    setLayoutMode,
+    setSearchText,
+    setSyncFilter,
+    setVisibilityFilter,
+    syncFilter,
+    visibilityFilter,
+  } = useForksViewState(forks)
 
   function openDetails(forkId: string) {
     void navigate({
@@ -265,23 +212,6 @@ export function ForksPage() {
       })
   }
 
-  function updateCachedForks(
-    updater: (items: ManagedForkQuery[]) => ManagedForkQuery[],
-  ) {
-    queryClient.setQueryData<{ forks: ManagedForkQuery[] }>(
-      ['my-forks'],
-      (current) => {
-        if (!current) {
-          return current
-        }
-
-        return {
-          forks: updater(current.forks),
-        }
-      },
-    )
-  }
-
   function handleDeleteConfirm() {
     if (!forkToDelete) {
       return
@@ -290,66 +220,7 @@ export function ForksPage() {
     const deletedFork = forkToDelete
     setForkToDelete(null)
 
-    updateCachedForks((items) =>
-      items.filter((item) => item.id !== deletedFork.id),
-    )
-
-    const timeoutId = window.setTimeout(async () => {
-      pendingDeleteTimeoutsRef.current.delete(deletedFork.id)
-
-      try {
-        await deleteQuery(deletedFork.id)
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ['my-forks'] }),
-          queryClient.invalidateQueries({ queryKey: ['my-queries'] }),
-        ])
-      } catch (rollbackError) {
-        updateCachedForks((items) => {
-          if (items.some((item) => item.id === deletedFork.id)) {
-            return items
-          }
-
-          return [deletedFork, ...items].sort(
-            (a, b) =>
-              new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-          )
-        })
-
-        toast.error(
-          getMutationErrorMessage(rollbackError, 'Could not delete fork.'),
-        )
-      }
-    }, 5000)
-
-    pendingDeleteTimeoutsRef.current.set(deletedFork.id, timeoutId)
-
-    toast.success('Fork deleted.', {
-      action: {
-        label: 'Undo',
-        onClick: () => {
-          const pendingTimeoutId = pendingDeleteTimeoutsRef.current.get(
-            deletedFork.id,
-          )
-
-          if (pendingTimeoutId) {
-            window.clearTimeout(pendingTimeoutId)
-            pendingDeleteTimeoutsRef.current.delete(deletedFork.id)
-          }
-
-          updateCachedForks((items) => {
-            if (items.some((item) => item.id === deletedFork.id)) {
-              return items
-            }
-
-            return [deletedFork, ...items].sort(
-              (a, b) =>
-                new Date(b.updatedAt).getTime() -
-                new Date(a.updatedAt).getTime(),
-            )
-          })
-        },
-      },
-    })
+    scheduleDelete(deletedFork)
   }
 
   return (

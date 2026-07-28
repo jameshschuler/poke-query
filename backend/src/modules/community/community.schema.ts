@@ -1,6 +1,6 @@
 import { Type } from "@fastify/type-provider-typebox";
 
-const CommunityQueryItem = Type.Object({
+export const CommunityQueryItemSchema = Type.Object({
   id: Type.String(),
   title: Type.String(),
   query: Type.String(),
@@ -35,14 +35,14 @@ const CommunityQueryItem = Type.Object({
   ]),
 });
 
-const CommunityFilter = Type.Union([
+export const CommunityFilterSchema = Type.Union([
   Type.Literal("all"),
   Type.Literal("new"),
   Type.Literal("popular"),
   Type.Literal("official"),
 ] as const);
 
-const CommunitySort = Type.Union([
+export const CommunitySortSchema = Type.Union([
   Type.Literal("created_asc"),
   Type.Literal("created_desc"),
   Type.Literal("title_asc"),
@@ -53,15 +53,15 @@ const CommunitySort = Type.Union([
 export const CommunitySchema = {
   querystring: Type.Object({
     tag: Type.Optional(Type.String({ minLength: 1, maxLength: 50 })),
-    filter: Type.Optional(CommunityFilter),
-    sort: Type.Optional(CommunitySort),
+    filter: Type.Optional(CommunityFilterSchema),
+    sort: Type.Optional(CommunitySortSchema),
     limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 50 })),
     offset: Type.Optional(Type.Integer({ minimum: 0 })),
     search: Type.Optional(Type.String({ minLength: 1, maxLength: 100 })),
   }),
   response: {
     200: Type.Object({
-      items: Type.Array(CommunityQueryItem),
+      items: Type.Array(CommunityQueryItemSchema),
       pagination: Type.Object({
         limit: Type.Integer(),
         offset: Type.Integer(),

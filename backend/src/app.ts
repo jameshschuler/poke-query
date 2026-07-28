@@ -10,7 +10,6 @@ import type { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import fastifyCookie from "@fastify/cookie";
 import rateLimit from "@fastify/rate-limit";
 import { queriesRoutes } from "./modules/queries/queries.routes.js";
-import { guestRoutes } from "./modules/guests/guest.routes.js";
 import { communityRoutes } from "./modules/community/community.routes.js";
 import { metricsRoutes } from "./modules/metrics/metrics.routes.js";
 import { notificationsRoutes } from "./modules/notifications/notifications.routes.js";
@@ -203,7 +202,6 @@ export async function buildApp() {
   await fastify.register(swaggerUi, { routePrefix: "/docs" });
   await fastify.register(authRoutes, { prefix: "/api/v1/auth" });
   await fastify.register(userRoutes, { prefix: "/api/v1/users" });
-  await fastify.register(guestRoutes, { prefix: "/api/v1/queries/guest" });
   await fastify.register(queriesRoutes, { prefix: "/api/v1/queries" });
   await fastify.register(communityRoutes, { prefix: "/api/v1/community" });
   await fastify.register(metricsRoutes, { prefix: "/api/v1/metrics" });
