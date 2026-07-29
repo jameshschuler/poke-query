@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import { fileURLToPath, URL } from 'node:url'
+import { configDefaults } from 'vitest/config'
 
 import { tanstackStart } from '@tanstack/react-start/plugin/vite'
 
@@ -21,6 +22,7 @@ const config = defineConfig(({ mode }) => {
     test: {
       environment: 'jsdom',
       setupFiles: ['./vitest.setup.ts'],
+      exclude: [...configDefaults.exclude, '**/e2e/**'],
       env: {
         VITE_SUPABASE_URL: 'http://localhost:54321',
         VITE_SUPABASE_PUBLISHABLE_KEY: 'test-publishable-key',

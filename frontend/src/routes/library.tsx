@@ -17,7 +17,7 @@ import {
   PlusIcon,
   Trash2Icon,
 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 
 import { ManagedStringCard } from '#/components/managed-string-card'
@@ -48,18 +48,12 @@ import {
   unfavoriteQuery,
 } from '#/lib/poke-query-api'
 import type { ManagedQuery } from '#/lib/poke-query-api'
+import { useUndoableQueryDelete } from '#/hooks/use-undoable-query-delete'
+import { useLibraryViewState } from '#/hooks/use-library-view-state'
+import type { LayoutMode, StatusFilter } from '#/hooks/use-library-view-state'
 import { getMutationErrorMessage } from '#/lib/mutation-toast'
 import { requireAuthenticated } from '#/lib/route-auth'
 import { formatCompactNumber, formatFullNumber } from '#/lib/utils'
-
-type StatusFilter = 'all' | 'draft' | 'public'
-type LayoutMode = 'list' | 'grid-2' | 'grid-3'
-
-const LIBRARY_LAYOUT_STORAGE_KEY = 'poke-query:library-layout'
-
-function isLayoutMode(value: string | null): value is LayoutMode {
-  return value === 'list' || value === 'grid-2' || value === 'grid-3'
-}
 
 export const Route = createFileRoute('/library')({
   ssr: false,
@@ -81,31 +75,18 @@ function LibraryPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [queryToDelete, setQueryToDelete] = useState<ManagedQuery | null>(null)
-  const [searchText, setSearchText] = useState('')
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>(() => {
-    if (typeof window === 'undefined') {
-      return 'grid-3'
-    }
 
-    const stored = window.localStorage.getItem(LIBRARY_LAYOUT_STORAGE_KEY)
-    return isLayoutMode(stored) ? stored : 'grid-3'
+  const { scheduleDelete } = useUndoableQueryDelete<ManagedQuery, 'queries'>({
+    queryClient,
+    queryKey: ['my-queries'],
+    itemsKey: 'queries',
+    deleteRemote: deleteQuery,
+    getId: (item) => item.id,
+    getSortValue: (item) => new Date(item.updatedAt).getTime(),
+    invalidateQueryKeys: [['my-queries']],
+    deletedToastMessage: 'String deleted.',
+    rollbackErrorMessage: 'Could not delete string.',
   })
-
-  useEffect(() => {
-    window.localStorage.setItem(LIBRARY_LAYOUT_STORAGE_KEY, layoutMode)
-  }, [layoutMode])
-
-  const pendingDeleteTimeoutsRef = useRef<Map<string, number>>(new Map())
-
-  useEffect(() => {
-    return () => {
-      for (const timeoutId of pendingDeleteTimeoutsRef.current.values()) {
-        window.clearTimeout(timeoutId)
-      }
-      pendingDeleteTimeoutsRef.current.clear()
-    }
-  }, [])
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['my-queries'],
@@ -155,49 +136,24 @@ function LibraryPage() {
   })
 
   const queries = data?.queries ?? []
+  const {
+    draftCount,
+    filteredQueries,
+    lastEdited,
+    layoutMode,
+    loadingCardClass,
+    publicCount,
+    resultsLayoutClass,
+    searchText,
+    setLayoutMode,
+    setSearchText,
+    setStatusFilter,
+    statusFilter,
+    totalViews,
+  } = useLibraryViewState(queries)
   const favoriteIdSet = new Set(myFavoriteIds?.favoriteQueryIds ?? [])
   const isFavoritePending =
     favoriteMutation.isPending || unfavoriteMutation.isPending
-  const draftCount = queries.filter((query) => !query.isPublic).length
-  const publicCount = queries.length - draftCount
-  const totalViews = queries.reduce((sum, query) => sum + query.viewCount, 0)
-  const lastEdited = queries[0]?.updatedAt ?? null
-  const normalizedSearch = searchText.trim().toLowerCase()
-  const filteredQueries = queries.filter((query) => {
-    if (statusFilter === 'draft' && query.isPublic) {
-      return false
-    }
-
-    if (statusFilter === 'public' && !query.isPublic) {
-      return false
-    }
-
-    if (!normalizedSearch) {
-      return true
-    }
-
-    const searchableText = [
-      query.title,
-      query.query,
-      query.description ?? '',
-      ...query.userTags,
-      ...query.autoTags,
-    ]
-      .join(' ')
-      .toLowerCase()
-
-    return searchableText.includes(normalizedSearch)
-  })
-  const resultsLayoutClass =
-    layoutMode === 'list'
-      ? 'mt-5 space-y-4'
-      : layoutMode === 'grid-2'
-        ? 'mt-5 grid gap-4 md:grid-cols-2'
-        : 'mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3'
-  const loadingCardClass =
-    layoutMode === 'list'
-      ? 'h-24 animate-pulse rounded-2xl border border-border/70 bg-card/95 dark:bg-card'
-      : 'h-40 animate-pulse rounded-2xl border border-border/70 bg-card/95 dark:bg-card'
 
   function handleDelete(query: ManagedQuery) {
     setQueryToDelete(query)
@@ -236,87 +192,7 @@ function LibraryPage() {
     const deletedItem = queryToDelete
     setQueryToDelete(null)
 
-    queryClient.setQueryData<{ queries: ManagedQuery[] }>(
-      ['my-queries'],
-      (current) => {
-        if (!current) {
-          return current
-        }
-
-        return {
-          queries: current.queries.filter((item) => item.id !== deletedItem.id),
-        }
-      },
-    )
-
-    const timeoutId = window.setTimeout(async () => {
-      pendingDeleteTimeoutsRef.current.delete(deletedItem.id)
-
-      try {
-        await deleteQuery(deletedItem.id)
-        await queryClient.invalidateQueries({ queryKey: ['my-queries'] })
-      } catch (rollbackError) {
-        queryClient.setQueryData<{ queries: ManagedQuery[] }>(
-          ['my-queries'],
-          (current) => {
-            const existing = current?.queries ?? []
-
-            if (existing.some((item) => item.id === deletedItem.id)) {
-              return current ?? { queries: existing }
-            }
-
-            return {
-              queries: [deletedItem, ...existing].sort(
-                (a, b) =>
-                  new Date(b.updatedAt).getTime() -
-                  new Date(a.updatedAt).getTime(),
-              ),
-            }
-          },
-        )
-
-        toast.error(
-          getMutationErrorMessage(rollbackError, 'Could not delete string.'),
-        )
-      }
-    }, 5000)
-
-    pendingDeleteTimeoutsRef.current.set(deletedItem.id, timeoutId)
-
-    toast.success('String deleted.', {
-      action: {
-        label: 'Undo',
-        onClick: () => {
-          const pendingTimeoutId = pendingDeleteTimeoutsRef.current.get(
-            deletedItem.id,
-          )
-
-          if (pendingTimeoutId) {
-            window.clearTimeout(pendingTimeoutId)
-            pendingDeleteTimeoutsRef.current.delete(deletedItem.id)
-          }
-
-          queryClient.setQueryData<{ queries: ManagedQuery[] }>(
-            ['my-queries'],
-            (current) => {
-              const existing = current?.queries ?? []
-
-              if (existing.some((item) => item.id === deletedItem.id)) {
-                return current ?? { queries: existing }
-              }
-
-              return {
-                queries: [deletedItem, ...existing].sort(
-                  (a, b) =>
-                    new Date(b.updatedAt).getTime() -
-                    new Date(a.updatedAt).getTime(),
-                ),
-              }
-            },
-          )
-        },
-      },
-    })
+    scheduleDelete(deletedItem)
   }
 
   function renderRelativeTime(iso: string) {

@@ -68,6 +68,19 @@ const buildJoinOrderByChain = (result: object[]) => ({
   })),
 });
 
+const buildLeftJoinWhereGroupByChain = (result: object[]) => ({
+  from: vi.fn(() => {
+    const joinable = {
+      leftJoin: vi.fn(),
+      where: vi.fn(() => ({
+        groupBy: vi.fn().mockResolvedValue(result),
+      })),
+    };
+    joinable.leftJoin.mockReturnValue(joinable);
+    return joinable;
+  }),
+});
+
 vi.mock("../src/db/index.js", () => ({
   queryClient: { end: vi.fn() },
   db: {
@@ -139,7 +152,7 @@ describe("GET /api/v1/users/me", () => {
 
   it("should return 200 onboarding payload when the trainer record does not exist", async () => {
     mockSelect.mockReturnValueOnce(buildSelectChain([]));
-    app.db.insert = vi.fn(() => ({
+    (app.db as any).insert = vi.fn(() => ({
       values: vi.fn(() => ({
         onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
       })),
@@ -445,5 +458,102 @@ describe("POST /api/v1/users/:id/views", () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.json()).toEqual({ viewCount: 12 });
+  });
+});
+
+describe("GET /api/v1/users/:id", () => {
+  let app: Awaited<ReturnType<typeof buildApp>>;
+
+  beforeAll(async () => {
+    app = await buildApp();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it("hides private profile fields when trainer profile is not public", async () => {
+    mockSelect.mockReturnValueOnce(
+      buildLeftJoinWhereGroupByChain([
+        {
+          id: "trainer-private-1",
+          username: "private_ash",
+          pogoUsername: "AshGO",
+          visibleUsername: "pogo",
+          team: "mystic",
+          level: 41,
+          trainerCode: "1234 5678 9012",
+          isProfilePublic: false,
+          avatarUrl: null,
+          queryCount: 2,
+          forkCount: 1,
+        },
+      ]),
+    );
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/users/11111111-1111-4111-8111-111111111111",
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({
+      id: "trainer-private-1",
+      username: "private_ash",
+      displayName: "AshGO",
+      avatarUrl: null,
+      queryCount: 2,
+      forkCount: 1,
+      team: null,
+      level: null,
+      trainerCode: null,
+    });
+  });
+});
+
+describe("POST /api/v1/users/:id/follow", () => {
+  let app: Awaited<ReturnType<typeof buildApp>>;
+
+  beforeAll(async () => {
+    app = await buildApp();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it("returns 401 when follow request is unauthenticated", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/users/11111111-1111-4111-8111-111111111111/follow",
+      payload: {},
+    });
+
+    expect(res.statusCode).toBe(401);
+    expect(res.json()).toEqual({ error: "Invalid Session" });
+  });
+
+  it("returns 403 when trying to follow a private trainer", async () => {
+    (app.db as any).insert = vi.fn(() => ({
+      values: vi.fn(() => ({
+        onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
+      })),
+    }));
+
+    mockSelect.mockReturnValueOnce(
+      buildWhereChain([{ id: "trainer-private-2", isProfilePublic: false }]),
+    );
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/users/11111111-1111-4111-8111-111111111111/follow",
+      payload: {},
+      cookies: { "sb-access-token": "mock-token" },
+    });
+
+    expect(res.statusCode).toBe(403);
+    expect(res.json()).toEqual({
+      error: "You cannot follow a private account",
+    });
   });
 });

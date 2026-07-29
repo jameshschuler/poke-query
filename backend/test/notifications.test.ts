@@ -167,6 +167,32 @@ describe("Notifications Routes", () => {
     expect(response.json()).toEqual({ error: "Notification not found" });
   });
 
+  it("marks all unread notifications as read", async () => {
+    const where = vi.fn().mockResolvedValue([]);
+    const set = vi.fn(() => ({ where }));
+    app.db.update = vi.fn(() => ({ set }));
+
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/api/v1/notifications/read-all",
+      cookies: { "sb-access-token": "mock-token" },
+    });
+
+    expect(response.statusCode).toBe(204);
+    expect(app.db.update).toHaveBeenCalledTimes(1);
+    expect(set).toHaveBeenCalledTimes(1);
+    expect(where).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns 401 for unauthenticated mark-all-read request", async () => {
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/api/v1/notifications/read-all",
+    });
+
+    expect(response.statusCode).toBe(401);
+  });
+
   it("returns default notification preferences when none are saved", async () => {
     app.db.select = vi.fn().mockReturnValueOnce(buildPreferencesChain([]));
 

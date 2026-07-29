@@ -51,7 +51,11 @@ import type {
   VisibleUsername,
 } from '#/lib/poke-query-api'
 import { findBlockedTerm } from '#/lib/content-policy'
-import { requireAuthenticated, setCachedUser } from '#/lib/route-auth'
+import {
+  normalizeRedirectPath,
+  requireAuthenticated,
+  setCachedUser,
+} from '#/lib/route-auth'
 import {
   getThemePreset,
   setThemePreset,
@@ -113,10 +117,7 @@ const ACCOUNT_UPGRADE_SUCCESS_STORAGE_KEY =
 export const Route = createFileRoute('/account')({
   ssr: false,
   validateSearch: (search): AccountSearch => ({
-    redirect:
-      typeof search.redirect === 'string' && search.redirect.trim().length > 0
-        ? search.redirect
-        : undefined,
+    redirect: normalizeRedirectPath(search.redirect),
     panel:
       typeof search.panel === 'string' && isAccountPanel(search.panel)
         ? search.panel

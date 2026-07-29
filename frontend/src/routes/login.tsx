@@ -18,7 +18,7 @@ import {
 } from '#/components/ui/input-otp'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
-import { requireGuest } from '#/lib/route-auth'
+import { normalizeRedirectPath, requireGuest } from '#/lib/route-auth'
 import { useAuth } from '#/lib/auth-context'
 
 type LoginSearch = {
@@ -28,7 +28,7 @@ type LoginSearch = {
 export const Route = createFileRoute('/login')({
   ssr: false,
   validateSearch: (search: Record<string, unknown>): LoginSearch => ({
-    redirect: typeof search.redirect === 'string' ? search.redirect : undefined,
+    redirect: normalizeRedirectPath(search.redirect),
   }),
   beforeLoad: async () => {
     await requireGuest()
@@ -101,7 +101,7 @@ const TESTIMONIALS = [
 export function LoginPage() {
   const navigate = useNavigate()
   const search = Route.useSearch()
-  const { signInWithOtp, verifyOtp, user } = useAuth()
+  const { signInWithOtp, verifyOtp } = useAuth()
   const docsUrl = import.meta.env.VITE_DOCS_URL ?? '/docs'
 
   const [identifier, setIdentifier] = useState('')
@@ -187,7 +187,8 @@ export function LoginPage() {
       })
 
       toast.success('Signed in successfully.')
-      await navigate({ to: search.redirect || '/dashboard', replace: true })
+      const redirectTarget = search.redirect || '/dashboard'
+      await navigate({ to: redirectTarget, replace: true })
     } catch (error) {
       const message =
         error instanceof Error && error.message

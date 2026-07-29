@@ -25,6 +25,17 @@ import {
 import { findBlockedTerm } from "../../lib/content-policy.js";
 
 import { ensureTrainerProfileExists } from "../../lib/trainer-bootstrap.js";
+import { createNewQuery, forkQuery, syncForkQuery, copyQuery } from "./queries.service.js";
+import {
+  getReferenceDomainTag,
+  hasRowsArray,
+  isOfficialQueryEditorUser,
+  isUuid,
+  isValidReferenceUrl,
+  normalizeReferenceUrl,
+  resolveDisplayName,
+  resolveMetadataSource,
+} from "./queries-helpers.js";
 
 const queryMutationRateLimit = {
   config: {
@@ -43,127 +54,6 @@ const copyMutationRateLimit = {
     },
   },
 } as const;
-
-function hasRowsArray(value: unknown): value is { rows: unknown[] } {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "rows" in value &&
-    Array.isArray((value as { rows?: unknown }).rows)
-  );
-}
-
-function isUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
-}
-
-function normalizeReferenceUrl(value: string | undefined): string | undefined {
-  const trimmed = value?.trim();
-  if (!trimmed) {
-    return undefined;
-  }
-
-  const hasScheme = /^[a-z][a-z\d+.-]*:/i.test(trimmed);
-  return hasScheme ? trimmed : `https://${trimmed}`;
-}
-
-function isValidReferenceUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
-function getReferenceDomainTag(referenceUrl: string | undefined): string | undefined {
-  if (!referenceUrl) {
-    return undefined;
-  }
-
-  try {
-    const hostname = new URL(referenceUrl).hostname.toLowerCase();
-    if (!hostname || hostname === "localhost") {
-      return undefined;
-    }
-
-    if (/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname) || hostname.includes(":")) {
-      return undefined;
-    }
-
-    const normalizedHost = hostname.replace(/^www\d*\./, "");
-    const labels = normalizedHost.split(".").filter(Boolean);
-    if (labels.length === 0) {
-      return undefined;
-    }
-
-    const secondLevelTlds = new Set([
-      "ac.uk",
-      "co.jp",
-      "co.nz",
-      "co.uk",
-      "com.au",
-      "com.br",
-      "gov.uk",
-      "net.au",
-      "org.au",
-      "org.uk",
-    ]);
-
-    let candidate = labels[0] ?? "";
-    if (labels.length >= 2) {
-      const suffix = `${labels[labels.length - 2]}.${labels[labels.length - 1]}`;
-      candidate =
-        labels.length >= 3 && secondLevelTlds.has(suffix)
-          ? (labels[labels.length - 3] ?? "")
-          : (labels[labels.length - 2] ?? "");
-    }
-
-    if (!candidate) {
-      return undefined;
-    }
-
-    const cleaned = candidate.replace(/[^a-z0-9-]/g, "").trim();
-    return cleaned || undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function resolveDisplayName(row: {
-  username: string;
-  pogoUsername: string | null;
-  visibleUsername: string | null;
-}): string {
-  if (row.visibleUsername === "pogo" && row.pogoUsername?.trim()) {
-    return row.pogoUsername.trim();
-  }
-
-  return row.username;
-}
-
-function resolveMetadataSource(value: unknown): "official" | "community" {
-  return value === "official" ? "official" : "community";
-}
-
-function getOfficialQueryEditorUserIds(): Set<string> {
-  const configured =
-    process.env.OFFICIAL_QUERY_EDITOR_USER_IDS ??
-    process.env.MODERATION_REVIEWER_USER_IDS ??
-    process.env.MODERATOR_USER_IDS ??
-    "";
-
-  return new Set(
-    configured
-      .split(",")
-      .map((id) => id.trim())
-      .filter(Boolean),
-  );
-}
-
-function isOfficialQueryEditorUser(userId: string): boolean {
-  return getOfficialQueryEditorUserIds().has(userId);
-}
 
 export async function queriesRoutes(fastify: FastifyTypebox) {
   const server = fastify.withTypeProvider<TypeBoxTypeProvider>();
@@ -201,7 +91,12 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
       ORDER BY tag_name
     `);
 
-    const rawRows = Array.isArray(result) ? result : hasRowsArray(result) ? result.rows : [];
+    let rawRows: unknown[] = [];
+    if (Array.isArray(result)) {
+      rawRows = result;
+    } else if (hasRowsArray(result)) {
+      rawRows = result.rows;
+    }
 
     const tagsRows: Array<{ id: string; name: string; queryCount: number }> = [];
 
@@ -382,102 +277,21 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
 
         await ensureTrainerProfileExists(fastify, request.user);
 
-        if (findBlockedTerm(title.trim())) {
-          return reply.code(400).send({ error: "Title contains blocked language" });
-        }
+        const newQuery = await createNewQuery(fastify, userId, {
+          title,
+          query,
+          description: description ?? null,
+          referenceUrl: referenceUrl ?? null,
+          isPublic,
+          tags: userTags,
+        });
 
-        if (description?.trim() && findBlockedTerm(description.trim())) {
-          return reply.code(400).send({ error: "Description contains blocked language" });
-        }
-
-        const normalizedReferenceUrl = normalizeReferenceUrl(referenceUrl);
-        if (normalizedReferenceUrl && !isValidReferenceUrl(normalizedReferenceUrl)) {
-          return reply.code(400).send({ error: "Reference URL must be a valid http(s) URL" });
-        }
-
-        const referenceDomainTag = getReferenceDomainTag(normalizedReferenceUrl);
-
-        // Generate the "Extensible Brain" data and mark user-created strings as community
-        const normalizedUserTags = Array.from(
-          new Set(userTags.map((tag) => tag.trim().toLowerCase()).filter(Boolean)),
-        );
-        const generatedMetadata = generateMetadata(query);
-        const generatedAutoTags = Array.isArray(generatedMetadata.autoTags)
-          ? generatedMetadata.autoTags
-          : [];
-        const autoTags = Array.from(
-          new Set(
-            [...generatedAutoTags, ...(referenceDomainTag ? [referenceDomainTag] : [])]
-              .map((tag) => tag.trim().toLowerCase())
-              .filter(Boolean),
-          ),
-        );
-        const metadata = {
-          ...generatedMetadata,
-          source: "community" as const,
-          userTags: normalizedUserTags,
-          autoTags,
-          ...(normalizedReferenceUrl ? { referenceUrl: normalizedReferenceUrl } : {}),
-        };
-
-        // Deduplicate and normalize tags (case-insensitive), including autoTags
-        const allTags = [...normalizedUserTags, ...autoTags];
-        const uniqueTags = Array.from(new Set(allTags.map((t) => t.trim().toLowerCase())));
-
-        // Insert the query first
-        const [newQuery] = await fastify.db
-          .insert(searchQueries)
-          .values({
-            creatorId: userId,
-            title,
-            query,
-            description,
-            isPublic,
-            metadata,
-          })
-          .returning();
-
-        // Handle tags if any
-        if (newQuery && uniqueTags.length > 0) {
-          // Insert tags if they don't exist
-          const tagRows = await Promise.all(
-            uniqueTags.map(async (tag) => {
-              const [existing] = await fastify.db
-                .select()
-                .from(tags)
-                .where(eq(tags.name, tag))
-                .limit(1);
-              if (existing) return existing;
-              const [created] = await fastify.db
-                .insert(tags)
-                .values({ name: tag })
-                .onConflictDoNothing()
-                .returning({ id: tags.id, name: tags.name });
-              return created || { name: tag };
-            }),
-          );
-          // Link tags to query
-          for (const tagRow of tagRows) {
-            if (
-              tagRow &&
-              typeof tagRow === "object" &&
-              "id" in tagRow &&
-              typeof tagRow.id === "string"
-            ) {
-              await fastify.db
-                .insert(queriesToTags)
-                .values({ queryId: newQuery.id, tagId: tagRow.id })
-                .onConflictDoNothing();
-            }
-          }
-        }
-
-        if (newQuery) {
-          return reply.code(201).send({ id: newQuery.id });
-        } else {
-          return reply.code(400).send({ error: "Failed to create query" });
-        }
+        return reply.code(201).send({ id: newQuery.id });
       } catch (error) {
+        const msg = (error as Error).message;
+        if (msg.includes("blocked") || msg.includes("URL")) {
+          return reply.code(400).send({ error: msg });
+        }
         request.log.error({ error }, "Failed to create query");
         return reply.code(400).send({ error: "Failed to create query" });
       }
@@ -637,58 +451,13 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
 
         await ensureTrainerProfileExists(fastify, request.user);
 
-        // 1. Find the original
-        const original = await fastify.db.query.searchQueries.findFirst({
-          where: eq(searchQueries.id, id),
-        });
-
-        if (!original || !original.isPublic) {
-          return reply.code(404).send({ error: "Original query not found or private" });
-        }
-
-        // 2. Create the Fork
-        const [forked] = await fastify.db
-          .insert(searchQueries)
-          .values({
-            creatorId: userId,
-            title: `Fork of ${original.title}`,
-            query: original.query,
-            description: original.description,
-            isPublic: false, // Forks are private by default
-            parentQueryId: original.id,
-            originalQuerySnapshot: original.query, // Lock in the version at time of fork
-            metadata: {
-              ...original.metadata,
-              source: "community",
-            },
-          })
-          .returning();
-
-        if (forked) {
-          if (original.creatorId && original.creatorId !== userId) {
-            try {
-              const actorDisplayName = await resolveDisplayNameForTrainer(fastify, userId);
-
-              await emitNotification(fastify, {
-                recipientTrainerId: original.creatorId,
-                actorTrainerId: userId,
-                eventType: "query_forked",
-                entityType: "query",
-                entityId: original.id,
-                title: "Your query was forked",
-                message: `${actorDisplayName ?? "A trainer"} forked "${original.title}".`,
-                isHighPriority: true,
-              });
-            } catch {
-              // Best effort: failure to emit a notification should not fail the fork action.
-            }
-          }
-
-          return reply.code(201).send({ id: forked.id });
-        } else {
-          return reply.code(400).send({ error: "Failed to fork query" });
-        }
+        const forked = await forkQuery(fastify, userId, id);
+        return reply.code(201).send({ id: forked.id });
       } catch (error) {
+        const msg = (error as Error).message;
+        if (msg.includes("not found")) {
+          return reply.code(404).send({ error: msg });
+        }
         request.log.error({ error }, "Failed to fork query");
         return reply.code(400).send({ error: "Failed to fork query" });
       }
@@ -703,49 +472,16 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
         const { id } = request.params;
         const userId = request.user.id;
 
-        const fork = await fastify.db.query.searchQueries.findFirst({
-          where: and(eq(searchQueries.id, id), eq(searchQueries.creatorId, userId)),
-        });
-
-        if (!fork || !fork.parentQueryId) {
-          return reply.code(404).send({ error: "Fork not found" });
-        }
-
-        const source = await fastify.db.query.searchQueries.findFirst({
-          where: eq(searchQueries.id, fork.parentQueryId),
-        });
-
-        if (!source) {
-          return reply.code(409).send({
-            error: "Original search string is no longer available",
-          });
-        }
-
-        if (!source.isPublic) {
-          return reply.code(409).send({
-            error: "Original search string is no longer public",
-          });
-        }
-
-        const [updatedFork] = await fastify.db
-          .update(searchQueries)
-          .set({
-            query: source.query,
-            originalQuerySnapshot: source.query,
-            metadata: {
-              ...generateMetadata(source.query),
-              source: "community",
-            },
-          })
-          .where(and(eq(searchQueries.id, id), eq(searchQueries.creatorId, userId)))
-          .returning({ id: searchQueries.id });
-
-        if (!updatedFork) {
-          return reply.code(404).send({ error: "Fork not found" });
-        }
-
+        const updatedFork = await syncForkQuery(fastify, userId, id);
         return reply.code(200).send({ id: updatedFork.id });
-      } catch (_error) {
+      } catch (error) {
+        const msg = (error as Error).message;
+        if (msg.includes("no longer")) {
+          return reply.code(409).send({ error: msg });
+        }
+        if (msg.includes("not found")) {
+          return reply.code(404).send({ error: msg });
+        }
         return reply.code(400).send({ error: "Failed to sync fork" });
       }
     },
@@ -917,14 +653,7 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
     async (request, reply) => {
       try {
         const { id } = request.params;
-
-        await fastify.db
-          .update(searchQueries)
-          .set({
-            copyCount: sql`${searchQueries.copyCount} + 1`,
-          })
-          .where(eq(searchQueries.id, id));
-
+        await copyQuery(fastify, id);
         return reply.code(204).send(null);
       } catch (_error) {
         return reply.code(400).send({ error: "Failed to copy query" });

@@ -34,12 +34,23 @@ export type VisibleUsername = 'pokequery' | 'pogo'
 
 export type ApiErrorResponse = {
   error: string
+  errorCode?: string
+  requestId?: string
+}
+
+export type ApiSuccessMetadata = {
+  requestId: string
+}
+
+export type ApiSuccessResponse<T> = T & {
+  meta?: ApiSuccessMetadata
 }
 
 export class ApiRequestError extends Error {
   status: number
   data: unknown
   requestId: string | null
+  errorCode: string | null
 
   constructor(status: number, data: unknown, requestId: string | null) {
     const message =
@@ -50,11 +61,20 @@ export class ApiRequestError extends Error {
         ? data.error
         : `Request failed with status ${status}`
 
+    const errorCode =
+      typeof data === 'object' &&
+      data !== null &&
+      'errorCode' in data &&
+      typeof data.errorCode === 'string'
+        ? data.errorCode
+        : inferErrorCode(status)
+
     super(message)
     this.name = 'ApiRequestError'
     this.status = status
     this.data = data
     this.requestId = requestId
+    this.errorCode = errorCode
   }
 }
 
@@ -66,6 +86,65 @@ type RequestOptions = Omit<RequestInit, 'body' | 'method'> & {
   method?: 'GET' | 'POST' | 'PATCH' | 'DELETE'
   body?: unknown
   parseAs?: 'json' | 'void'
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+function inferErrorCode(status: number): string {
+  if (status === 400) {
+    return 'bad_request'
+  }
+
+  if (status === 401) {
+    return 'unauthorized'
+  }
+
+  if (status === 403) {
+    return 'forbidden'
+  }
+
+  if (status === 404) {
+    return 'not_found'
+  }
+
+  if (status === 409) {
+    return 'conflict'
+  }
+
+  if (status === 422) {
+    return 'validation_error'
+  }
+
+  if (status === 429) {
+    return 'rate_limited'
+  }
+
+  if (status >= 500) {
+    return 'internal_error'
+  }
+
+  return 'request_failed'
+}
+
+function attachSuccessMeta<T>(
+  payload: T,
+  requestId: string,
+): ApiSuccessResponse<T> {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return payload as ApiSuccessResponse<T>
+  }
+
+  const value = payload as Record<string, unknown>
+  if (isPlainObject(value.meta)) {
+    return value as ApiSuccessResponse<T>
+  }
+
+  return {
+    ...value,
+    meta: { requestId },
+  } as ApiSuccessResponse<T>
 }
 
 function findAccessToken(value: unknown): string | null {
@@ -190,7 +269,11 @@ async function apiRequest<T>(
     return undefined as T
   }
 
-  return (await response.json()) as T
+  const payload = (await response.json()) as T
+  return attachSuccessMeta(
+    payload,
+    response.headers.get('x-request-id') ?? requestId,
+  )
 }
 
 async function safeParseJson(response: Response): Promise<unknown> {
@@ -355,18 +438,6 @@ export type QueryTag = {
   queryCount: number
 }
 
-export type GuestFavoritesResponse = {
-  favoriteQueryIds: string[]
-  favoritesCount: number
-  maxFavorites: number
-}
-
-export type GuestSessionResponse = {
-  guestId: string
-  favoritesCount: number
-  maxFavorites: number
-}
-
 export function getQueryById(id: string): Promise<QueryDetail> {
   return apiRequest<QueryDetail>(`/api/v1/queries/${id}`)
 }
@@ -382,30 +453,6 @@ export function getQueryTags(): Promise<QueryTag[]> {
   return apiRequest<{ tags: QueryTag[] }>('/api/v1/queries/tags').then(
     (response) => response.tags,
   )
-}
-
-export function ensureGuestSession(): Promise<GuestSessionResponse> {
-  return apiRequest<GuestSessionResponse>('/api/v1/queries/guest/session', {
-    method: 'POST',
-  })
-}
-
-export function getGuestFavorites(): Promise<GuestFavoritesResponse> {
-  return apiRequest<GuestFavoritesResponse>('/api/v1/queries/guest/favorites')
-}
-
-export function favoriteGuestQuery(id: string): Promise<void> {
-  return apiRequest<void>(`/api/v1/queries/guest/favorites/${id}`, {
-    method: 'POST',
-    parseAs: 'void',
-  })
-}
-
-export function unfavoriteGuestQuery(id: string): Promise<void> {
-  return apiRequest<void>(`/api/v1/queries/guest/favorites/${id}/unfavorite`, {
-    method: 'POST',
-    parseAs: 'void',
-  })
 }
 
 export type TrainerPublicQuery = {

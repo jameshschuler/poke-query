@@ -345,6 +345,151 @@ integrationDescribe("Community Search Integration", () => {
     expect(rollup?.impressions ?? 0).toBeLessThanOrEqual(4);
   });
 
+  it("returns all-time trusted items that satisfy quality threshold", async () => {
+    const searchKey = `trusted-threshold-${Date.now()}`;
+
+    for (let i = 0; i < 4; i += 1) {
+      const createRes = await app.inject({
+        method: "POST",
+        url: "/api/v1/queries",
+        cookies: { "sb-access-token": "integration-token" },
+        payload: {
+          title: `${searchKey} Trusted ${i}`,
+          query: `cp-${1400 + i}&!traded&!shadow`,
+          description: "Candidate with richer metadata for discover ranking",
+          isPublic: true,
+          tags: ["great-league", "daily-catch"],
+        },
+      });
+
+      expect(createRes.statusCode).toBe(201);
+    }
+
+    const surfacingRes = await app.inject({
+      method: "GET",
+      url: `/api/v1/metrics/surfacing?search=${encodeURIComponent(searchKey)}`,
+    });
+
+    expect(surfacingRes.statusCode).toBe(200);
+    const surfacingPayload: {
+      allTimeTrusted: Array<{ id: string; qualityScore: number }>;
+    } = surfacingRes.json();
+
+    expect(surfacingPayload.allTimeTrusted.length > 0).toBe(true);
+    expect(surfacingPayload.allTimeTrusted.every((item) => item.qualityScore >= 1.1)).toBe(true);
+  });
+
+  it("returns deterministic featured-today ordering for the same day", async () => {
+    const searchKey = `featured-deterministic-${Date.now()}`;
+
+    for (let i = 0; i < 6; i += 1) {
+      const createRes = await app.inject({
+        method: "POST",
+        url: "/api/v1/queries",
+        cookies: { "sb-access-token": "integration-token" },
+        payload: {
+          title: `${searchKey} Featured ${i}`,
+          query: `cp-${1500 + i}&!traded&!shadow`,
+          description: "Featured deterministic ordering candidate",
+          isPublic: true,
+          tags: ["great-league", "raid"],
+        },
+      });
+
+      expect(createRes.statusCode).toBe(201);
+    }
+
+    const firstSurfacingRes = await app.inject({
+      method: "GET",
+      url: `/api/v1/metrics/surfacing?search=${encodeURIComponent(searchKey)}&railLimit=6`,
+    });
+    const secondSurfacingRes = await app.inject({
+      method: "GET",
+      url: `/api/v1/metrics/surfacing?search=${encodeURIComponent(searchKey)}&railLimit=6`,
+    });
+
+    expect(firstSurfacingRes.statusCode).toBe(200);
+    expect(secondSurfacingRes.statusCode).toBe(200);
+
+    const firstPayload: {
+      dateKey: string;
+      featuredToday: Array<{ id: string }>;
+    } = firstSurfacingRes.json();
+    const secondPayload: {
+      dateKey: string;
+      featuredToday: Array<{ id: string }>;
+    } = secondSurfacingRes.json();
+
+    expect(firstPayload.dateKey).toBe(secondPayload.dateKey);
+    expect(firstPayload.featuredToday.map((item) => item.id)).toEqual(
+      secondPayload.featuredToday.map((item) => item.id),
+    );
+  });
+
+  it("caps repeated detail-click telemetry per repeat window bucket", async () => {
+    const searchKey = `detail-click-cap-${Date.now()}`;
+
+    const created = await app.inject({
+      method: "POST",
+      url: "/api/v1/queries",
+      cookies: { "sb-access-token": "integration-token" },
+      payload: {
+        title: `${searchKey} Candidate`,
+        query: "cp-1500&!traded",
+        description: "Detail click cap candidate",
+        isPublic: true,
+        tags: ["great-league"],
+      },
+    });
+
+    expect(created.statusCode).toBe(201);
+    const queryId = created.json().id as string;
+
+    const sessionKey = `integration-detail-cap-${Date.now()}`;
+    const firstBucketEvents = Array.from({ length: 8 }, () => ({
+      queryId,
+      rail: "featured_today",
+      eventType: "detail_click",
+      occurredAt: "2026-07-20T10:05:00.000Z",
+    }));
+    const secondBucketEvents = Array.from({ length: 5 }, () => ({
+      queryId,
+      rail: "featured_today",
+      eventType: "detail_click",
+      occurredAt: "2026-07-20T10:40:00.000Z",
+    }));
+
+    const firstTrackRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/metrics/surfacing/events",
+      payload: { sessionKey, events: firstBucketEvents },
+    });
+    const secondTrackRes = await app.inject({
+      method: "POST",
+      url: "/api/v1/metrics/surfacing/events",
+      payload: { sessionKey, events: secondBucketEvents },
+    });
+
+    expect(firstTrackRes.statusCode).toBe(202);
+    expect(secondTrackRes.statusCode).toBe(202);
+
+    const [rollup] = await app.db
+      .select({
+        detailClicks: sql<number>`COALESCE(SUM(${discoverEventRollups.eventCount}), 0)::int`,
+      })
+      .from(discoverEventRollups)
+      .where(
+        and(
+          eq(discoverEventRollups.queryId, queryId),
+          eq(discoverEventRollups.eventType, "detail_click"),
+        ),
+      );
+
+    // Cap is 2 per detail-click bucket; two 30-minute buckets should cap at 4 total.
+    expect((rollup?.detailClicks ?? 0) > 0).toBe(true);
+    expect(rollup?.detailClicks ?? 0).toBeLessThanOrEqual(4);
+  });
+
   it("allows admins to manage weekly picks via API", async () => {
     const searchKey = `weekly-picks-${Date.now()}`;
 

@@ -17,8 +17,10 @@ At a high level, the project lets trainers create, manage, and discover reusable
 - Backend is fully set up and tested
 - Frontend includes discover, trainer profiles, library/forks/favorites management, template-based string creation, and legal pages
 - API docs site powered by Scalar
-- Community discovery supports search, tag filters, sort modes, and pagination
+- Community discovery supports search, tag filters, sort modes, and pagination with total count
 - The new string page supports importing partial templates and copying a starter template to the clipboard
+- All API error responses carry a stable `errorCode` and `requestId`; mutation responses include `meta.requestId`
+- Feature flags control opt-in surfaces (AI assistant, All-Time Trusted discover rail)
 
 ## Backend Highlights
 
@@ -28,13 +30,17 @@ At a high level, the project lets trainers create, manage, and discover reusable
 - Authenticated favorites endpoints for paginated favorites pages and favorite-id hydration
 - Query tags support both user-supplied tags and parser-generated `autoTags`
 - Query tags endpoint for frontend filter options: `GET /api/v1/queries/tags`
-- Community route supports text search, tag filtering, sort options, and pagination
+- Community route supports text search, tag filtering, sort options, and pagination with `total`
 - Community and profile responses hide trainer team, level, and trainer code when a profile is private
 - `/api/v1/users/me` includes `profileCompleted` and `deactivatedAt` for onboarding/account UX
 - Account deletion policy preserves public strings (anonymized) and removes private strings
 - Trainer profiles by username with split public lists for strings, forks, favorites, and followers
 - Explicit engagement tracking endpoints for query views and trainer profile views
-- Seed scripts for trainers, search queries, and followers
+- In-app notifications with read/unread state
+- Aggregate usage metrics endpoints
+- Content moderation with a report queue and review workflow
+- Normalized API response contract: stable `errorCode` + `requestId` on errors; `meta.requestId` on mutations
+- Seed scripts for trainers, search queries, followers, and notifications
 - Drizzle ORM + Postgres schema/migrations
 - Unit/integration test suites with Vitest
 
@@ -66,6 +72,7 @@ From `backend/`:
 - `npm run db:seed:trainers` to create sample trainers
 - `npm run db:seed:search` to create sample queries with tag coverage for community filters
 - `npm run db:seed:followers` to create sample follow relationships
+- `npm run db:seed:notifications` to create sample in-app notifications
 - `npm run db:seed` to run all seed steps in sequence
 
 ## Documentation
@@ -108,6 +115,8 @@ Frontend service:
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_PUBLISHABLE_KEY`
 - `VITE_AUTH_REDIRECT_URL` (your frontend URL)
+- `VITE_ENABLE_AI_ASSISTANT` (optional, set to `'true'` to enable AI assistant UI)
+- `VITE_ENABLE_ALL_TIME_TRUSTED` (optional, set to `'true'` to enable All-Time Trusted discover rail)
 
 Notes:
 

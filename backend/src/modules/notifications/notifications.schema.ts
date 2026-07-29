@@ -27,8 +27,8 @@ const notificationItemSchema = Type.Object({
   message: Type.String(),
   isHighPriority: Type.Boolean(),
   isRead: Type.Boolean(),
-  readAt: Type.Union([Type.String(), Type.Null()]),
-  createdAt: Type.String(),
+  readAt: Type.Union([Type.String({ format: "date-time" }), Type.Null()]),
+  createdAt: Type.String({ format: "date-time" }),
   actor: actorSchema,
 });
 
@@ -51,7 +51,11 @@ export const GetNotificationsSchema = {
         total: Type.Integer(),
       }),
     }),
-    401: Type.Object({ error: Type.String() }),
+    401: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -59,7 +63,11 @@ export const GetUnreadCountSchema = {
   security: cookieAuthSecurity,
   response: {
     200: Type.Object({ unreadCount: Type.Integer() }),
-    401: Type.Object({ error: Type.String() }),
+    401: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -70,8 +78,16 @@ export const MarkNotificationReadSchema = {
   }),
   response: {
     204: Type.Null(),
-    401: Type.Object({ error: Type.String() }),
-    404: Type.Object({ error: Type.String() }),
+    401: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    404: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -79,7 +95,11 @@ export const MarkAllNotificationsReadSchema = {
   security: cookieAuthSecurity,
   response: {
     204: Type.Null(),
-    401: Type.Object({ error: Type.String() }),
+    401: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -94,7 +114,11 @@ export const GetNotificationPreferencesSchema = {
   security: cookieAuthSecurity,
   response: {
     200: notificationPreferencesSchema,
-    401: Type.Object({ error: Type.String() }),
+    401: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -111,6 +135,10 @@ export const UpdateNotificationPreferencesSchema = {
   ),
   response: {
     200: notificationPreferencesSchema,
-    401: Type.Object({ error: Type.String() }),
+    401: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
