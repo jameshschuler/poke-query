@@ -51,8 +51,10 @@ export function ManagedStringCard({
               {description ?? 'No description yet.'}
             </p>
 
-            <div className="rounded-lg border border-border/60 bg-background/60 px-3 py-2">
-              <p className="font-mono text-xs text-muted-foreground">{query}</p>
+            <div className="max-h-48 overflow-y-auto rounded-lg border border-border/60 bg-background/60 px-3 py-2">
+              <p className="font-mono text-xs text-muted-foreground [overflow-wrap:anywhere] break-words">
+                {query}
+              </p>
             </div>
 
             {details ? (
