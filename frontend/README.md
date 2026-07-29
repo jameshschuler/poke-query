@@ -43,15 +43,22 @@ Common variables:
 - `VITE_AUTH_REDIRECT_URL`
 - `VITE_DOCS_URL` (optional override for docs link)
 
+Feature flags (set to `'true'` to enable):
+
+- `VITE_ENABLE_AI_ASSISTANT` — enables the AI assistant UI (hidden by default)
+- `VITE_ENABLE_ALL_TIME_TRUSTED` — enables the All-Time Trusted discover rail (hidden by default)
+
 ## Scripts
 
 Run from `frontend/`:
 
 - `npm run dev` — start local dev server
 - `npm run build` — production build (client + SSR output)
-- `npm run test` — run frontend tests
+- `npm run test` — run unit/component tests with Vitest
+- `npm run test:e2e` — run Playwright end-to-end tests
 - `npm run lint` — run ESLint
-- `npm run format` — run Prettier
+- `npm run check` — check formatting with Prettier
+- `npm run format` — auto-format with Prettier + ESLint fix
 
 ## Notes
 
@@ -60,3 +67,12 @@ Run from `frontend/`:
 - Trainer profile views are tracked with `POST /api/v1/users/:id/views`.
 - The new string page includes a template import mode, supports partial template prefill, and provides a clipboard copy action for the starter template.
 - Docs links in the app point to `/docs` unless `VITE_DOCS_URL` is set.
+- Feature flags are exported from `src/lib/feature-flags.ts` and read from Vite env vars at build time.
+
+## API Client
+
+All requests go through `src/lib/poke-query-api.ts`. Key behaviors:
+
+- Errors throw `ApiRequestError`, which exposes `status`, `message`, and `errorCode` — a stable snake_case code (e.g. `unauthorized`, `not_found`) for client-side branching without parsing human text.
+- Successful mutation responses include `meta.requestId` for correlating UI errors with server logs.
+- Both fields mirror the backend contract and are inferred client-side when the server does not provide them.

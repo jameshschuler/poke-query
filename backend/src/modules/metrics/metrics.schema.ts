@@ -22,8 +22,8 @@ export const MetricsSurfacingSchema = {
       featuredToday: Type.Array(CommunityQueryItemSchema),
       allTimeTrusted: Type.Array(CommunityQueryItemSchema),
       contextualPicks: Type.Array(CommunityQueryItemSchema),
-      generatedAt: Type.String(),
-      dateKey: Type.String(),
+      generatedAt: Type.String({ format: "date-time" }),
+      dateKey: Type.String({ format: "date" }),
     }),
   },
 };
@@ -40,7 +40,7 @@ export const TrackMetricsSurfacingEventsSchema = {
           Type.Literal("detail_click"),
           Type.Literal("copy_action"),
         ] as const),
-        occurredAt: Type.Optional(Type.String()),
+        occurredAt: Type.Optional(Type.String({ format: "date-time" })),
       }),
       { minItems: 1, maxItems: 50 },
     ),
@@ -68,8 +68,16 @@ export const MetricsSchema = {
         uniqueImpressionStrings: Type.Integer(),
       }),
     }),
-    401: Type.Object({ error: Type.String() }),
-    403: Type.Object({ error: Type.String() }),
+    401: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    403: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -79,19 +87,27 @@ const WeeklyPickItem = Type.Object({
   isPublic: Type.Boolean(),
   displayOrder: Type.Integer(),
   isActive: Type.Boolean(),
-  startsAt: Type.Union([Type.String(), Type.Null()]),
-  endsAt: Type.Union([Type.String(), Type.Null()]),
+  startsAt: Type.Union([Type.String({ format: "date-time" }), Type.Null()]),
+  endsAt: Type.Union([Type.String({ format: "date-time" }), Type.Null()]),
   notes: Type.Union([Type.String(), Type.Null()]),
-  createdAt: Type.String(),
-  updatedAt: Type.String(),
+  createdAt: Type.String({ format: "date-time" }),
+  updatedAt: Type.String({ format: "date-time" }),
 });
 
 export const GetWeeklyPicksSchema = {
   security: [{ cookieAuth: [] }],
   response: {
     200: Type.Object({ items: Type.Array(WeeklyPickItem) }),
-    401: Type.Object({ error: Type.String() }),
-    403: Type.Object({ error: Type.String() }),
+    401: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    403: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -107,10 +123,26 @@ export const UpsertWeeklyPickSchema = {
   }),
   response: {
     200: Type.Object({ item: WeeklyPickItem }),
-    400: Type.Object({ error: Type.String() }),
-    401: Type.Object({ error: Type.String() }),
-    403: Type.Object({ error: Type.String() }),
-    404: Type.Object({ error: Type.String() }),
+    400: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    401: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    403: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    404: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -121,8 +153,20 @@ export const DeleteWeeklyPickSchema = {
   }),
   response: {
     200: Type.Object({ removedQueryId: Type.String() }),
-    401: Type.Object({ error: Type.String() }),
-    403: Type.Object({ error: Type.String() }),
-    404: Type.Object({ error: Type.String() }),
+    401: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    403: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    404: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };

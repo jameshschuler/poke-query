@@ -188,11 +188,6 @@ export function LoginPage() {
 
       toast.success('Signed in successfully.')
       const redirectTarget = search.redirect || '/dashboard'
-      if (typeof window !== 'undefined') {
-        window.location.assign(redirectTarget)
-        return
-      }
-
       await navigate({ to: redirectTarget, replace: true })
     } catch (error) {
       const message =

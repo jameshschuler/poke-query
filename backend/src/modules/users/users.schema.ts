@@ -24,7 +24,11 @@ export const GetTrainerSchema = {
       queryCount: Type.Integer(),
       forkCount: Type.Integer(),
     }),
-    404: Type.Object({ error: Type.String() }),
+    404: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -50,15 +54,23 @@ export const GetMeSchema = {
       level: Type.Union([Type.Integer(), Type.Null()]),
       trainerCode: Type.Union([Type.String(), Type.Null()]),
       isProfilePublic: Type.Boolean(),
-      deactivatedAt: Type.Union([Type.String(), Type.Null()]),
+      deactivatedAt: Type.Union([Type.String({ format: "date-time" }), Type.Null()]),
       avatarUrl: Type.Union([Type.String(), Type.Null()]),
       queryCount: Type.Integer(),
       favoriteCount: Type.Integer(),
       followerCount: Type.Integer(),
       forkCount: Type.Integer(),
     }),
-    404: Type.Object({ error: Type.String() }),
-    401: Type.Object({ error: Type.String() }),
+    404: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    401: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -116,11 +128,31 @@ export const UpdateTrainerSchema = {
   ),
   response: {
     200: Type.Object({ id: Type.String() }),
-    400: Type.Object({ error: Type.String() }),
-    409: Type.Object({ error: Type.String() }),
-    404: Type.Object({ error: Type.String() }),
-    401: Type.Object({ error: Type.String() }),
-    500: Type.Object({ error: Type.String() }),
+    400: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    409: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    404: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    401: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    500: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -128,8 +160,16 @@ export const DeactivateTrainerSchema = {
   security: cookieAuthSecurity,
   response: {
     200: Type.Object({ message: Type.String() }),
-    404: Type.Object({ error: Type.String() }),
-    401: Type.Object({ error: Type.String() }),
+    404: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    401: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -137,9 +177,21 @@ export const DeleteTrainerSchema = {
   security: cookieAuthSecurity,
   response: {
     204: Type.Null(),
-    404: Type.Object({ error: Type.String() }),
-    401: Type.Object({ error: Type.String() }),
-    500: Type.Object({ error: Type.String() }),
+    404: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    401: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    500: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -156,7 +208,7 @@ const followerResponseItem = Type.Object({
   level: Type.Union([Type.Integer(), Type.Null()]),
   trainerCode: Type.Union([Type.String(), Type.Null()]),
   avatarUrl: Type.Union([Type.String(), Type.Null()]),
-  followedAt: Type.String(),
+  followedAt: Type.String({ format: "date-time" }),
 });
 
 const followParams = Type.Object({
@@ -169,10 +221,26 @@ export const FollowTrainerSchema = {
   body: Type.Object({}),
   response: {
     204: Type.Null(),
-    400: Type.Object({ error: Type.String() }),
-    403: Type.Object({ error: Type.String() }),
-    401: Type.Object({ error: Type.String() }),
-    404: Type.Object({ error: Type.String() }),
+    400: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    403: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    401: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    404: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -181,7 +249,11 @@ export const UnfollowTrainerSchema = {
   params: followParams,
   response: {
     204: Type.Null(),
-    401: Type.Object({ error: Type.String() }),
+    401: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -192,7 +264,11 @@ export const GetTrainerFollowersSchema = {
       total: Type.Integer(),
       followers: Type.Array(followerResponseItem),
     }),
-    404: Type.Object({ error: Type.String() }),
+    404: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -203,8 +279,16 @@ export const GetMeFollowersSchema = {
       total: Type.Integer(),
       followers: Type.Array(followerResponseItem),
     }),
-    401: Type.Object({ error: Type.String() }),
-    404: Type.Object({ error: Type.String() }),
+    401: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    404: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -215,8 +299,16 @@ export const GetMeFollowingSchema = {
       total: Type.Integer(),
       following: Type.Array(followerResponseItem),
     }),
-    401: Type.Object({ error: Type.String() }),
-    404: Type.Object({ error: Type.String() }),
+    401: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    404: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -231,7 +323,7 @@ const publicQueryItem = Type.Object({
   referenceUrl: Type.Union([Type.String(), Type.Null()]),
   userTags: Type.Array(Type.String()),
   autoTags: Type.Array(Type.String()),
-  createdAt: Type.String(),
+  createdAt: Type.String({ format: "date-time" }),
 });
 
 const managedQueryItem = Type.Object({
@@ -247,8 +339,8 @@ const managedQueryItem = Type.Object({
   referenceUrl: Type.Union([Type.String(), Type.Null()]),
   userTags: Type.Array(Type.String()),
   autoTags: Type.Array(Type.String()),
-  createdAt: Type.String(),
-  updatedAt: Type.String(),
+  createdAt: Type.String({ format: "date-time" }),
+  updatedAt: Type.String({ format: "date-time" }),
 });
 
 export const GetMeQueriesSchema = {
@@ -257,8 +349,16 @@ export const GetMeQueriesSchema = {
     200: Type.Object({
       queries: Type.Array(managedQueryItem),
     }),
-    401: Type.Object({ error: Type.String() }),
-    404: Type.Object({ error: Type.String() }),
+    401: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    404: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -275,9 +375,9 @@ const meFavoriteItem = Type.Object({
   referenceUrl: Type.Union([Type.String(), Type.Null()]),
   userTags: Type.Array(Type.String()),
   autoTags: Type.Array(Type.String()),
-  createdAt: Type.String(),
-  updatedAt: Type.String(),
-  favoritedAt: Type.String(),
+  createdAt: Type.String({ format: "date-time" }),
+  updatedAt: Type.String({ format: "date-time" }),
+  favoritedAt: Type.String({ format: "date-time" }),
   creator: Type.Union([
     Type.Object({
       id: Type.String(),
@@ -306,8 +406,16 @@ export const GetMeFavoritesSchema = {
         total: Type.Integer(),
       }),
     }),
-    401: Type.Object({ error: Type.String() }),
-    404: Type.Object({ error: Type.String() }),
+    401: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    404: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -318,8 +426,16 @@ export const GetMeFavoriteIdsSchema = {
       favoriteQueryIds: Type.Array(Type.String()),
       favoritesCount: Type.Integer(),
     }),
-    401: Type.Object({ error: Type.String() }),
-    404: Type.Object({ error: Type.String() }),
+    401: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    404: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -342,7 +458,7 @@ const managedForkSourceItem = Type.Object({
   title: Type.String(),
   query: Type.String(),
   isPublic: Type.Boolean(),
-  updatedAt: Type.String(),
+  updatedAt: Type.String({ format: "date-time" }),
   creator: Type.Union([trainerSummarySchema, Type.Null()]),
 });
 
@@ -359,8 +475,8 @@ const managedForkItem = Type.Object({
   referenceUrl: Type.Union([Type.String(), Type.Null()]),
   userTags: Type.Array(Type.String()),
   autoTags: Type.Array(Type.String()),
-  createdAt: Type.String(),
-  updatedAt: Type.String(),
+  createdAt: Type.String({ format: "date-time" }),
+  updatedAt: Type.String({ format: "date-time" }),
   parentQueryId: Type.Union([Type.String(), Type.Null()]),
   originalQuerySnapshot: Type.Union([Type.String(), Type.Null()]),
   syncStatus: Type.Union([
@@ -377,8 +493,16 @@ export const GetMeForksSchema = {
     200: Type.Object({
       forks: Type.Array(managedForkItem),
     }),
-    401: Type.Object({ error: Type.String() }),
-    404: Type.Object({ error: Type.String() }),
+    401: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    404: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -399,15 +523,19 @@ export const GetTrainerByUsernameSchema = {
       trainerCode: Type.Union([Type.String(), Type.Null()]),
       avatarUrl: Type.Union([Type.String(), Type.Null()]),
       isProfilePublic: Type.Boolean(),
-      deactivatedAt: Type.Union([Type.String(), Type.Null()]),
-      createdAt: Type.String(),
+      deactivatedAt: Type.Union([Type.String({ format: "date-time" }), Type.Null()]),
+      createdAt: Type.String({ format: "date-time" }),
       stringCount: Type.Integer(),
       profileViewCount: Type.Integer(),
       favoriteCount: Type.Integer(),
       forkCount: Type.Integer(),
       followerCount: Type.Integer(),
     }),
-    404: Type.Object({ error: Type.String() }),
+    404: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -420,7 +548,11 @@ export const TrackTrainerViewSchema = {
     200: Type.Object({
       viewCount: Type.Integer(),
     }),
-    404: Type.Object({ error: Type.String() }),
+    404: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -428,7 +560,11 @@ export const GetTrainerStringsSchema = {
   params: trainerIdParams,
   response: {
     200: Type.Object({ strings: Type.Array(publicQueryItem) }),
-    404: Type.Object({ error: Type.String() }),
+    404: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -436,7 +572,11 @@ export const GetTrainerForksSchema = {
   params: trainerIdParams,
   response: {
     200: Type.Object({ forks: Type.Array(publicQueryItem) }),
-    404: Type.Object({ error: Type.String() }),
+    404: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -444,6 +584,10 @@ export const GetTrainerFavoritesSchema = {
   params: trainerIdParams,
   response: {
     200: Type.Object({ favorites: Type.Array(publicQueryItem) }),
-    404: Type.Object({ error: Type.String() }),
+    404: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };

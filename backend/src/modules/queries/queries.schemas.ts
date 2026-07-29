@@ -33,19 +33,23 @@ export const GetQuerySchema = {
       referenceUrl: Type.Union([Type.String(), Type.Null()]),
       userTags: Type.Array(Type.String()),
       autoTags: Type.Array(Type.String()),
-      createdAt: Type.String(),
-      updatedAt: Type.String(),
+      createdAt: Type.String({ format: "date-time" }),
+      updatedAt: Type.String({ format: "date-time" }),
       creator: TrainerSchema,
       forks: Type.Array(
         Type.Object({
           id: Type.String(),
           title: Type.String(),
-          createdAt: Type.String(),
+          createdAt: Type.String({ format: "date-time" }),
           creator: TrainerSchema,
         }),
       ),
     }),
-    404: Type.Object({ error: Type.String() }),
+    404: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -58,7 +62,11 @@ export const TrackQueryViewSchema = {
     200: Type.Object({
       viewCount: Type.Integer(),
     }),
-    404: Type.Object({ error: Type.String() }),
+    404: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 

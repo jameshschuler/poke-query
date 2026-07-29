@@ -63,6 +63,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -135,6 +141,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -151,6 +163,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -166,6 +184,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -209,6 +233,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -360,6 +390,7 @@
                     "deactivatedAt": {
                       "anyOf": [
                         {
+                          "format": "date-time",
                           "type": "string"
                         },
                         {
@@ -404,6 +435,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -419,6 +456,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -530,6 +573,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -545,6 +594,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -562,6 +617,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -578,6 +639,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -593,6 +660,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -622,6 +695,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -638,6 +717,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -653,6 +738,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -757,9 +848,11 @@
                             }
                           },
                           "createdAt": {
+                            "format": "date-time",
                             "type": "string"
                           },
                           "updatedAt": {
+                            "format": "date-time",
                             "type": "string"
                           }
                         }
@@ -780,6 +873,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -795,6 +894,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -922,12 +1027,15 @@
                             }
                           },
                           "createdAt": {
+                            "format": "date-time",
                             "type": "string"
                           },
                           "updatedAt": {
+                            "format": "date-time",
                             "type": "string"
                           },
                           "favoritedAt": {
+                            "format": "date-time",
                             "type": "string"
                           },
                           "creator": {
@@ -1019,6 +1127,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -1034,6 +1148,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -1084,6 +1204,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -1099,6 +1225,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -1207,9 +1339,11 @@
                             }
                           },
                           "createdAt": {
+                            "format": "date-time",
                             "type": "string"
                           },
                           "updatedAt": {
+                            "format": "date-time",
                             "type": "string"
                           },
                           "parentQueryId": {
@@ -1274,6 +1408,7 @@
                                     "type": "boolean"
                                   },
                                   "updatedAt": {
+                                    "format": "date-time",
                                     "type": "string"
                                   },
                                   "creator": {
@@ -1369,6 +1504,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -1384,6 +1525,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -1487,6 +1634,7 @@
                             ]
                           },
                           "followedAt": {
+                            "format": "date-time",
                             "type": "string"
                           }
                         }
@@ -1507,6 +1655,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -1522,6 +1676,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -1625,6 +1785,7 @@
                             ]
                           },
                           "followedAt": {
+                            "format": "date-time",
                             "type": "string"
                           }
                         }
@@ -1645,6 +1806,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -1660,6 +1827,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -1771,6 +1944,7 @@
                     "deactivatedAt": {
                       "anyOf": [
                         {
+                          "format": "date-time",
                           "type": "string"
                         },
                         {
@@ -1779,6 +1953,7 @@
                       ]
                     },
                     "createdAt": {
+                      "format": "date-time",
                       "type": "string"
                     },
                     "stringCount": {
@@ -1810,6 +1985,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -1870,6 +2051,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -1971,6 +2158,7 @@
                             }
                           },
                           "createdAt": {
+                            "format": "date-time",
                             "type": "string"
                           }
                         }
@@ -1990,6 +2178,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -2091,6 +2285,7 @@
                             }
                           },
                           "createdAt": {
+                            "format": "date-time",
                             "type": "string"
                           }
                         }
@@ -2110,6 +2305,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -2211,6 +2412,7 @@
                             }
                           },
                           "createdAt": {
+                            "format": "date-time",
                             "type": "string"
                           }
                         }
@@ -2230,6 +2432,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -2351,6 +2559,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -2459,6 +2673,7 @@
                             ]
                           },
                           "followedAt": {
+                            "format": "date-time",
                             "type": "string"
                           }
                         }
@@ -2478,6 +2693,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -2531,6 +2752,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -2546,6 +2773,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -2563,6 +2796,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -2578,6 +2817,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -2619,6 +2864,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -2663,6 +2914,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -2678,6 +2935,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -2722,6 +2985,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -2737,6 +3006,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -2895,10 +3170,12 @@
                       }
                     },
                     "createdAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     },
                     "updatedAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     },
                     "creator": {
                       "anyOf": [
@@ -2972,7 +3249,8 @@
                             "type": "string"
                           },
                           "createdAt": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "date-time"
                           },
                           "creator": {
                             "anyOf": [
@@ -3050,6 +3328,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -3303,6 +3587,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -4162,10 +4452,12 @@
                             }
                           },
                           "createdAt": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "date-time"
                           },
                           "updatedAt": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "date-time"
                           },
                           "creator": {
                             "anyOf": [
@@ -4251,7 +4543,13 @@
                     },
                     "pagination": {
                       "type": "object",
-                      "required": ["limit", "offset", "nextOffset", "hasMore"],
+                      "required": [
+                        "limit",
+                        "offset",
+                        "nextOffset",
+                        "hasMore",
+                        "total"
+                      ],
                       "properties": {
                         "limit": {
                           "type": "integer"
@@ -4271,6 +4569,9 @@
                         },
                         "hasMore": {
                           "type": "boolean"
+                        },
+                        "total": {
+                          "type": "integer"
                         }
                       }
                     }
@@ -4288,6 +4589,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -4349,7 +4656,8 @@
                           "startsAt": {
                             "anyOf": [
                               {
-                                "type": "string"
+                                "type": "string",
+                                "format": "date-time"
                               },
                               {
                                 "type": "null"
@@ -4359,7 +4667,8 @@
                           "endsAt": {
                             "anyOf": [
                               {
-                                "type": "string"
+                                "type": "string",
+                                "format": "date-time"
                               },
                               {
                                 "type": "null"
@@ -4377,10 +4686,12 @@
                             ]
                           },
                           "createdAt": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "date-time"
                           },
                           "updatedAt": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "date-time"
                           }
                         }
                       }
@@ -4400,6 +4711,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -4415,6 +4732,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -4531,7 +4854,8 @@
                         "startsAt": {
                           "anyOf": [
                             {
-                              "type": "string"
+                              "type": "string",
+                              "format": "date-time"
                             },
                             {
                               "type": "null"
@@ -4541,7 +4865,8 @@
                         "endsAt": {
                           "anyOf": [
                             {
-                              "type": "string"
+                              "type": "string",
+                              "format": "date-time"
                             },
                             {
                               "type": "null"
@@ -4559,10 +4884,12 @@
                           ]
                         },
                         "createdAt": {
-                          "type": "string"
+                          "type": "string",
+                          "format": "date-time"
                         },
                         "updatedAt": {
-                          "type": "string"
+                          "type": "string",
+                          "format": "date-time"
                         }
                       }
                     }
@@ -4581,6 +4908,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -4596,6 +4929,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -4613,6 +4952,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -4628,6 +4973,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -4684,6 +5035,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -4700,6 +5057,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -4715,6 +5078,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -4895,10 +5264,12 @@
                             }
                           },
                           "createdAt": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "date-time"
                           },
                           "updatedAt": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "date-time"
                           },
                           "creator": {
                             "anyOf": [
@@ -5077,10 +5448,12 @@
                             }
                           },
                           "createdAt": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "date-time"
                           },
                           "updatedAt": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "date-time"
                           },
                           "creator": {
                             "anyOf": [
@@ -5259,10 +5632,12 @@
                             }
                           },
                           "createdAt": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "date-time"
                           },
                           "updatedAt": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "date-time"
                           },
                           "creator": {
                             "anyOf": [
@@ -5441,10 +5816,12 @@
                             }
                           },
                           "createdAt": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "date-time"
                           },
                           "updatedAt": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "date-time"
                           },
                           "creator": {
                             "anyOf": [
@@ -5529,10 +5906,12 @@
                       }
                     },
                     "generatedAt": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date-time"
                     },
                     "dateKey": {
-                      "type": "string"
+                      "type": "string",
+                      "format": "date"
                     }
                   }
                 }
@@ -5609,7 +5988,8 @@
                           ]
                         },
                         "occurredAt": {
-                          "type": "string"
+                          "type": "string",
+                          "format": "date-time"
                         }
                       }
                     },
@@ -5725,6 +6105,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -5740,6 +6126,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -5880,6 +6272,7 @@
                           "readAt": {
                             "anyOf": [
                               {
+                                "format": "date-time",
                                 "type": "string"
                               },
                               {
@@ -5888,6 +6281,7 @@
                             ]
                           },
                           "createdAt": {
+                            "format": "date-time",
                             "type": "string"
                           },
                           "actor": {
@@ -5979,6 +6373,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -6022,6 +6422,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -6063,6 +6469,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -6078,6 +6490,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -6108,6 +6526,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -6165,6 +6589,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -6246,6 +6676,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -6288,6 +6724,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -6391,6 +6833,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -6406,6 +6854,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -6423,6 +6877,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -6438,6 +6898,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -6664,9 +7130,11 @@
                             ]
                           },
                           "createdAt": {
+                            "format": "date-time",
                             "type": "string"
                           },
                           "updatedAt": {
+                            "format": "date-time",
                             "type": "string"
                           }
                         }
@@ -6721,6 +7189,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -6736,6 +7210,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -6910,9 +7390,11 @@
                           ]
                         },
                         "createdAt": {
+                          "format": "date-time",
                           "type": "string"
                         },
                         "updatedAt": {
+                          "format": "date-time",
                           "type": "string"
                         }
                       }
@@ -7037,6 +7519,7 @@
                             ]
                           },
                           "createdAt": {
+                            "format": "date-time",
                             "type": "string"
                           }
                         }
@@ -7057,6 +7540,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -7073,6 +7562,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -7088,6 +7583,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -7187,6 +7688,7 @@
                       ]
                     },
                     "updatedAt": {
+                      "format": "date-time",
                       "type": "string"
                     }
                   }
@@ -7204,6 +7706,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -7220,6 +7728,12 @@
                   "properties": {
                     "error": {
                       "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
+                      "type": "string"
                     }
                   }
                 }
@@ -7235,6 +7749,12 @@
                   "required": ["error"],
                   "properties": {
                     "error": {
+                      "type": "string"
+                    },
+                    "errorCode": {
+                      "type": "string"
+                    },
+                    "requestId": {
                       "type": "string"
                     }
                   }
@@ -7437,7 +7957,40 @@
       "get": {
         "responses": {
           "200": {
-            "description": "Default Response"
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "service": {
+                      "type": "string"
+                    },
+                    "uptimeSeconds": {
+                      "type": "integer"
+                    },
+                    "startedAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "now": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "service",
+                    "uptimeSeconds",
+                    "startedAt",
+                    "now"
+                  ]
+                }
+              }
+            }
           }
         }
       }

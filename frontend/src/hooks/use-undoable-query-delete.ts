@@ -25,12 +25,14 @@ type CacheShape<TItem, TKey extends string> = {
 export function useUndoableQueryDelete<TItem, TKey extends string>(
   options: UseUndoableQueryDeleteOptions<TItem, TKey>,
 ) {
-  const pendingDeleteTimeoutsRef = useRef<Map<string, number>>(new Map())
+  const pendingDeleteTimeoutsRef = useRef<
+    Map<string, ReturnType<typeof setTimeout>>
+  >(new Map())
 
   useEffect(() => {
     return () => {
       for (const timeoutId of pendingDeleteTimeoutsRef.current.values()) {
-        window.clearTimeout(timeoutId)
+        globalThis.clearTimeout(timeoutId)
       }
       pendingDeleteTimeoutsRef.current.clear()
     }
@@ -73,7 +75,7 @@ export function useUndoableQueryDelete<TItem, TKey extends string>(
 
     setItems((items) => items.filter((entry) => options.getId(entry) !== id))
 
-    const timeoutId = window.setTimeout(async () => {
+    const timeoutId = globalThis.setTimeout(async () => {
       pendingDeleteTimeoutsRef.current.delete(id)
 
       try {
@@ -102,8 +104,8 @@ export function useUndoableQueryDelete<TItem, TKey extends string>(
         onClick: () => {
           const pendingTimeoutId = pendingDeleteTimeoutsRef.current.get(id)
 
-          if (pendingTimeoutId) {
-            window.clearTimeout(pendingTimeoutId)
+          if (pendingTimeoutId !== undefined) {
+            globalThis.clearTimeout(pendingTimeoutId)
             pendingDeleteTimeoutsRef.current.delete(id)
           }
 

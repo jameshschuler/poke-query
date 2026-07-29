@@ -26,9 +26,13 @@ backend/
 │   │   ├── index.ts        # Drizzle client
 │   │   └── schema.ts       # Database schema
 │   ├── modules/
+│   │   ├── assistant/      # AI assistant endpoints
 │   │   ├── auth/           # Login, logout, session
 │   │   ├── community/      # Public query feed
 │   │   ├── guests/         # Guest session + guest favorites
+│   │   ├── metrics/        # Aggregate usage metrics
+│   │   ├── moderation/     # Content reports and review queue
+│   │   ├── notifications/  # In-app notification feeds
 │   │   ├── queries/        # CRUD for search queries
 │   │   └── users/          # Trainer profiles
 │   ├── plugins/
@@ -82,22 +86,24 @@ Health endpoint: `GET /health` (no auth required).
 
 ## Scripts
 
-| Command                     | Description                           |
-| --------------------------- | ------------------------------------- |
-| `npm run dev`               | Start with hot reload                 |
-| `npm run build`             | Compile TypeScript to `dist/`         |
-| `npm start`                 | Run compiled build                    |
-| `npm test`                  | Run tests                             |
-| `npm run test:integration`  | Run integration tests                 |
-| `npm run lint`              | Lint source files                     |
-| `npm run format`            | Format with Prettier                  |
-| `npm run db:generate`       | Generate a new migration              |
-| `npm run db:migrate`        | Apply pending migrations              |
-| `npm run db:seed`           | Seed trainers, queries, and followers |
-| `npm run db:seed:trainers`  | Seed auth users and trainer profiles  |
-| `npm run db:seed:search`    | Seed search queries with tag coverage |
-| `npm run db:seed:followers` | Seed follower relationships           |
-| `npm run docs:openapi`      | Export OpenAPI JSON for the docs site |
+| Command                         | Description                                          |
+| ------------------------------- | ---------------------------------------------------- |
+| `npm run dev`                   | Start with hot reload                                |
+| `npm run build`                 | Compile TypeScript to `dist/`                        |
+| `npm start`                     | Run compiled build                                   |
+| `npm test`                      | Run tests                                            |
+| `npm run test:integration`      | Run integration tests                                |
+| `npm run lint`                  | Lint source files                                    |
+| `npm run format`                | Format with Prettier                                 |
+| `npm run db:generate`           | Generate a new migration                             |
+| `npm run db:migrate`            | Apply pending migrations                             |
+| `npm run db:seed`               | Seed trainers, queries, followers, and notifications |
+| `npm run db:seed:trainers`      | Seed auth users and trainer profiles                 |
+| `npm run db:seed:search`        | Seed search queries with tag coverage                |
+| `npm run db:seed:search:prod`   | Seed production-approved search queries              |
+| `npm run db:seed:followers`     | Seed follower relationships                          |
+| `npm run db:seed:notifications` | Seed sample in-app notifications                     |
+| `npm run docs:openapi`          | Export OpenAPI JSON for the docs site                |
 
 ## API Routes
 
@@ -197,6 +203,34 @@ Supported query params:
 - `sort`: one of `created_desc`, `created_asc`, `title_asc`, `title_desc`, or `popular`
 - `limit`: 1-50, defaults to 20
 - `offset`: pagination offset, defaults to 0
+
+Pagination responses include a `total` field for building accurate page controls.
+
+## API Response Contract
+
+All error responses follow a consistent shape:
+
+```json
+{
+  "error": "Human-readable message",
+  "errorCode": "snake_case_code",
+  "requestId": "uuid"
+}
+```
+
+`errorCode` is a stable machine-readable identifier (e.g. `unauthorized`, `not_found`, `conflict`, `validation_error`) suitable for client-side branching without parsing text. `requestId` correlates the response to server logs.
+
+All successful mutation responses (non-GET) include a `meta` block:
+
+```json
+{
+  "meta": {
+    "requestId": "uuid"
+  }
+}
+```
+
+All timestamp fields (`createdAt`, `updatedAt`, `followedAt`, `readAt`, etc.) are ISO 8601 `date-time` strings. Date-only fields (e.g. `dateKey`) use the `date` format.
 
 Notes:
 

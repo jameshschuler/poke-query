@@ -14,8 +14,8 @@ export const CommunityQueryItemSchema = Type.Object({
   referenceUrl: Type.Union([Type.String(), Type.Null()]),
   userTags: Type.Array(Type.String()),
   autoTags: Type.Array(Type.String()),
-  createdAt: Type.String(),
-  updatedAt: Type.String(),
+  createdAt: Type.String({ format: "date-time" }),
+  updatedAt: Type.String({ format: "date-time" }),
   creator: Type.Union([
     Type.Object({
       id: Type.String(),
@@ -67,10 +67,13 @@ export const CommunitySchema = {
         offset: Type.Integer(),
         nextOffset: Type.Union([Type.Integer(), Type.Null()]),
         hasMore: Type.Boolean(),
+        total: Type.Integer(),
       }),
     }),
     400: Type.Object({
       error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
     }),
   },
 };

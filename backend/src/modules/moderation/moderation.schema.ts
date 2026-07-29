@@ -35,8 +35,8 @@ const moderationReportItemSchema = Type.Object({
   target: moderationTargetSchema,
   reporter: moderatorActorSchema,
   reviewedBy: moderatorActorSchema,
-  createdAt: Type.String(),
-  updatedAt: Type.String(),
+  createdAt: Type.String({ format: "date-time" }),
+  updatedAt: Type.String({ format: "date-time" }),
 });
 
 const moderationReportActionSchema = Type.Object({
@@ -50,7 +50,7 @@ const moderationReportActionSchema = Type.Object({
   toStatus: Type.Union([ReportStatusSchema, Type.Null()]),
   comment: Type.Union([Type.String(), Type.Null()]),
   actor: moderatorActorSchema,
-  createdAt: Type.String(),
+  createdAt: Type.String({ format: "date-time" }),
 });
 
 export const SubmitReportSchema = {
@@ -66,10 +66,26 @@ export const SubmitReportSchema = {
       id: Type.String(),
       status: ReportStatusSchema,
     }),
-    400: Type.Object({ error: Type.String() }),
-    401: Type.Object({ error: Type.String() }),
-    404: Type.Object({ error: Type.String() }),
-    409: Type.Object({ error: Type.String() }),
+    400: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    401: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    404: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    409: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -77,7 +93,11 @@ export const GetModerationAccessSchema = {
   security: cookieAuthSecurity,
   response: {
     200: Type.Object({ isReviewer: Type.Boolean() }),
-    401: Type.Object({ error: Type.String() }),
+    401: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -100,8 +120,16 @@ export const GetModerationReportsSchema = {
         total: Type.Integer(),
       }),
     }),
-    401: Type.Object({ error: Type.String() }),
-    403: Type.Object({ error: Type.String() }),
+    401: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    403: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -115,9 +143,21 @@ export const GetModerationReportDetailSchema = {
       report: moderationReportItemSchema,
       actions: Type.Array(moderationReportActionSchema),
     }),
-    401: Type.Object({ error: Type.String() }),
-    403: Type.Object({ error: Type.String() }),
-    404: Type.Object({ error: Type.String() }),
+    401: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    403: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    404: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };
 
@@ -134,10 +174,22 @@ export const UpdateModerationReportStatusSchema = {
     200: Type.Object({
       id: Type.String(),
       status: ReportStatusSchema,
-      updatedAt: Type.String(),
+      updatedAt: Type.String({ format: "date-time" }),
     }),
-    401: Type.Object({ error: Type.String() }),
-    403: Type.Object({ error: Type.String() }),
-    404: Type.Object({ error: Type.String() }),
+    401: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    403: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
+    404: Type.Object({
+      error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
+    }),
   },
 };

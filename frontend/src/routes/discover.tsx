@@ -810,7 +810,7 @@ function DiscoverPage() {
                         className="cursor-pointer rounded-xl shadow-sm"
                         aria-label="Log in"
                         onClick={() => {
-                          window.location.href = '/login'
+                          void navigate({ to: '/login' })
                         }}
                       >
                         <UserIcon className="size-4" />

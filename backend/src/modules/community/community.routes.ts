@@ -260,6 +260,11 @@ export async function communityRoutes(fastify: FastifyTypebox) {
       .limit(pageLimit + 1)
       .offset(pageOffset);
 
+    const [totalRow] = await fastify.db
+      .select({ total: sql<number>`COUNT(*)::int` })
+      .from(searchQueries)
+      .where(and(...conditions));
+
     const hasMore = rows.length > pageLimit;
     const pageRows = hasMore ? rows.slice(0, pageLimit) : rows;
     const nextOffset = hasMore ? pageOffset + pageLimit : null;
@@ -273,6 +278,7 @@ export async function communityRoutes(fastify: FastifyTypebox) {
         offset: pageOffset,
         nextOffset,
         hasMore,
+        total: totalRow?.total ?? 0,
       },
     });
   });

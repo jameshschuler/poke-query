@@ -10,6 +10,8 @@ export const LoginSchema = {
     }),
     400: Type.Object({
       error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
     }),
   },
 };
@@ -47,12 +49,18 @@ export const VerifyRouteSchema = {
     }),
     400: Type.Object({
       error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
     }),
     401: Type.Object({
       error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
     }),
     500: Type.Object({
       error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
     }),
   },
 };
@@ -65,6 +73,8 @@ export const LogoutSchema = {
     }),
     401: Type.Object({
       error: Type.String(),
+      errorCode: Type.Optional(Type.String()),
+      requestId: Type.Optional(Type.String()),
     }),
   },
 };

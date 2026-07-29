@@ -313,11 +313,6 @@ function AccountPage() {
       setFormErrors({})
 
       if (updated.profileCompleted && search.redirect) {
-        if (typeof window !== 'undefined') {
-          window.location.assign(search.redirect)
-          return
-        }
-
         void navigate({ to: search.redirect, replace: true })
       }
     },
