@@ -52,7 +52,7 @@ export function ManagedStringCard({
             </p>
 
             <div className="max-h-48 overflow-y-auto rounded-lg border border-border/60 bg-background/60 px-3 py-2">
-              <p className="font-mono text-xs text-muted-foreground [overflow-wrap:anywhere] break-words">
+              <p className="font-mono text-xs text-muted-foreground wrap-anywhere">
                 {query}
               </p>
             </div>

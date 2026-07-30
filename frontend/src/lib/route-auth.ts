@@ -23,6 +23,14 @@ function isRecoverableAuthError(error: unknown): error is ApiRequestError {
   return error instanceof ApiRequestError && error.status === 401
 }
 
+function isTransientPublicRouteError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false
+  }
+
+  return /failed to fetch|networkerror|load failed|fetch/i.test(error.message)
+}
+
 const PROFILE_REDIRECT_STORAGE_KEY = 'poke-query:profile-redirected:'
 
 function getProfileRedirectKey(userId: string) {
@@ -161,7 +169,7 @@ export async function requireGuest() {
 
     return
   } catch (error) {
-    if (isRecoverableAuthError(error)) {
+    if (isRecoverableAuthError(error) || isTransientPublicRouteError(error)) {
       return
     }
 
