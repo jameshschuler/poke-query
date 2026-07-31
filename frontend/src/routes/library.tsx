@@ -21,7 +21,6 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 import { ManagedStringCard } from '#/components/managed-string-card'
-import { TimestampTooltip } from '#/components/timestamp-tooltip'
 import { PageShell } from '#/components/page-shell'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
@@ -533,7 +532,7 @@ function LibraryPage() {
       </PageShell>
 
       <Dialog
-        open={queryToDelete !== null}
+        open={Boolean(queryToDelete)}
         onOpenChange={(nextOpen) => {
           if (!nextOpen) {
             setQueryToDelete(null)

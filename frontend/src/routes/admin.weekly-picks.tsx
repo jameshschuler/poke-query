@@ -228,34 +228,16 @@ function WeeklyPicksAdminPage() {
         title="Weekly Picks"
         subtitle="Admin curation workspace"
         contentHeaderVariant="floating"
-        showSidebar
       >
         <p className="text-sm text-muted-foreground">Loading access...</p>
       </PageShell>
     )
   }
-
-  if (!isAdmin) {
-    return (
-      <PageShell
-        title="Weekly Picks"
-        subtitle="Admin curation workspace"
-        contentHeaderVariant="floating"
-        showSidebar
-      >
-        <p className="text-sm text-muted-foreground">
-          Admin access is required to open this page.
-        </p>
-      </PageShell>
-    )
-  }
-
   return (
     <PageShell
       title="Weekly Picks"
       subtitle="Hand-pick discover highlights and control rotation windows."
       contentHeaderVariant="floating"
-      showSidebar
     >
       <div className="space-y-6">
         <section className="rounded-xl border border-border/70 bg-card p-4">

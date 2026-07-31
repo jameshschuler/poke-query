@@ -710,7 +710,6 @@ function AccountPage() {
         title="Account"
         subtitle="Manage your profile and account controls."
         contentHeaderVariant="floating"
-        showSidebar
       >
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2Icon className="size-4 animate-spin" />
@@ -719,14 +718,12 @@ function AccountPage() {
       </PageShell>
     )
   }
-
-  if (error || !me) {
+  if (error) {
     return (
       <PageShell
         title="Account"
         subtitle="Manage your profile and account controls."
         contentHeaderVariant="floating"
-        showSidebar
       >
         <div className="rounded-xl border border-border/70 bg-card/90 p-6 text-sm text-muted-foreground">
           Account settings could not be loaded.
@@ -734,14 +731,12 @@ function AccountPage() {
       </PageShell>
     )
   }
-
   return (
     <>
       <PageShell
         title="Account"
         subtitle="Update your trainer identity, privacy settings, and account status."
         contentHeaderVariant="floating"
-        showSidebar
       >
         <div className="space-y-8">
           {upgradeSuccessEmail ? (
@@ -1421,10 +1416,7 @@ function AccountPage() {
         </div>
       </PageShell>
 
-      <Dialog
-        open={deactivateDialogOpen}
-        onOpenChange={setDeactivateDialogOpen}
-      >
+      <Dialog onOpenChange={setDeactivateDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Deactivate account?</DialogTitle>

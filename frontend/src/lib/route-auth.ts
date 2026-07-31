@@ -120,15 +120,19 @@ export async function requireAuthenticated(redirectPath: string) {
     const user = await getUser()
 
     if (!user) {
-      await startAnonymousSession()
-      clearCachedUser()
-      const anonymousUser = await getUser()
+      try {
+        await startAnonymousSession()
+        clearCachedUser()
+        const anonymousUser = await getUser()
 
-      if (!anonymousUser) {
-        throw new ApiRequestError(401, { error: 'Invalid Session' }, null)
+        if (anonymousUser) {
+          maybeRedirectToProfile(anonymousUser)
+        }
+      } catch {
+        // If anonymous bootstrap is unavailable, allow the route to render
+        // instead of forcing a login redirect.
       }
 
-      maybeRedirectToProfile(anonymousUser)
       return
     }
 
@@ -145,13 +149,10 @@ export async function requireAuthenticated(redirectPath: string) {
           return
         }
       } catch {
-        // Fall through to login redirect if anonymous sign-in is unavailable.
+        // Fall through and allow anonymous users to continue.
       }
 
-      throw redirect({
-        to: '/login',
-        search: { redirect: safeRedirectPath },
-      })
+      return
     }
 
     throw error

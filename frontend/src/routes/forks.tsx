@@ -20,7 +20,6 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 import { ManagedStringCard } from '#/components/managed-string-card'
-import { OfficialTrainerBadge } from '#/components/official-trainer-badge'
 import { PageShell } from '#/components/page-shell'
 import { TimestampTooltip } from '#/components/timestamp-tooltip'
 import { Badge } from '#/components/ui/badge'
@@ -568,7 +567,7 @@ export function ForksPage() {
       </PageShell>
 
       <Dialog
-        open={forkToDelete !== null}
+        open={Boolean(forkToDelete)}
         onOpenChange={(nextOpen) => {
           if (!nextOpen) {
             setForkToDelete(null)
