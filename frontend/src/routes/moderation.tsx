@@ -129,7 +129,6 @@ function ModerationPage() {
         title="Moderation"
         subtitle="Review and resolve abuse reports."
         contentHeaderVariant="floating"
-        showSidebar
       >
         <p className="text-sm text-muted-foreground">
           Loading moderation access...
@@ -137,14 +136,16 @@ function ModerationPage() {
       </PageShell>
     )
   }
-
-  if (!moderationAccess?.isReviewer) {
+  const isReviewer = moderationAccess?.isReviewer === true
+  if (
+    !isReviewer ||
+    (reportsError instanceof ApiRequestError && reportsError.status === 403)
+  ) {
     return (
       <PageShell
         title="Moderation"
         subtitle="Reviewer workspace"
         contentHeaderVariant="floating"
-        showSidebar
       >
         <p className="text-sm text-muted-foreground">
           Reviewer access is required to open this page.
@@ -152,28 +153,11 @@ function ModerationPage() {
       </PageShell>
     )
   }
-
-  if (reportsError instanceof ApiRequestError && reportsError.status === 403) {
-    return (
-      <PageShell
-        title="Moderation"
-        subtitle="Reviewer workspace"
-        contentHeaderVariant="floating"
-        showSidebar
-      >
-        <p className="text-sm text-muted-foreground">
-          Reviewer access is required to open this page.
-        </p>
-      </PageShell>
-    )
-  }
-
   return (
     <PageShell
       title="Moderation"
       subtitle="Review incoming abuse reports and move them through the queue."
       contentHeaderVariant="floating"
-      showSidebar
     >
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-2">

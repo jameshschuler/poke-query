@@ -202,7 +202,6 @@ function FavoritesPage() {
       title="Favorites"
       subtitle="Quick access to strings you saved across discover, profiles, and detail pages."
       contentHeaderVariant="floating"
-      showSidebar
     >
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {[

@@ -137,7 +137,6 @@ function ForkDetailPage() {
       title={fork?.title ?? 'Fork details'}
       subtitle="Review source, sync status, and current string before editing or publishing."
       contentHeaderVariant="floating"
-      showSidebar
     >
       <div className="space-y-7">
         <nav className="flex items-center gap-2 text-sm text-muted-foreground">

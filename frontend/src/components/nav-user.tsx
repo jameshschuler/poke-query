@@ -99,14 +99,6 @@ export function NavUser({
             <DropdownMenuGroup>
               <DropdownMenuItem
                 onClick={() => {
-                  void navigate({ to: '/updates' })
-                }}
-              >
-                <NewspaperIcon />
-                Updates
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
                   void navigate({ to: '/account' })
                 }}
               >
@@ -136,6 +128,14 @@ export function NavUser({
               >
                 <UsersIcon />
                 Following
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  void navigate({ to: '/updates' })
+                }}
+              >
+                <NewspaperIcon />
+                Updates
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

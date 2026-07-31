@@ -130,7 +130,7 @@ describe('route-auth', () => {
     expect(routeAuth.getMe).toHaveBeenCalledTimes(2)
   })
 
-  it('redirects protected routes to login when session recovery fails', async () => {
+  it('redirects to login when anonymous session recovery fails', async () => {
     const routeAuth = await loadRouteAuth({
       getMeResults: [
         new MockApiRequestError(401, { error: 'Invalid Session' }, null),

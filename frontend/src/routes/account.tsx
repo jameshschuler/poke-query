@@ -710,7 +710,6 @@ function AccountPage() {
         title="Account"
         subtitle="Manage your profile and account controls."
         contentHeaderVariant="floating"
-        showSidebar
       >
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2Icon className="size-4 animate-spin" />
@@ -719,14 +718,12 @@ function AccountPage() {
       </PageShell>
     )
   }
-
-  if (error || !me) {
+  if (error) {
     return (
       <PageShell
         title="Account"
         subtitle="Manage your profile and account controls."
         contentHeaderVariant="floating"
-        showSidebar
       >
         <div className="rounded-xl border border-border/70 bg-card/90 p-6 text-sm text-muted-foreground">
           Account settings could not be loaded.
@@ -734,14 +731,26 @@ function AccountPage() {
       </PageShell>
     )
   }
-
+  if (!me) {
+    return (
+      <PageShell
+        title="Account"
+        subtitle="Manage your profile and account controls."
+        contentHeaderVariant="floating"
+      >
+        <div className="rounded-xl border border-border/70 bg-card/90 p-6 text-sm text-muted-foreground">
+          No active account session was found. Sign in or start an anonymous
+          session from Discover to manage account settings.
+        </div>
+      </PageShell>
+    )
+  }
   return (
     <>
       <PageShell
         title="Account"
         subtitle="Update your trainer identity, privacy settings, and account status."
         contentHeaderVariant="floating"
-        showSidebar
       >
         <div className="space-y-8">
           {upgradeSuccessEmail ? (

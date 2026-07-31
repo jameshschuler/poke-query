@@ -20,7 +20,6 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 import { ManagedStringCard } from '#/components/managed-string-card'
-import { OfficialTrainerBadge } from '#/components/official-trainer-badge'
 import { PageShell } from '#/components/page-shell'
 import { TimestampTooltip } from '#/components/timestamp-tooltip'
 import { Badge } from '#/components/ui/badge'
@@ -229,7 +228,6 @@ export function ForksPage() {
         title="Forks"
         subtitle="Track strings you forked from the community and keep them in sync."
         contentHeaderVariant="floating"
-        showSidebar
       >
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {[
@@ -568,7 +566,7 @@ export function ForksPage() {
       </PageShell>
 
       <Dialog
-        open={forkToDelete !== null}
+        open={Boolean(forkToDelete)}
         onOpenChange={(nextOpen) => {
           if (!nextOpen) {
             setForkToDelete(null)

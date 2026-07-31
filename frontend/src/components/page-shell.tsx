@@ -1,4 +1,3 @@
-import { useAuth } from '#/lib/auth-context'
 import type { ReactNode } from 'react'
 import { Link, useRouterState } from '@tanstack/react-router'
 import {
@@ -26,7 +25,6 @@ type PageShellProps = {
   outsideCardContent?: ReactNode
   headerControls?: ReactNode
   contentHeaderVariant?: 'inline' | 'floating' | 'none'
-  showSidebar?: boolean
 }
 
 export function PageShell({
@@ -37,13 +35,10 @@ export function PageShell({
   outsideCardContent,
   headerControls,
   contentHeaderVariant = 'inline',
-  showSidebar,
 }: PageShellProps) {
-  const { user } = useAuth()
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
-  const shouldShowSidebar = showSidebar ?? Boolean(user)
 
   const mobileNavItems = [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboardIcon },
@@ -85,12 +80,8 @@ export function PageShell({
     <>
       <header className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border/60 bg-zinc-50 px-5 py-4 text-foreground transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 dark:bg-zinc-900 sm:flex-nowrap md:px-8 lg:px-10">
         <div className="flex items-center gap-2">
-          {shouldShowSidebar ? (
-            <SidebarTrigger className="-ml-1 text-foreground" />
-          ) : null}
-          {shouldShowSidebar ? (
-            <Separator orientation="vertical" className="mr-1" />
-          ) : null}
+          <SidebarTrigger className="-ml-1 text-foreground" />
+          <Separator orientation="vertical" className="mr-1" />
           {headerPrefix ? (
             <p className="text-sm font-medium text-muted-foreground md:text-base">
               {headerPrefix}
@@ -139,15 +130,6 @@ export function PageShell({
       </main>
     </>
   )
-
-  if (!shouldShowSidebar) {
-    return (
-      <div className="flex min-h-screen flex-col bg-background">
-        {pageContent}
-        {mobileBottomNav}
-      </div>
-    )
-  }
 
   return (
     <>

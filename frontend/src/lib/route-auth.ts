@@ -104,6 +104,12 @@ async function getUser() {
 
 export async function requireAuthenticated(redirectPath: string) {
   const safeRedirectPath = normalizeRedirectPath(redirectPath) ?? '/dashboard'
+  const redirectToLogin = () => {
+    throw redirect({
+      to: '/login',
+      search: { redirect: safeRedirectPath },
+    })
+  }
 
   const maybeRedirectToProfile = (user: GetMeResponse) => {
     clearProfileRedirectMarkerIfCompleted(user)
@@ -120,16 +126,20 @@ export async function requireAuthenticated(redirectPath: string) {
     const user = await getUser()
 
     if (!user) {
-      await startAnonymousSession()
-      clearCachedUser()
-      const anonymousUser = await getUser()
+      try {
+        await startAnonymousSession()
+        clearCachedUser()
+        const anonymousUser = await getUser()
 
-      if (!anonymousUser) {
-        throw new ApiRequestError(401, { error: 'Invalid Session' }, null)
+        if (anonymousUser) {
+          maybeRedirectToProfile(anonymousUser)
+          return
+        }
+      } catch {
+        redirectToLogin()
       }
 
-      maybeRedirectToProfile(anonymousUser)
-      return
+      redirectToLogin()
     }
 
     maybeRedirectToProfile(user)
@@ -145,13 +155,10 @@ export async function requireAuthenticated(redirectPath: string) {
           return
         }
       } catch {
-        // Fall through to login redirect if anonymous sign-in is unavailable.
+        redirectToLogin()
       }
 
-      throw redirect({
-        to: '/login',
-        search: { redirect: safeRedirectPath },
-      })
+      redirectToLogin()
     }
 
     throw error

@@ -197,7 +197,6 @@ function DashboardRoute() {
       title="Dashboard"
       subtitle="Finish onboarding, create your first search string, and keep an eye on recent activity."
       contentHeaderVariant="floating"
-      showSidebar
     >
       <div className="space-y-4">
         {recentlyUpgradedEmail ? (
@@ -695,9 +694,13 @@ function DashboardRoute() {
     </PageShell>
   )
 }
-
 function relativeTime(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime()
+  const timestamp = new Date(iso).getTime()
+  if (!Number.isFinite(timestamp)) {
+    return 'just now'
+  }
+
+  const diff = Math.max(0, Date.now() - timestamp)
   const minutes = Math.floor(diff / 60_000)
 
   if (minutes < 60) {

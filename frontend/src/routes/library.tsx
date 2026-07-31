@@ -21,7 +21,6 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 import { ManagedStringCard } from '#/components/managed-string-card'
-import { TimestampTooltip } from '#/components/timestamp-tooltip'
 import { PageShell } from '#/components/page-shell'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
@@ -215,7 +214,6 @@ function LibraryPage() {
         title="My Library"
         subtitle="Manage your personal search strings and draft strings."
         contentHeaderVariant="floating"
-        showSidebar
       >
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           {[
@@ -533,7 +531,7 @@ function LibraryPage() {
       </PageShell>
 
       <Dialog
-        open={queryToDelete !== null}
+        open={Boolean(queryToDelete)}
         onOpenChange={(nextOpen) => {
           if (!nextOpen) {
             setQueryToDelete(null)
