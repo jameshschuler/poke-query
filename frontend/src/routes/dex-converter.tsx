@@ -84,7 +84,6 @@ function DexConverterPage() {
       title="Dex String Converter"
       subtitle="Convert standalone Pokemon names and dex numbers inside search strings."
       contentHeaderVariant="floating"
-      showSidebar
       headerControls={
         <Button
           nativeButton={false}

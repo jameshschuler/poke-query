@@ -731,6 +731,20 @@ function AccountPage() {
       </PageShell>
     )
   }
+  if (!me) {
+    return (
+      <PageShell
+        title="Account"
+        subtitle="Manage your profile and account controls."
+        contentHeaderVariant="floating"
+      >
+        <div className="rounded-xl border border-border/70 bg-card/90 p-6 text-sm text-muted-foreground">
+          No active account session was found. Sign in or start an anonymous
+          session from Discover to manage account settings.
+        </div>
+      </PageShell>
+    )
+  }
   return (
     <>
       <PageShell
@@ -1416,7 +1430,10 @@ function AccountPage() {
         </div>
       </PageShell>
 
-      <Dialog onOpenChange={setDeactivateDialogOpen}>
+      <Dialog
+        open={deactivateDialogOpen}
+        onOpenChange={setDeactivateDialogOpen}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Deactivate account?</DialogTitle>

@@ -104,6 +104,12 @@ async function getUser() {
 
 export async function requireAuthenticated(redirectPath: string) {
   const safeRedirectPath = normalizeRedirectPath(redirectPath) ?? '/dashboard'
+  const redirectToLogin = () => {
+    throw redirect({
+      to: '/login',
+      search: { redirect: safeRedirectPath },
+    })
+  }
 
   const maybeRedirectToProfile = (user: GetMeResponse) => {
     clearProfileRedirectMarkerIfCompleted(user)
@@ -127,13 +133,13 @@ export async function requireAuthenticated(redirectPath: string) {
 
         if (anonymousUser) {
           maybeRedirectToProfile(anonymousUser)
+          return
         }
       } catch {
-        // If anonymous bootstrap is unavailable, allow the route to render
-        // instead of forcing a login redirect.
+        redirectToLogin()
       }
 
-      return
+      redirectToLogin()
     }
 
     maybeRedirectToProfile(user)
@@ -149,10 +155,10 @@ export async function requireAuthenticated(redirectPath: string) {
           return
         }
       } catch {
-        // Fall through and allow anonymous users to continue.
+        redirectToLogin()
       }
 
-      return
+      redirectToLogin()
     }
 
     throw error

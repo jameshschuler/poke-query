@@ -136,7 +136,11 @@ function ModerationPage() {
       </PageShell>
     )
   }
-  if (reportsError instanceof ApiRequestError && reportsError.status === 403) {
+  const isReviewer = moderationAccess?.isReviewer === true
+  if (
+    !isReviewer ||
+    (reportsError instanceof ApiRequestError && reportsError.status === 403)
+  ) {
     return (
       <PageShell
         title="Moderation"

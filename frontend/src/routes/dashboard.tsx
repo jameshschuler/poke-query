@@ -695,6 +695,12 @@ function DashboardRoute() {
   )
 }
 function relativeTime(iso: string): string {
+  const timestamp = new Date(iso).getTime()
+  if (!Number.isFinite(timestamp)) {
+    return 'just now'
+  }
+
+  const diff = Math.max(0, Date.now() - timestamp)
   const minutes = Math.floor(diff / 60_000)
 
   if (minutes < 60) {

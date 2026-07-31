@@ -130,7 +130,7 @@ describe('route-auth', () => {
     expect(routeAuth.getMe).toHaveBeenCalledTimes(2)
   })
 
-  it('allows protected routes to render when anonymous session recovery fails', async () => {
+  it('redirects to login when anonymous session recovery fails', async () => {
     const routeAuth = await loadRouteAuth({
       getMeResults: [
         new MockApiRequestError(401, { error: 'Invalid Session' }, null),
@@ -139,9 +139,12 @@ describe('route-auth', () => {
         Promise.reject(new Error('anonymous disabled')),
     })
 
-    await expect(
-      routeAuth.requireAuthenticated('/dashboard'),
-    ).resolves.toBeUndefined()
+    await expect(routeAuth.requireAuthenticated('/dashboard')).rejects.toEqual({
+      __redirect: {
+        to: '/login',
+        search: { redirect: '/dashboard' },
+      },
+    })
   })
 
   it('redirects incomplete email users to account once before other protected pages', async () => {

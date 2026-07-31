@@ -133,7 +133,6 @@ function NewLibraryQueryPage() {
       title="New String"
       subtitle="Draft it privately or publish it to the community."
       contentHeaderVariant="floating"
-      showSidebar
     >
       <div className="flex flex-col gap-8">
         <div className="flex items-start gap-4">

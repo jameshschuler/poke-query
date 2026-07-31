@@ -228,7 +228,6 @@ export function ForksPage() {
         title="Forks"
         subtitle="Track strings you forked from the community and keep them in sync."
         contentHeaderVariant="floating"
-        showSidebar
       >
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {[
