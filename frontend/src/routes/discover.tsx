@@ -657,6 +657,7 @@ function DiscoverPage() {
         headerPrefix={user ? undefined : 'PokeQuery'}
         title="Discover"
         subtitle="Explore weekly picks, featured quality strings, and trusted all-time favorites."
+        showSidebar
         contentHeaderVariant="floating"
         outsideCardContent={
           pagedRailSections.some((section) => section.items.length > 0) ? (
