@@ -1,5 +1,13 @@
 import { useAuth } from '#/lib/auth-context'
 import type { ReactNode } from 'react'
+import { Link, useRouterState } from '@tanstack/react-router'
+import {
+  BookOpenIcon,
+  GitForkIcon,
+  HeartIcon,
+  LayoutDashboardIcon,
+  SearchIcon,
+} from 'lucide-react'
 
 import { AppSidebar } from '#/components/app-sidebar'
 import { ThemeToggle } from '#/components/theme-toggle'
@@ -32,7 +40,46 @@ export function PageShell({
   showSidebar,
 }: PageShellProps) {
   const { user } = useAuth()
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  })
   const shouldShowSidebar = showSidebar ?? Boolean(user)
+
+  const mobileNavItems = [
+    { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboardIcon },
+    { to: '/discover', label: 'Discover', icon: SearchIcon },
+    { to: '/library', label: 'Library', icon: BookOpenIcon },
+    { to: '/forks', label: 'Forks', icon: GitForkIcon },
+    { to: '/favorites', label: 'Favorites', icon: HeartIcon },
+  ]
+
+  const mobileBottomNav = (
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-background/95 px-3 py-2 backdrop-blur md:hidden">
+      <ul className="mx-auto grid max-w-md grid-cols-5 gap-1">
+        {mobileNavItems.map((item) => {
+          const isActive =
+            pathname === item.to ||
+            (item.to !== '/discover' && pathname.startsWith(`${item.to}/`))
+
+          return (
+            <li key={item.to}>
+              <Link
+                to={item.to}
+                className={`flex flex-col items-center gap-1 rounded-lg px-2 py-1 text-[11px] transition-colors ${
+                  isActive
+                    ? 'bg-muted text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <item.icon className="size-4" />
+                <span>{item.label}</span>
+              </Link>
+            </li>
+          )
+        })}
+      </ul>
+    </nav>
+  )
 
   const pageContent = (
     <>
@@ -67,7 +114,7 @@ export function PageShell({
         )}
       </header>
 
-      <main className="flex flex-1 flex-col bg-zinc-50 p-5 dark:bg-zinc-900 md:p-8 lg:p-10">
+      <main className="flex flex-1 flex-col bg-zinc-50 p-5 pb-24 dark:bg-zinc-900 md:p-8 md:pb-8 lg:p-10">
         {contentHeaderVariant === 'floating' ? (
           <div className="mb-6 rounded-2xl border border-border/70 bg-card/95 p-4 text-foreground shadow-sm backdrop-blur dark:bg-card">
             <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
@@ -97,14 +144,18 @@ export function PageShell({
     return (
       <div className="flex min-h-screen flex-col bg-background">
         {pageContent}
+        {mobileBottomNav}
       </div>
     )
   }
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>{pageContent}</SidebarInset>
-    </SidebarProvider>
+    <>
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>{pageContent}</SidebarInset>
+      </SidebarProvider>
+      {mobileBottomNav}
+    </>
   )
 }

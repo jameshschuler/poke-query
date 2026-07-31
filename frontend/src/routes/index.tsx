@@ -1,6 +1,13 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { useAuth } from '#/lib/auth-context'
-import { BookOpenTextIcon, CompassIcon } from 'lucide-react'
+import {
+  BookOpenTextIcon,
+  CompassIcon,
+  ExternalLinkIcon,
+  LockIcon,
+  NewspaperIcon,
+  ShieldCheckIcon,
+} from 'lucide-react'
 
 import { Button } from '#/components/ui/button'
 import { requireGuest } from '#/lib/route-auth'
@@ -57,12 +64,6 @@ function LandingPage() {
                 About
               </a>
               <a
-                href="/updates"
-                className="rounded-full border border-sky-300/50 bg-sky-100/60 px-2 py-1 font-medium text-sky-950 transition-colors hover:bg-sky-100 dark:border-sky-700/50 dark:bg-sky-950/30 dark:text-sky-100 sm:px-3"
-              >
-                Updates
-              </a>
-              <a
                 href="/login"
                 className="rounded-full border border-[#f59e0b]/45 bg-[#f59e0b]/18 px-2 py-1 font-medium text-foreground transition-colors hover:bg-[#f59e0b]/28 sm:px-3"
               >
@@ -73,14 +74,6 @@ function LandingPage() {
 
           <div className="mt-6 flex flex-col gap-6 sm:mt-12 sm:gap-10 lg:grid lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
             <div className="flex flex-col lg:pr-6">
-              <p className="mb-3 inline-flex w-fit items-center gap-2 rounded-full border border-[#22c55e]/45 bg-[#22c55e]/12 px-2 py-0.5 text-xs font-semibold text-foreground sm:mb-5 sm:px-3 sm:py-1">
-                <CompassIcon className="size-3 sm:size-3.5" />
-                <span className="hidden sm:inline">
-                  No account needed — start sharing right away
-                </span>
-                <span className="sm:hidden">No account needed</span>
-              </p>
-
               <h1 className="max-w-4xl text-2xl font-semibold leading-snug tracking-tight sm:text-3xl lg:text-6xl">
                 Find, save, and share
                 <span className="bg-linear-to-r from-[#38bdf8] via-[#22c55e] to-[#f59e0b] bg-clip-text text-transparent">
@@ -101,18 +94,14 @@ function LandingPage() {
               </p>
 
               <div className="mt-5 flex flex-wrap items-center gap-2 sm:mt-7 sm:gap-3">
-                <a href="/dashboard">
-                  <Button className="rounded-full border border-cyan-300/70 bg-cyan-500 px-4 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(6,182,212,0.35)] transition hover:bg-cyan-400 sm:px-6">
-                    <CompassIcon className="size-3.5 sm:size-4" />
-                    Open App
-                  </Button>
-                </a>
-                <a
-                  href="/discover"
-                  className="px-2 text-sm text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground"
+                <Button
+                  nativeButton={false}
+                  className="rounded-full border border-cyan-300/70 bg-cyan-500 px-4 text-sm font-semibold text-white transition hover:bg-cyan-400 sm:px-6"
+                  render={<Link to="/discover" />}
                 >
+                  <CompassIcon className="size-3.5 sm:size-4" />
                   Get Started
-                </a>
+                </Button>
               </div>
             </div>
 
@@ -212,19 +201,37 @@ function LandingPage() {
               rel="noreferrer"
               className="rounded-full border border-border/70 bg-background/70 px-2 py-0.5 text-muted-foreground transition-colors hover:text-foreground sm:px-3 sm:py-1"
             >
-              GitHub
+              <span className="inline-flex items-center gap-1.5">
+                <ExternalLinkIcon className="size-3 sm:size-3.5" />
+                <span>GitHub</span>
+              </span>
+            </a>
+            <a
+              href="/updates"
+              className="rounded-full border border-border/70 bg-background/70 px-2 py-0.5 text-muted-foreground transition-colors hover:text-foreground sm:px-3 sm:py-1"
+            >
+              <span className="inline-flex items-center gap-1.5">
+                <NewspaperIcon className="size-3 sm:size-3.5" />
+                <span>Updates</span>
+              </span>
             </a>
             <a
               href="/privacy"
               className="rounded-full border border-border/70 bg-background/70 px-2 py-0.5 text-muted-foreground transition-colors hover:text-foreground sm:px-3 sm:py-1"
             >
-              Privacy
+              <span className="inline-flex items-center gap-1.5">
+                <LockIcon className="size-3 sm:size-3.5" />
+                <span>Privacy</span>
+              </span>
             </a>
             <a
               href="/terms"
               className="rounded-full border border-border/70 bg-background/70 px-2 py-0.5 text-muted-foreground transition-colors hover:text-foreground sm:px-3 sm:py-1"
             >
-              Terms
+              <span className="inline-flex items-center gap-1.5">
+                <ShieldCheckIcon className="size-3 sm:size-3.5" />
+                <span>Terms</span>
+              </span>
             </a>
           </div>
         </section>

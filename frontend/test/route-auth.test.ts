@@ -201,6 +201,14 @@ describe('route-auth', () => {
     await expect(routeAuth.requireGuest()).resolves.toBeUndefined()
   })
 
+  it('allows guest routes when the backend auth check is temporarily unavailable', async () => {
+    const routeAuth = await loadRouteAuth({
+      getMeResults: [new TypeError('Failed to fetch')],
+    })
+
+    await expect(routeAuth.requireGuest()).resolves.toBeUndefined()
+  })
+
   it('normalizes safe in-app redirect paths', async () => {
     const routeAuth = await loadRouteAuth()
 
