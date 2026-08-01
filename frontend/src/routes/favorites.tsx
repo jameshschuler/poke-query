@@ -74,7 +74,9 @@ export const Route = createFileRoute('/favorites')({
         : undefined,
   }),
   beforeLoad: async () => {
-    await requireAuthenticated('/favorites')
+    await requireAuthenticated('/favorites', {
+      unauthenticatedBehavior: 'allow',
+    })
   },
   component: FavoritesPage,
 })

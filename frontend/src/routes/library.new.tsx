@@ -22,7 +22,9 @@ type VisibilityMode = 'public' | 'private'
 export const Route = createFileRoute('/library/new')({
   ssr: false,
   beforeLoad: async () => {
-    await requireAuthenticated('/library/new')
+    await requireAuthenticated('/library/new', {
+      unauthenticatedBehavior: 'allow',
+    })
   },
   component: NewLibraryQueryPage,
 })

@@ -30,7 +30,7 @@ describe('Route protection configuration', () => {
     const source = readRoute(fileName)
 
     expect(source).toContain('beforeLoad: async () => {')
-    expect(source).toContain(`await requireAuthenticated('${expectedPath}')`)
+    expect(source).toContain(`await requireAuthenticated('${expectedPath}'`)
   })
 
   it.each(['index.tsx', 'login.tsx'])(

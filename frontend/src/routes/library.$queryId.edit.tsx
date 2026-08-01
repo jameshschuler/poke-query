@@ -17,7 +17,9 @@ type VisibilityMode = 'public' | 'private'
 export const Route = createFileRoute('/library/$queryId/edit')({
   ssr: false,
   beforeLoad: async () => {
-    await requireAuthenticated('/library')
+    await requireAuthenticated('/library', {
+      unauthenticatedBehavior: 'allow',
+    })
   },
   component: EditLibraryQueryPage,
 })
