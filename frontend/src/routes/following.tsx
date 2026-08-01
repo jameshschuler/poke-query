@@ -17,7 +17,9 @@ import { requireAuthenticated } from '#/lib/route-auth'
 export const Route = createFileRoute('/following')({
   ssr: false,
   beforeLoad: async () => {
-    await requireAuthenticated('/following')
+    await requireAuthenticated('/following', {
+      unauthenticatedBehavior: 'allow',
+    })
   },
   component: FollowingPage,
 })

@@ -147,6 +147,22 @@ describe('route-auth', () => {
     })
   })
 
+  it('allows protected routes to render when allow mode is enabled and anonymous recovery fails', async () => {
+    const routeAuth = await loadRouteAuth({
+      getMeResults: [
+        new MockApiRequestError(401, { error: 'Invalid Session' }, null),
+      ],
+      startAnonymousSessionImpl: () =>
+        Promise.reject(new Error('anonymous disabled')),
+    })
+
+    await expect(
+      routeAuth.requireAuthenticated('/dashboard', {
+        unauthenticatedBehavior: 'allow',
+      }),
+    ).resolves.toBeUndefined()
+  })
+
   it('redirects incomplete email users to account once before other protected pages', async () => {
     const upgradingUser = {
       ...baseUser,

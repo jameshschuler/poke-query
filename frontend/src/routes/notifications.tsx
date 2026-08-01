@@ -21,7 +21,9 @@ type NotificationFilter = 'all' | 'unread' | 'high-priority'
 export const Route = createFileRoute('/notifications')({
   ssr: false,
   beforeLoad: async () => {
-    await requireAuthenticated('/notifications')
+    await requireAuthenticated('/notifications', {
+      unauthenticatedBehavior: 'allow',
+    })
   },
   component: NotificationsPage,
 })

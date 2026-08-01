@@ -24,7 +24,9 @@ import { requireAuthenticated } from '#/lib/route-auth'
 export const Route = createFileRoute('/forks/$queryId')({
   ssr: false,
   beforeLoad: async () => {
-    await requireAuthenticated('/forks')
+    await requireAuthenticated('/forks', {
+      unauthenticatedBehavior: 'allow',
+    })
   },
   component: ForkDetailPage,
 })

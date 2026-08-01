@@ -102,13 +102,28 @@ async function getUser() {
   return user
 }
 
-export async function requireAuthenticated(redirectPath: string) {
+type RequireAuthenticatedOptions = {
+  unauthenticatedBehavior?: 'redirect' | 'allow'
+}
+
+export async function requireAuthenticated(
+  redirectPath: string,
+  options?: RequireAuthenticatedOptions,
+) {
   const safeRedirectPath = normalizeRedirectPath(redirectPath) ?? '/dashboard'
+  const unauthenticatedBehavior = options?.unauthenticatedBehavior ?? 'redirect'
   const redirectToLogin = () => {
     throw redirect({
       to: '/login',
       search: { redirect: safeRedirectPath },
     })
+  }
+  const handleUnauthenticated = () => {
+    if (unauthenticatedBehavior === 'allow') {
+      return
+    }
+
+    redirectToLogin()
   }
 
   const maybeRedirectToProfile = (user: GetMeResponse) => {
@@ -136,10 +151,12 @@ export async function requireAuthenticated(redirectPath: string) {
           return
         }
       } catch {
-        redirectToLogin()
+        handleUnauthenticated()
+        return
       }
 
-      redirectToLogin()
+      handleUnauthenticated()
+      return
     }
 
     maybeRedirectToProfile(user)
@@ -155,10 +172,12 @@ export async function requireAuthenticated(redirectPath: string) {
           return
         }
       } catch {
-        redirectToLogin()
+        handleUnauthenticated()
+        return
       }
 
-      redirectToLogin()
+      handleUnauthenticated()
+      return
     }
 
     throw error

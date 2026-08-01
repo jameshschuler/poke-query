@@ -91,7 +91,9 @@ function formatSyncLabel(syncStatus: ManagedForkQuery['syncStatus']) {
 export const Route = createFileRoute('/forks')({
   ssr: false,
   beforeLoad: async () => {
-    await requireAuthenticated('/forks')
+    await requireAuthenticated('/forks', {
+      unauthenticatedBehavior: 'allow',
+    })
   },
   component: ForksPage,
 })

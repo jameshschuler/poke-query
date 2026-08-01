@@ -40,7 +40,9 @@ const ACCOUNT_UPGRADE_SUCCESS_STORAGE_KEY =
 export const Route = createFileRoute('/dashboard')({
   ssr: false,
   beforeLoad: async () => {
-    await requireAuthenticated('/dashboard')
+    await requireAuthenticated('/dashboard', {
+      unauthenticatedBehavior: 'allow',
+    })
   },
   component: DashboardRoute,
 })

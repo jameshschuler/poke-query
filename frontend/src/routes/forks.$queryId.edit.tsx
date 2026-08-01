@@ -18,7 +18,9 @@ type VisibilityMode = 'public' | 'private'
 export const Route = createFileRoute('/forks/$queryId/edit')({
   ssr: false,
   beforeLoad: async () => {
-    await requireAuthenticated('/forks')
+    await requireAuthenticated('/forks', {
+      unauthenticatedBehavior: 'allow',
+    })
   },
   component: EditForkPage,
 })

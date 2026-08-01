@@ -57,7 +57,9 @@ import { formatCompactNumber, formatFullNumber } from '#/lib/utils'
 export const Route = createFileRoute('/library')({
   ssr: false,
   beforeLoad: async () => {
-    await requireAuthenticated('/library')
+    await requireAuthenticated('/library', {
+      unauthenticatedBehavior: 'allow',
+    })
   },
   component: LibraryPage,
 })

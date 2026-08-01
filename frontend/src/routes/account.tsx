@@ -124,7 +124,9 @@ export const Route = createFileRoute('/account')({
         : undefined,
   }),
   beforeLoad: async () => {
-    await requireAuthenticated('/account')
+    await requireAuthenticated('/account', {
+      unauthenticatedBehavior: 'allow',
+    })
   },
   component: AccountPage,
 })
