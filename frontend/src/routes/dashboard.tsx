@@ -40,7 +40,9 @@ const ACCOUNT_UPGRADE_SUCCESS_STORAGE_KEY =
 export const Route = createFileRoute('/dashboard')({
   ssr: false,
   beforeLoad: async () => {
-    await requireAuthenticated('/dashboard')
+    await requireAuthenticated('/dashboard', {
+      unauthenticatedBehavior: 'allow',
+    })
   },
   component: DashboardRoute,
 })
@@ -60,6 +62,7 @@ function DashboardRoute() {
   } = useQuery({
     queryKey: ['dashboard', 'me'],
     queryFn: getMe,
+    enabled: Boolean(user),
   })
 
   const {
@@ -69,6 +72,7 @@ function DashboardRoute() {
   } = useQuery({
     queryKey: ['dashboard', 'queries'],
     queryFn: getMyQueries,
+    enabled: Boolean(user),
   })
 
   const {
@@ -78,6 +82,7 @@ function DashboardRoute() {
   } = useQuery({
     queryKey: ['dashboard', 'forks'],
     queryFn: getMyForks,
+    enabled: Boolean(user),
   })
 
   const {
@@ -87,6 +92,7 @@ function DashboardRoute() {
   } = useQuery({
     queryKey: ['dashboard', 'activity'],
     queryFn: () => getNotifications({ limit: 5, offset: 0 }),
+    enabled: Boolean(user),
     staleTime: 30_000,
   })
 
@@ -185,8 +191,47 @@ function DashboardRoute() {
   }
 
   if (isLoading || !user) {
-    return null
+    if (isLoading) {
+      return null
+    }
+
+    return (
+      <PageShell
+        title="Dashboard"
+        subtitle="Finish onboarding, create your first search string, and keep an eye on recent activity."
+        contentHeaderVariant="floating"
+      >
+        <div className="rounded-2xl border border-border/70 bg-card/95 p-6 text-sm text-muted-foreground shadow-sm">
+          Could not restore your session right now. Continue in Discover or try
+          signing in again.
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button
+              nativeButton={false}
+              className="rounded-xl"
+              render={<Link to="/discover" />}
+            >
+              Open Discover
+            </Button>
+            <Button
+              nativeButton={false}
+              variant="outline"
+              className="rounded-xl"
+              render={<Link to="/login" search={{ redirect: '/dashboard' }} />}
+            >
+              Sign in
+            </Button>
+          </div>
+        </div>
+      </PageShell>
+    )
   }
+
+  const hasDashboardError = [
+    meError,
+    queriesError,
+    forksError,
+    activityError,
+  ].some((error) => Boolean(error) && !isTransientDashboardError(error))
 
   const isBusy =
     isMeLoading || isQueriesLoading || isForksLoading || isActivityLoading
@@ -582,7 +627,7 @@ function DashboardRoute() {
                   <Loader2Icon className="mr-2 inline-block size-4 animate-spin" />
                   Loading dashboard data...
                 </div>
-              ) : meError || queriesError || forksError || activityError ? (
+              ) : hasDashboardError ? (
                 <div className="rounded-2xl border border-border/70 bg-background/60 p-6 text-sm text-muted-foreground">
                   The dashboard could not load completely right now.
                 </div>
@@ -694,6 +739,21 @@ function DashboardRoute() {
     </PageShell>
   )
 }
+
+function isTransientDashboardError(error: unknown): boolean {
+  if (error instanceof ApiRequestError && error.status === 401) {
+    return true
+  }
+
+  if (!(error instanceof Error)) {
+    return false
+  }
+
+  return /abort|aborted|aborterror|canceled|cancelled|networkerror/i.test(
+    `${error.name} ${error.message}`,
+  )
+}
+
 function relativeTime(iso: string): string {
   const timestamp = new Date(iso).getTime()
   if (!Number.isFinite(timestamp)) {
