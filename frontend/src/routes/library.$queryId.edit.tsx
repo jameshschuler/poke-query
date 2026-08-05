@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { PageShell } from '#/components/page-shell'
 import { MAX_QUERY_TAGS, QueryTagsField } from '#/components/query-tags-field'
 import { Button } from '#/components/ui/button'
+import { useAuth } from '#/lib/auth-context'
 import { findBlockedTerm } from '#/lib/content-policy'
 import { getMyQueries, updateQuery } from '#/lib/poke-query-api'
 import { getMutationErrorMessage } from '#/lib/mutation-toast'
@@ -17,14 +18,13 @@ type VisibilityMode = 'public' | 'private'
 export const Route = createFileRoute('/library/$queryId/edit')({
   ssr: false,
   beforeLoad: async () => {
-    await requireAuthenticated('/library', {
-      unauthenticatedBehavior: 'allow',
-    })
+    await requireAuthenticated('/library')
   },
   component: EditLibraryQueryPage,
 })
 
 function EditLibraryQueryPage() {
+  const { user } = useAuth()
   const { queryId } = Route.useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -43,6 +43,7 @@ function EditLibraryQueryPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['my-queries'],
     queryFn: getMyQueries,
+    enabled: Boolean(user),
   })
 
   const currentQuery = data?.queries.find((item) => item.id === queryId) ?? null

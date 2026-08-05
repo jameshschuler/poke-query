@@ -102,28 +102,13 @@ async function getUser() {
   return user
 }
 
-type RequireAuthenticatedOptions = {
-  unauthenticatedBehavior?: 'redirect' | 'allow'
-}
-
-export async function requireAuthenticated(
-  redirectPath: string,
-  options?: RequireAuthenticatedOptions,
-) {
+export async function requireAuthenticated(redirectPath: string) {
   const safeRedirectPath = normalizeRedirectPath(redirectPath) ?? '/dashboard'
-  const unauthenticatedBehavior = options?.unauthenticatedBehavior ?? 'redirect'
   const redirectToLogin = () => {
     throw redirect({
       to: '/login',
       search: { redirect: safeRedirectPath },
     })
-  }
-  const handleUnauthenticated = () => {
-    if (unauthenticatedBehavior === 'allow') {
-      return
-    }
-
-    redirectToLogin()
   }
 
   const maybeRedirectToProfile = (user: GetMeResponse) => {
@@ -137,12 +122,24 @@ export async function requireAuthenticated(
     }
   }
 
+  let bootstrapAttempted = false
+
+  // Bootstrap anonymous auth before /me to reduce initial 401 churn.
+  try {
+    await startAnonymousSession()
+    bootstrapAttempted = true
+  } catch {
+    // If bootstrap fails, fall through to existing /me + fallback flow.
+  }
+
   try {
     const user = await getUser()
 
     if (!user) {
       try {
-        await startAnonymousSession()
+        if (!bootstrapAttempted) {
+          await startAnonymousSession()
+        }
         clearCachedUser()
         const anonymousUser = await getUser()
 
@@ -151,11 +148,11 @@ export async function requireAuthenticated(
           return
         }
       } catch {
-        handleUnauthenticated()
+        redirectToLogin()
         return
       }
 
-      handleUnauthenticated()
+      redirectToLogin()
       return
     }
 
@@ -172,11 +169,11 @@ export async function requireAuthenticated(
           return
         }
       } catch {
-        handleUnauthenticated()
+        redirectToLogin()
         return
       }
 
-      handleUnauthenticated()
+      redirectToLogin()
       return
     }
 

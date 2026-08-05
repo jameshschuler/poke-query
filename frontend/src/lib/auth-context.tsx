@@ -9,6 +9,9 @@ type VerifyOtpPayload = Parameters<typeof supabase.auth.verifyOtp>[0]
 type UpdateUserPayload = Parameters<typeof supabase.auth.updateUser>[0]
 
 let anonymousSessionPromise: Promise<void> | null = null
+let lastAnonymousSessionFailureAt = 0
+let lastAnonymousSessionFailure: unknown = null
+const ANONYMOUS_RETRY_COOLDOWN_MS = 20_000
 
 export async function startAnonymousSession(): Promise<void> {
   const {
@@ -23,11 +26,24 @@ export async function startAnonymousSession(): Promise<void> {
     return anonymousSessionPromise
   }
 
+  const now = Date.now()
+  if (
+    lastAnonymousSessionFailure &&
+    now - lastAnonymousSessionFailureAt < ANONYMOUS_RETRY_COOLDOWN_MS
+  ) {
+    throw lastAnonymousSessionFailure
+  }
+
   anonymousSessionPromise = (async () => {
     const { error } = await supabase.auth.signInAnonymously()
     if (error) {
+      lastAnonymousSessionFailureAt = Date.now()
+      lastAnonymousSessionFailure = error
       throw error
     }
+
+    lastAnonymousSessionFailureAt = 0
+    lastAnonymousSessionFailure = null
   })()
 
   try {
@@ -59,9 +75,23 @@ export function AuthProvider({ children }: PropsWithChildren) {
     let isMounted = true
 
     const init = async () => {
-      const {
+      let {
         data: { user: currentUser },
       } = await supabase.auth.getUser()
+
+      // Bootstrap an anonymous session on app load so protected API calls
+      // have a usable auth context without requiring explicit route recovery.
+      if (!currentUser) {
+        try {
+          await startAnonymousSession()
+          const {
+            data: { user: anonymousUser },
+          } = await supabase.auth.getUser()
+          currentUser = anonymousUser
+        } catch {
+          // Allow app rendering to continue; route-level guards decide fallback.
+        }
+      }
 
       if (isMounted) {
         setUser(currentUser)

@@ -10,6 +10,7 @@ import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { PageShell } from '#/components/page-shell'
 import { OfficialTrainerBadge } from '#/components/official-trainer-badge'
+import { useAuth } from '#/lib/auth-context'
 import { getMeFollowing, unfollowTrainer } from '#/lib/poke-query-api'
 import { getMutationErrorMessage } from '#/lib/mutation-toast'
 import { requireAuthenticated } from '#/lib/route-auth'
@@ -17,9 +18,7 @@ import { requireAuthenticated } from '#/lib/route-auth'
 export const Route = createFileRoute('/following')({
   ssr: false,
   beforeLoad: async () => {
-    await requireAuthenticated('/following', {
-      unauthenticatedBehavior: 'allow',
-    })
+    await requireAuthenticated('/following')
   },
   component: FollowingPage,
 })
@@ -41,12 +40,14 @@ function getAvatarFallback(name: string) {
 }
 
 function FollowingPage() {
+  const { user } = useAuth()
   const queryClient = useQueryClient()
   const [searchText, setSearchText] = useState('')
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['me-following'],
     queryFn: getMeFollowing,
+    enabled: Boolean(user),
   })
 
   const unfollowMutation = useMutation({

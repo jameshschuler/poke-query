@@ -1,3 +1,5 @@
+import { supabase } from '#/lib/supabase-client'
+
 export type TrainerFollower = {
   id: string
   username: string
@@ -147,64 +149,14 @@ function attachSuccessMeta<T>(
   } as ApiSuccessResponse<T>
 }
 
-function findAccessToken(value: unknown): string | null {
-  if (!value) {
-    return null
-  }
-
-  if (typeof value === 'object') {
-    if (
-      'access_token' in value &&
-      typeof (value as { access_token?: unknown }).access_token === 'string'
-    ) {
-      return (value as { access_token: string }).access_token
-    }
-
-    if (Array.isArray(value)) {
-      for (const entry of value) {
-        const token = findAccessToken(entry)
-        if (token) {
-          return token
-        }
-      }
-      return null
-    }
-
-    for (const entry of Object.values(value as Record<string, unknown>)) {
-      const token = findAccessToken(entry)
-      if (token) {
-        return token
-      }
-    }
-  }
-
-  return null
-}
-
-function getSupabaseAccessTokenFromStorage(): string | null {
-  if (typeof window === 'undefined') {
-    return null
-  }
-
+async function getSupabaseAccessToken(): Promise<string | null> {
   try {
-    for (let i = 0; i < window.localStorage.length; i += 1) {
-      const key = window.localStorage.key(i)
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
 
-      if (!key || !key.startsWith('sb-') || !key.endsWith('-auth-token')) {
-        continue
-      }
-
-      const raw = window.localStorage.getItem(key)
-      if (!raw) {
-        continue
-      }
-
-      const parsed = JSON.parse(raw) as unknown
-      const token = findAccessToken(parsed)
-
-      if (token) {
-        return token
-      }
+    if (session?.access_token) {
+      return session.access_token
     }
   } catch {
     return null
@@ -243,7 +195,7 @@ async function apiRequest<T>(
     requestHeaders.set('content-type', 'application/json')
   }
 
-  const accessToken = getSupabaseAccessTokenFromStorage()
+  const accessToken = await getSupabaseAccessToken()
   if (accessToken && !requestHeaders.has('authorization')) {
     requestHeaders.set('authorization', `Bearer ${accessToken}`)
   }

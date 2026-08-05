@@ -13,6 +13,7 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
 } from '#/lib/poke-query-api'
+import { useAuth } from '#/lib/auth-context'
 import { getMutationErrorMessage } from '#/lib/mutation-toast'
 import { requireAuthenticated } from '#/lib/route-auth'
 
@@ -21,14 +22,13 @@ type NotificationFilter = 'all' | 'unread' | 'high-priority'
 export const Route = createFileRoute('/notifications')({
   ssr: false,
   beforeLoad: async () => {
-    await requireAuthenticated('/notifications', {
-      unauthenticatedBehavior: 'allow',
-    })
+    await requireAuthenticated('/notifications')
   },
   component: NotificationsPage,
 })
 
 function NotificationsPage() {
+  const { user } = useAuth()
   const queryClient = useQueryClient()
   const [filter, setFilter] = useState<NotificationFilter>('all')
 
@@ -48,6 +48,7 @@ function NotificationsPage() {
   } = useQuery({
     queryKey: ['notifications', 'list', notificationQueryParams],
     queryFn: () => getNotifications(notificationQueryParams),
+    enabled: Boolean(user),
   })
 
   const { data: unreadCountData } = useUnreadNotificationCount()

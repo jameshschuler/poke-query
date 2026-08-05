@@ -47,6 +47,7 @@ import {
 } from '#/lib/poke-query-api'
 import { getMutationErrorMessage } from '#/lib/mutation-toast'
 import type { ManagedForkQuery } from '#/lib/poke-query-api'
+import { useAuth } from '#/lib/auth-context'
 import { useUndoableQueryDelete } from '#/hooks/use-undoable-query-delete'
 import { useForksViewState } from '#/hooks/use-forks-view-state'
 import type {
@@ -91,14 +92,13 @@ function formatSyncLabel(syncStatus: ManagedForkQuery['syncStatus']) {
 export const Route = createFileRoute('/forks')({
   ssr: false,
   beforeLoad: async () => {
-    await requireAuthenticated('/forks', {
-      unauthenticatedBehavior: 'allow',
-    })
+    await requireAuthenticated('/forks')
   },
   component: ForksPage,
 })
 
 export function ForksPage() {
+  const { user } = useAuth()
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
@@ -128,6 +128,7 @@ export function ForksPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['my-forks'],
     queryFn: getMyForks,
+    enabled: Boolean(user),
   })
 
   const syncMutation = useMutation({

@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { PageShell } from '#/components/page-shell'
 import { MAX_QUERY_TAGS, QueryTagsField } from '#/components/query-tags-field'
 import { Button } from '#/components/ui/button'
+import { useAuth } from '#/lib/auth-context'
 import { findBlockedTerm } from '#/lib/content-policy'
 import { ApiRequestError, getMyForks, updateQuery } from '#/lib/poke-query-api'
 import { getMutationErrorMessage } from '#/lib/mutation-toast'
@@ -18,14 +19,13 @@ type VisibilityMode = 'public' | 'private'
 export const Route = createFileRoute('/forks/$queryId/edit')({
   ssr: false,
   beforeLoad: async () => {
-    await requireAuthenticated('/forks', {
-      unauthenticatedBehavior: 'allow',
-    })
+    await requireAuthenticated('/forks')
   },
   component: EditForkPage,
 })
 
 function EditForkPage() {
+  const { user } = useAuth()
   const { queryId } = Route.useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -44,6 +44,7 @@ function EditForkPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['my-forks'],
     queryFn: getMyForks,
+    enabled: Boolean(user),
   })
 
   const currentFork = data?.forks.find((item) => item.id === queryId) ?? null
