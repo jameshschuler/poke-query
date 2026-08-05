@@ -93,6 +93,13 @@ vi.mock('#/lib/poke-query-api', () => ({
   syncForkQuery: mockSyncForkQuery,
 }))
 
+vi.mock('#/lib/auth-context', () => ({
+  useAuth: () => ({
+    user: { id: 'anon-1', email: null },
+    isLoading: false,
+  }),
+}))
+
 vi.mock('sonner', () => ({
   toast: {
     success: vi.fn(),

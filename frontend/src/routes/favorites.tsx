@@ -34,6 +34,7 @@ import {
   unfavoriteQuery,
 } from '#/lib/poke-query-api'
 import type { MyFavoriteQuery } from '#/lib/poke-query-api'
+import { useAuth } from '#/lib/auth-context'
 import { getMutationErrorMessage } from '#/lib/mutation-toast'
 import { requireAuthenticated } from '#/lib/route-auth'
 import { formatCompactNumber } from '#/lib/utils'
@@ -74,14 +75,13 @@ export const Route = createFileRoute('/favorites')({
         : undefined,
   }),
   beforeLoad: async () => {
-    await requireAuthenticated('/favorites', {
-      unauthenticatedBehavior: 'allow',
-    })
+    await requireAuthenticated('/favorites')
   },
   component: FavoritesPage,
 })
 
 function FavoritesPage() {
+  const { user } = useAuth()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const routeSearch = Route.useSearch()
@@ -110,6 +110,7 @@ function FavoritesPage() {
         limit: 12,
         offset: pageParam,
       }),
+    enabled: Boolean(user),
     initialPageParam: 0,
     getNextPageParam: (lastPage) =>
       lastPage.pagination.hasMore ? lastPage.pagination.nextOffset : undefined,

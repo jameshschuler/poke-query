@@ -124,9 +124,7 @@ export const Route = createFileRoute('/account')({
         : undefined,
   }),
   beforeLoad: async () => {
-    await requireAuthenticated('/account', {
-      unauthenticatedBehavior: 'allow',
-    })
+    await requireAuthenticated('/account')
   },
   component: AccountPage,
 })
@@ -185,15 +183,18 @@ function AccountPage() {
   const {
     data: me,
     isLoading,
+    isFetching,
     error,
   } = useQuery({
     queryKey: ['me'],
     queryFn: getMe,
+    enabled: Boolean(user),
   })
 
   const { data: notificationPreferences } = useQuery({
     queryKey: ['notification-preferences'],
     queryFn: getNotificationPreferences,
+    enabled: Boolean(user),
   })
 
   useEffect(() => {
@@ -706,7 +707,7 @@ function AccountPage() {
     toast.success('Generated a random DiceBear avatar URL.')
   }
 
-  if (isLoading) {
+  if (isLoading || isFetching) {
     return (
       <PageShell
         title="Account"

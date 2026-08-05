@@ -47,6 +47,7 @@ import {
   unfavoriteQuery,
 } from '#/lib/poke-query-api'
 import type { ManagedQuery } from '#/lib/poke-query-api'
+import { useAuth } from '#/lib/auth-context'
 import { useUndoableQueryDelete } from '#/hooks/use-undoable-query-delete'
 import { useLibraryViewState } from '#/hooks/use-library-view-state'
 import type { LayoutMode, StatusFilter } from '#/hooks/use-library-view-state'
@@ -57,14 +58,13 @@ import { formatCompactNumber, formatFullNumber } from '#/lib/utils'
 export const Route = createFileRoute('/library')({
   ssr: false,
   beforeLoad: async () => {
-    await requireAuthenticated('/library', {
-      unauthenticatedBehavior: 'allow',
-    })
+    await requireAuthenticated('/library')
   },
   component: LibraryPage,
 })
 
 function LibraryPage() {
+  const { user } = useAuth()
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
@@ -92,11 +92,13 @@ function LibraryPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['my-queries'],
     queryFn: getMyQueries,
+    enabled: Boolean(user),
   })
 
   const { data: myFavoriteIds } = useQuery({
     queryKey: ['my-favorite-ids'],
     queryFn: getMyFavoriteIds,
+    enabled: Boolean(user),
     staleTime: 60_000,
   })
 

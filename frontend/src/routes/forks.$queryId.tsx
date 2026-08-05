@@ -13,6 +13,7 @@ import { PageShell } from '#/components/page-shell'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { OfficialTrainerBadge } from '#/components/official-trainer-badge'
+import { useAuth } from '#/lib/auth-context'
 import {
   ApiRequestError,
   getMyForks,
@@ -24,9 +25,7 @@ import { requireAuthenticated } from '#/lib/route-auth'
 export const Route = createFileRoute('/forks/$queryId')({
   ssr: false,
   beforeLoad: async () => {
-    await requireAuthenticated('/forks', {
-      unauthenticatedBehavior: 'allow',
-    })
+    await requireAuthenticated('/forks')
   },
   component: ForkDetailPage,
 })
@@ -81,6 +80,7 @@ function toSafeExternalUrl(value: string | null | undefined): string | null {
 }
 
 function ForkDetailPage() {
+  const { user } = useAuth()
   const { queryId } = Route.useParams()
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
@@ -96,6 +96,7 @@ function ForkDetailPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['my-forks'],
     queryFn: getMyForks,
+    enabled: Boolean(user),
   })
 
   const fork = data?.forks.find((item) => item.id === queryId) ?? null
