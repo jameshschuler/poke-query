@@ -111,10 +111,8 @@ export const Route = createFileRoute('/discover')({
 function DiscoverPage() {
   const navigate = useNavigate()
   const routeSearch = Route.useSearch()
-  const { user, startAnonymousSession } = useAuth()
+  const { user } = useAuth()
   const queryClient = useQueryClient()
-  const [isStartingAnonymousSession, setIsStartingAnonymousSession] =
-    useState(false)
   const [railPageByKey, setRailPageByKey] = useState<Record<string, number>>({})
   const [railTransitionByKey, setRailTransitionByKey] = useState<
     Record<string, 'prev' | 'next' | null>
@@ -560,20 +558,7 @@ function DiscoverPage() {
 
   async function handleToggleFavorite(queryId: string, isFavorited: boolean) {
     if (!user) {
-      if (isStartingAnonymousSession) {
-        return
-      }
-
-      setIsStartingAnonymousSession(true)
-
-      try {
-        await startAnonymousSession()
-      } catch {
-        toast.error('Could not start your session. Please try again.')
-        return
-      } finally {
-        setIsStartingAnonymousSession(false)
-      }
+      return
     }
 
     if (isFavorited) {
@@ -586,20 +571,7 @@ function DiscoverPage() {
 
   async function handleFork(queryId: string) {
     if (!user) {
-      if (isStartingAnonymousSession) {
-        return
-      }
-
-      setIsStartingAnonymousSession(true)
-
-      try {
-        await startAnonymousSession()
-      } catch {
-        toast.error('Could not start your session. Please try again.')
-        return
-      } finally {
-        setIsStartingAnonymousSession(false)
-      }
+      return
     }
 
     if (forkMutation.isPending) {
@@ -635,20 +607,11 @@ function DiscoverPage() {
   }
 
   async function handleCreateString() {
-    if (isStartingAnonymousSession) {
+    if (!user) {
       return
     }
 
-    setIsStartingAnonymousSession(true)
-
-    try {
-      await startAnonymousSession()
-      await navigate({ to: '/library/new' })
-    } catch {
-      toast.error('Could not start your session. Please try again.')
-    } finally {
-      setIsStartingAnonymousSession(false)
-    }
+    await navigate({ to: '/library/new' })
   }
 
   return (
@@ -789,16 +752,11 @@ function DiscoverPage() {
                 <Button
                   type="button"
                   className="shrink-0 rounded-full px-3 sm:px-4"
-                  disabled={isStartingAnonymousSession}
                   onClick={() => {
                     void handleCreateString()
                   }}
                 >
-                  {isStartingAnonymousSession ? (
-                    <Loader2Icon className="size-4 animate-spin" />
-                  ) : (
-                    <PlusIcon className="size-4" />
-                  )}
+                  <PlusIcon className="size-4" />
                   <span>Create String</span>
                 </Button>
                 <Tooltip>
