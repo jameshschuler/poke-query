@@ -162,10 +162,10 @@ export async function requireAuthenticated(redirectPath: string) {
       try {
         await startAnonymousSession()
         clearCachedUser()
-        const anonymousUser = await getUser()
+        const refreshedAnonymousUser = await getUser()
 
-        if (anonymousUser) {
-          maybeRedirectToProfile(anonymousUser)
+        if (refreshedAnonymousUser) {
+          maybeRedirectToProfile(refreshedAnonymousUser)
           return
         }
       } catch {
