@@ -9,7 +9,6 @@ type VerifyOtpPayload = Parameters<typeof supabase.auth.verifyOtp>[0]
 type UpdateUserPayload = Parameters<typeof supabase.auth.updateUser>[0]
 
 let anonymousSessionPromise: Promise<User | null> | null = null
-let anonymousAuthUnavailable = false
 let lastAnonymousSessionFailureAt = 0
 let lastAnonymousSessionFailure: unknown = null
 const ANONYMOUS_RETRY_COOLDOWN_MS = 20_000
@@ -21,10 +20,6 @@ export async function startAnonymousSession(): Promise<User | null> {
 
   if (session?.user) {
     return session.user
-  }
-
-  if (anonymousAuthUnavailable) {
-    return null
   }
 
   if (anonymousSessionPromise) {
@@ -44,13 +39,11 @@ export async function startAnonymousSession(): Promise<User | null> {
     if (error) {
       lastAnonymousSessionFailureAt = Date.now()
       lastAnonymousSessionFailure = error
-      anonymousAuthUnavailable = true
       return null
     }
 
     lastAnonymousSessionFailureAt = 0
     lastAnonymousSessionFailure = null
-    anonymousAuthUnavailable = false
 
     const {
       data: { user },
