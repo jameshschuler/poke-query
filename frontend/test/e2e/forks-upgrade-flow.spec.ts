@@ -235,12 +235,17 @@ test('shows locked forks experience for incomplete profiles', async ({
   await expect(
     page.getByRole('heading', { name: 'Forks' }).first(),
   ).toBeVisible()
-  await expect(page.getByText('Upgrade required')).toBeVisible()
+  await expect(page.getByText('Account setup')).toBeVisible()
   await expect(
-    page.getByRole('heading', { name: 'Upgrade for free' }),
+    page.getByRole('heading', { name: 'Finish your account' }),
+  ).toBeVisible()
+  await expect(
+    page.getByText(
+      'Head to your account to finish setup and unlock this library.',
+    ),
   ).toBeVisible()
   await expect(page.getByRole('link', { name: 'Go to account' })).toBeVisible()
-  await expect(page.locator('.blur-sm').first()).toBeVisible()
+  await expect(page.getByText('No forks yet')).toBeVisible()
 
   await expect.poll(() => metrics.getSignupCallCount()).toBe(1)
   await expect.poll(() => metrics.getForksRequestCount()).toBe(0)

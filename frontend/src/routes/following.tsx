@@ -50,9 +50,7 @@ function FollowingPage() {
     enabled: Boolean(user),
   })
 
-  const isUpgradeLocked = Boolean(
-    user && (me === undefined || !me.profileCompleted),
-  )
+  const isUpgradeLocked = Boolean(user && me?.profileCompleted === false)
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['me-following'],

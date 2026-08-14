@@ -110,6 +110,7 @@ function getDiscoverSessionKey() {
 export const Route = createFileRoute('/discover')({
   ssr: false,
   validateSearch: validateDiscoverSearch,
+  component: DiscoverRedirectPlaceholder,
   beforeLoad: ({ location }) => {
     throw redirect({
       to: '/',
@@ -117,6 +118,10 @@ export const Route = createFileRoute('/discover')({
     })
   },
 })
+
+function DiscoverRedirectPlaceholder() {
+  return null
+}
 
 export function DiscoverPage({
   routeSearch,
@@ -1006,10 +1011,4 @@ export function DiscoverPage({
       </PageShell>
     </>
   )
-}
-
-function DiscoverRoutePage() {
-  const routeSearch = Route.useSearch()
-
-  return <DiscoverPage routeSearch={routeSearch} searchRoutePath="/discover" />
 }

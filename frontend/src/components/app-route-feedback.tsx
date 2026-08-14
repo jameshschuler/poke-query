@@ -166,7 +166,7 @@ export function AppNotFoundPage() {
               variant="ghost"
               size="sm"
               onClick={() => {
-                window.open('/docs', '_blank', 'noreferrer')
+                window.open('/docs', '_blank', 'noopener,noreferrer')
               }}
             >
               <LifeBuoyIcon />

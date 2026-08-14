@@ -449,18 +449,6 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
         const { id } = request.params;
         const userId = request.user.id;
 
-        const me = await fastify.db
-          .select({ id: trainers.id })
-          .from(trainers)
-          .where(eq(trainers.userId, userId))
-          .limit(1);
-
-        if (!me[0]) {
-          return reply
-            .code(403 as any)
-            .send({ error: "Account upgrade required to access this feature" });
-        }
-
         const currentProfile = await fastify.db
           .select({
             username: trainers.username,

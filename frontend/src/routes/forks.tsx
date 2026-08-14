@@ -112,9 +112,7 @@ export function ForksPage() {
     enabled: Boolean(user),
   })
 
-  const isUpgradeLocked = Boolean(
-    user && (me === undefined || !me.profileCompleted),
-  )
+  const isUpgradeLocked = Boolean(user && me?.profileCompleted === false)
 
   const navigate = useNavigate()
   const queryClient = useQueryClient()
