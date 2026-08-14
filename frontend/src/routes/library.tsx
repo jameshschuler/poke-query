@@ -22,6 +22,7 @@ import { toast } from 'sonner'
 
 import { ManagedStringCard } from '#/components/managed-string-card'
 import { PageShell } from '#/components/page-shell'
+import { TimestampTooltip } from '#/components/timestamp-tooltip'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import {

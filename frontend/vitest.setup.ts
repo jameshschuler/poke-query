@@ -3,7 +3,7 @@
  * Required by input-otp library used in login tests
  */
 class ResizeObserverPolyfill {
-  constructor(callback: ResizeObserverCallback) {}
+  constructor(_callback: ResizeObserverCallback) {}
   observe() {}
   unobserve() {}
   disconnect() {}

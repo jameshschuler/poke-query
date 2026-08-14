@@ -213,6 +213,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         title: 'Admin',
         url: '/dashboard',
         icon: <ShieldAlertIcon />,
+        upgradeIcon: undefined,
         collapsible: false,
         items: adminItems,
       })
@@ -221,6 +222,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         title: 'Moderation',
         url: '/moderation',
         icon: <ShieldAlertIcon />,
+        upgradeIcon: undefined,
       })
     }
 

@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { Route } from '#/routes/trainers.$username'
@@ -162,6 +163,9 @@ vi.mock('#/components/ui/tooltip', () => ({
 }))
 
 describe('TrainerProfilePage follow gate', () => {
+  const RouteComponent = (Route as unknown as { component: () => ReactNode })
+    .component
+
   beforeEach(() => {
     vi.clearAllMocks()
 
@@ -200,7 +204,7 @@ describe('TrainerProfilePage follow gate', () => {
   })
 
   it('hides the follow action until the viewer has completed their profile', () => {
-    render(<Route.component />)
+    render(<RouteComponent />)
 
     expect(screen.queryByText('Follow')).toBeNull()
   })

@@ -52,6 +52,9 @@ vi.mock('#/lib/poke-query-api', () => ({
 }))
 
 describe('ModerationPage', () => {
+  const RouteComponent = (Route as unknown as { component: () => ReactNode })
+    .component
+
   beforeEach(() => {
     mockGetModerationAccess.mockReset()
     mockGetModerationReports.mockReset()
@@ -130,7 +133,7 @@ describe('ModerationPage', () => {
 
     render(
       <QueryClientProvider client={queryClient}>
-        <Route.component />
+        <RouteComponent />
       </QueryClientProvider>,
     )
 
