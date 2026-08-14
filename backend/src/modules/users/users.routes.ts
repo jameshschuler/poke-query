@@ -247,6 +247,13 @@ export async function userRoutes(fastify: FastifyTypebox) {
     { preHandler: [fastify.authenticate], schema: GetMeForksSchema },
     async (request, reply) => {
       const userId = request.user.id;
+      const me = await loadMeProfile(fastify, userId, normalizeAuthEmail(request.user.email));
+
+      if (!me.profileCompleted) {
+        return reply
+          .code(403 as any)
+          .send({ error: "Account upgrade required to access this feature" });
+      }
 
       const trainerId = await getTrainerIdByUserId(fastify, userId);
 
@@ -336,8 +343,15 @@ export async function userRoutes(fastify: FastifyTypebox) {
   server.get(
     "/me/following",
     { preHandler: [fastify.authenticate], schema: GetMeFollowingSchema },
-    async (request) => {
+    async (request, reply) => {
       const userId = request.user.id;
+      const me = await loadMeProfile(fastify, userId, normalizeAuthEmail(request.user.email));
+
+      if (!me.profileCompleted) {
+        return reply
+          .code(403 as any)
+          .send({ error: "Account upgrade required to access this feature" });
+      }
 
       const trainerId = await getTrainerIdByUserId(fastify, userId);
 
@@ -620,6 +634,17 @@ export async function userRoutes(fastify: FastifyTypebox) {
       const targetTrainerId = request.params.id;
       const currentTrainerId = request.user.id;
 
+      const me = await loadMeProfile(
+        fastify,
+        currentTrainerId,
+        normalizeAuthEmail(request.user.email),
+      );
+      if (!me.profileCompleted) {
+        return reply
+          .code(403 as any)
+          .send({ error: "Account upgrade required to access this feature" });
+      }
+
       await ensureTrainerProfileExists(fastify, request.user);
 
       if (targetTrainerId === currentTrainerId) {
@@ -709,6 +734,17 @@ export async function userRoutes(fastify: FastifyTypebox) {
     async (request, reply) => {
       const targetTrainerId = request.params.id;
       const currentTrainerId = request.user.id;
+
+      const me = await loadMeProfile(
+        fastify,
+        currentTrainerId,
+        normalizeAuthEmail(request.user.email),
+      );
+      if (!me.profileCompleted) {
+        return reply
+          .code(403 as any)
+          .send({ error: "Account upgrade required to access this feature" });
+      }
 
       await ensureTrainerProfileExists(fastify, request.user);
 

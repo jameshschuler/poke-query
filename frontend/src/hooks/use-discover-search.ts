@@ -34,9 +34,11 @@ const DEFAULT_TAG_FILTERS: Array<{ tag: string; label: string }> = [
 export function useDiscoverSearch({
   routeSearch,
   availableTags,
+  searchRoutePath = '/discover',
 }: {
   routeSearch: DiscoverSearchState
   availableTags: QueryTag[]
+  searchRoutePath?: string
 }) {
   const navigate = useNavigate()
   const [activeFilterKey, setActiveFilterKey] = useState(
@@ -66,7 +68,7 @@ export function useDiscoverSearch({
 
   useEffect(() => {
     void navigate({
-      to: '/discover',
+      to: searchRoutePath,
       search: {
         q: debouncedSearch.trim().length > 0 ? debouncedSearch : undefined,
         filter: activeFilterKey,
@@ -74,7 +76,7 @@ export function useDiscoverSearch({
       replace: true,
       resetScroll: false,
     })
-  }, [activeFilterKey, debouncedSearch, navigate])
+  }, [activeFilterKey, debouncedSearch, navigate, searchRoutePath])
 
   const { visibleFilters, dropdownFilters, allFilters } = useMemo(() => {
     const tagCounts = new Map(

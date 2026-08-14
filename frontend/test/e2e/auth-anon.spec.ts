@@ -406,8 +406,8 @@ test('keeps anonymous session after landing on discover, then opens library', as
     anonymousSignupSucceeds: true,
   })
 
-  await page.goto('/discover')
-  await expect(page).toHaveURL(/\/discover/)
+  await page.goto('/')
+  await expect(page).toHaveURL(/\/$/)
 
   await page.goto('/library')
   await expect(page).toHaveURL(/\/library/)
@@ -424,8 +424,8 @@ test('keeps anonymous users on authenticated pages without redirecting to login'
     anonymousSignupSucceeds: true,
   })
 
-  await page.goto('/discover')
-  await expect(page).toHaveURL(/\/discover/)
+  await page.goto('/')
+  await expect(page).toHaveURL(/\/$/)
   await expect.poll(() => auth.getSignupCallCount()).toBe(1)
 
   for (const route of protectedRouteChecks) {

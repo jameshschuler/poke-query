@@ -20,6 +20,7 @@ interface NavMainProps {
     title: string
     url?: string
     icon?: React.ReactNode
+    upgradeIcon?: React.ReactNode
     isActive?: boolean
     collapsible?: boolean
     items?: {
@@ -92,6 +93,11 @@ export function NavMain({ items }: NavMainProps) {
               >
                 {item.icon}
                 <span>{item.title}</span>
+                {item.upgradeIcon ? (
+                  <span className="ml-auto inline-flex items-center justify-center text-muted-foreground/80">
+                    {item.upgradeIcon}
+                  </span>
+                ) : null}
               </SidebarMenuButton>
             </SidebarMenuItem>
           ),

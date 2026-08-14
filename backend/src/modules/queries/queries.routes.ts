@@ -449,6 +449,41 @@ export async function queriesRoutes(fastify: FastifyTypebox) {
         const { id } = request.params;
         const userId = request.user.id;
 
+        const me = await fastify.db
+          .select({ id: trainers.id })
+          .from(trainers)
+          .where(eq(trainers.userId, userId))
+          .limit(1);
+
+        if (!me[0]) {
+          return reply
+            .code(403 as any)
+            .send({ error: "Account upgrade required to access this feature" });
+        }
+
+        const currentProfile = await fastify.db
+          .select({
+            username: trainers.username,
+            team: trainers.team,
+            level: trainers.level,
+            trainerCode: trainers.trainerCode,
+          })
+          .from(trainers)
+          .where(eq(trainers.userId, userId))
+          .limit(1);
+
+        if (
+          !currentProfile[0] ||
+          !currentProfile[0].username ||
+          !currentProfile[0].team ||
+          !currentProfile[0].level ||
+          !currentProfile[0].trainerCode
+        ) {
+          return reply
+            .code(403 as any)
+            .send({ error: "Account upgrade required to access this feature" });
+        }
+
         await ensureTrainerProfileExists(fastify, request.user);
 
         const forked = await forkQuery(fastify, userId, id);

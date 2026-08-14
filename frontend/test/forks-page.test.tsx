@@ -5,11 +5,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ForksPage } from '#/routes/forks'
 
-const { mockNavigate, mockGetMyForks, mockSyncForkQuery } = vi.hoisted(() => ({
-  mockNavigate: vi.fn(),
-  mockGetMyForks: vi.fn(),
-  mockSyncForkQuery: vi.fn(),
-}))
+const { mockNavigate, mockGetMe, mockGetMyForks, mockSyncForkQuery } =
+  vi.hoisted(() => ({
+    mockNavigate: vi.fn(),
+    mockGetMe: vi.fn(),
+    mockGetMyForks: vi.fn(),
+    mockSyncForkQuery: vi.fn(),
+  }))
 
 vi.mock('@tanstack/react-router', () => ({
   createFileRoute: () => (options: unknown) => ({
@@ -89,6 +91,7 @@ vi.mock('#/lib/poke-query-api', () => ({
     }
   },
   deleteQuery: vi.fn(),
+  getMe: mockGetMe,
   getMyForks: mockGetMyForks,
   syncForkQuery: mockSyncForkQuery,
 }))
@@ -110,8 +113,11 @@ vi.mock('sonner', () => ({
 describe('ForksPage', () => {
   beforeEach(() => {
     mockNavigate.mockReset()
+    mockGetMe.mockReset()
     mockGetMyForks.mockReset()
     mockSyncForkQuery.mockReset()
+
+    mockGetMe.mockResolvedValue({ profileCompleted: true })
   })
 
   it('renders forks data and syncs a behind fork from source', async () => {

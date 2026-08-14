@@ -41,6 +41,7 @@ import {
 import {
   copyQuery,
   deleteQuery,
+  getMe,
   getMyForks,
   ApiRequestError,
   syncForkQuery,
@@ -50,6 +51,7 @@ import type { ManagedForkQuery } from '#/lib/poke-query-api'
 import { useAuth } from '#/lib/auth-context'
 import { useUndoableQueryDelete } from '#/hooks/use-undoable-query-delete'
 import { useForksViewState } from '#/hooks/use-forks-view-state'
+import { OfficialTrainerBadge } from '#/components/official-trainer-badge'
 import type {
   LayoutMode,
   SyncFilter,
@@ -102,10 +104,17 @@ export function ForksPage() {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   })
+  const isForksRoot = pathname === '/forks'
 
-  if (pathname !== '/forks') {
-    return <Outlet />
-  }
+  const { data: me } = useQuery({
+    queryKey: ['me'],
+    queryFn: getMe,
+    enabled: Boolean(user),
+  })
+
+  const isUpgradeLocked = Boolean(
+    user && (me === undefined || !me.profileCompleted),
+  )
 
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -128,7 +137,7 @@ export function ForksPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['my-forks'],
     queryFn: getMyForks,
-    enabled: Boolean(user),
+    enabled: Boolean(user && me?.profileCompleted && isForksRoot),
   })
 
   const syncMutation = useMutation({
@@ -223,6 +232,73 @@ export function ForksPage() {
     setForkToDelete(null)
 
     scheduleDelete(deletedFork)
+  }
+
+  if (!isForksRoot) {
+    return <Outlet />
+  }
+
+  if (isUpgradeLocked) {
+    return (
+      <PageShell
+        title="Forks"
+        subtitle="Track strings you forked from the community and keep them in sync."
+        contentHeaderVariant="floating"
+      >
+        <div className="relative min-h-[38rem] overflow-hidden rounded-2xl border border-border/70 bg-card/95 p-8 text-center shadow-sm dark:bg-card">
+          <div className="pointer-events-none select-none blur-[3px] opacity-80">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {[
+                { label: 'Forked Strings', value: '0' },
+                { label: 'Draft Forks', value: '0' },
+                { label: 'Need Sync', value: '0' },
+                { label: 'Last Edited', value: '—' },
+              ].map((stat) => (
+                <div
+                  key={stat.label}
+                  className="rounded-2xl border border-border/70 bg-card/95 px-4 py-3 text-foreground dark:bg-card"
+                >
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                    {stat.label}
+                  </p>
+                  <p className="mt-1 text-lg font-semibold">{stat.value}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-5 rounded-2xl border border-dashed border-border/70 bg-card/95 p-8 text-sm text-muted-foreground dark:bg-card">
+              No forks yet
+            </div>
+          </div>
+
+          <div className="absolute inset-0 flex items-center justify-center bg-background/55 p-4 backdrop-blur-[2px]">
+            <div className="max-w-md min-h-[22rem] w-full rounded-2xl border border-border/70 bg-card/95 p-6 shadow-lg dark:bg-card">
+              <div className="flex h-full flex-col justify-between text-center">
+                <div className="space-y-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-primary">
+                    Account setup
+                  </p>
+                  <h3 className="text-3xl font-semibold text-foreground">
+                    Finish your account
+                  </h3>
+                  <p className="mx-auto max-w-xs text-sm leading-6 text-muted-foreground">
+                    Head to your account to finish setup and unlock this
+                    library.
+                  </p>
+                </div>
+
+                <Button
+                  type="button"
+                  className="mt-8 w-full rounded-xl"
+                  render={<Link to="/account" />}
+                >
+                  Go to account
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </PageShell>
+    )
   }
 
   return (

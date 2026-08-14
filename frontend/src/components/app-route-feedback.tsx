@@ -39,7 +39,7 @@ function getNotFoundContext(pathname: string): NotFoundContext {
       message:
         'This query might have been deleted, made private, or the link was copied incorrectly.',
       ctaLabel: 'Browse discover',
-      ctaTo: '/discover',
+      ctaTo: '/',
     }
   }
 
@@ -49,7 +49,7 @@ function getNotFoundContext(pathname: string): NotFoundContext {
       message:
         'This trainer may have changed their username, switched to private mode, or does not exist.',
       ctaLabel: 'Find trainers in discover',
-      ctaTo: '/discover',
+      ctaTo: '/',
     }
   }
 
@@ -91,7 +91,7 @@ function getNotFoundContext(pathname: string): NotFoundContext {
     message:
       'Try heading back to your dashboard, or jump into discover to hunt for a new string.',
     ctaLabel: 'Explore discover',
-    ctaTo: '/discover',
+    ctaTo: '/',
   }
 }
 
@@ -165,8 +165,9 @@ export function AppNotFoundPage() {
               className="mt-3"
               variant="ghost"
               size="sm"
-              nativeButton={false}
-              render={<Link to="/docs" target="_blank" rel="noreferrer" />}
+              onClick={() => {
+                window.open('/docs', '_blank', 'noreferrer')
+              }}
             >
               <LifeBuoyIcon />
               Open docs
@@ -298,7 +299,7 @@ function getErrorContext(error: unknown, pathname: string): ErrorContext {
       message:
         'Too many requests were sent in a short window. Wait a moment, then try again.',
       ctaLabel: 'Back to discover',
-      ctaTo: '/discover',
+      ctaTo: '/',
     }
   }
 

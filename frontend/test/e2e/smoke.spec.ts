@@ -147,7 +147,7 @@ test('renders the login page for auth flows', async ({ page }) => {
 test('renders discover with a usable shell', async ({ page }) => {
   await mockApiResponses(page)
 
-  await page.goto('/discover')
+  await page.goto('/')
 
   await expect(
     page.getByRole('heading', { name: 'Discover' }).first(),
