@@ -230,6 +230,17 @@ describe("GET /api/v1/users/me/forks", () => {
   });
 
   it("returns managed forks with source metadata and sync status", async () => {
+    mockSelect.mockReturnValueOnce(
+      buildSelectChain([
+        {
+          ...mockRow,
+          username: "AshKetchum",
+          team: "mystic",
+          level: 40,
+          trainerCode: "1234 5678 9012",
+        },
+      ]),
+    );
     mockSelect.mockReturnValueOnce(buildWhereChain([{ id: "uuid-123" }]));
     mockSelect.mockReturnValueOnce(
       buildOrderByLimitChain([
@@ -327,6 +338,17 @@ describe("GET /api/v1/users/me/following", () => {
   });
 
   it("returns trainers followed by the authenticated trainer", async () => {
+    mockSelect.mockReturnValueOnce(
+      buildSelectChain([
+        {
+          ...mockRow,
+          username: "AshKetchum",
+          team: "mystic",
+          level: 40,
+          trainerCode: "1234 5678 9012",
+        },
+      ]),
+    );
     mockSelect.mockReturnValueOnce(buildWhereChain([{ id: "uuid-123" }]));
     mockSelect.mockReturnValueOnce(
       buildJoinOrderByChain([
@@ -366,6 +388,68 @@ describe("GET /api/v1/users/me/following", () => {
           followedAt: "2026-07-01T08:30:00.000Z",
         },
       ],
+    });
+  });
+});
+
+describe("Upgrade gating for social features", () => {
+  let app: Awaited<ReturnType<typeof buildApp>>;
+
+  beforeAll(async () => {
+    app = await buildApp();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it("rejects incomplete profiles from GET /api/v1/users/me/forks", async () => {
+    mockSelect.mockReturnValueOnce(
+      buildSelectChain([
+        {
+          ...mockRow,
+          username: "AshKetchum",
+          team: null,
+          level: null,
+          trainerCode: null,
+        },
+      ]),
+    );
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/users/me/forks",
+      cookies: { "sb-access-token": "mock-token" },
+    });
+
+    expect(res.statusCode).toBe(403);
+    expect(res.json()).toEqual({
+      error: "Account upgrade required to access this feature",
+    });
+  });
+
+  it("rejects incomplete profiles from GET /api/v1/users/me/following", async () => {
+    mockSelect.mockReturnValueOnce(
+      buildSelectChain([
+        {
+          ...mockRow,
+          username: "AshKetchum",
+          team: null,
+          level: null,
+          trainerCode: null,
+        },
+      ]),
+    );
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/v1/users/me/following",
+      cookies: { "sb-access-token": "mock-token" },
+    });
+
+    expect(res.statusCode).toBe(403);
+    expect(res.json()).toEqual({
+      error: "Account upgrade required to access this feature",
     });
   });
 });
@@ -540,6 +624,17 @@ describe("POST /api/v1/users/:id/follow", () => {
       })),
     }));
 
+    mockSelect.mockReturnValueOnce(
+      buildSelectChain([
+        {
+          ...mockRow,
+          username: "AshKetchum",
+          team: "mystic",
+          level: 40,
+          trainerCode: "1234 5678 9012",
+        },
+      ]),
+    );
     mockSelect.mockReturnValueOnce(
       buildWhereChain([{ id: "trainer-private-2", isProfilePublic: false }]),
     );

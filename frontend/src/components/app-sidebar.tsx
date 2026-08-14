@@ -21,6 +21,7 @@ import {
   BookOpenIcon,
   GitForkIcon,
   HeartIcon,
+  LockKeyholeIcon,
   ShieldAlertIcon,
   UsersIcon,
 } from 'lucide-react'
@@ -42,14 +43,14 @@ const data = {
   },
   navMain: [
     {
+      title: 'Discover',
+      url: '/',
+      icon: <SearchIcon />,
+    },
+    {
       title: 'Dashboard',
       url: '/dashboard',
       icon: <LayoutDashboardIcon />,
-    },
-    {
-      title: 'Discover',
-      url: '/discover',
-      icon: <SearchIcon />,
     },
     {
       title: 'My Library',
@@ -57,14 +58,14 @@ const data = {
       icon: <BookOpenIcon />,
     },
     {
-      title: 'Forks',
-      url: '/forks',
-      icon: <GitForkIcon />,
-    },
-    {
       title: 'Favorites',
       url: '/favorites',
       icon: <HeartIcon />,
+    },
+    {
+      title: 'Forks',
+      url: '/forks',
+      icon: <GitForkIcon />,
     },
     {
       title: 'Following',
@@ -162,7 +163,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   }
 
   const navMainItems = useMemo(() => {
-    const baseItems = [...data.navMain]
+    const baseItems = [...data.navMain].map((item) => {
+      const isUpgradeLockedItem =
+        !me?.profileCompleted &&
+        (item.title === 'Forks' || item.title === 'Following')
+
+      return {
+        ...item,
+        upgradeIcon: isUpgradeLockedItem ? (
+          <LockKeyholeIcon className="size-3.5" />
+        ) : undefined,
+      }
+    })
     const adminOnlyItems = [] as {
       title: string
       url: string

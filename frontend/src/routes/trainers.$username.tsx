@@ -13,6 +13,7 @@ import {
 } from '#/components/ui/tooltip'
 import {
   favoriteQuery,
+  getMe,
   getMyFavoriteIds,
   getTrainerByUsername,
   recordTrainerProfileView,
@@ -106,6 +107,13 @@ function TrainerProfilePage() {
     queryKey: ['trainer-followers', trainer?.id],
     queryFn: () => getTrainerFollowers(trainer!.id),
     enabled: !!trainer?.id,
+  })
+
+  const { data: me } = useQuery({
+    queryKey: ['me'],
+    queryFn: getMe,
+    enabled: Boolean(user),
+    staleTime: 60_000,
   })
 
   const { data: myFavoriteIds } = useQuery({
@@ -295,7 +303,8 @@ function TrainerProfilePage() {
     trainer.isProfilePublic &&
     !trainer.deactivatedAt &&
     user &&
-    trainer.id !== user.id
+    trainer.id !== user.id &&
+    me?.profileCompleted === true
   const canReportTrainer =
     trainer &&
     trainer.isProfilePublic &&
@@ -305,7 +314,11 @@ function TrainerProfilePage() {
   const canForkFromProfile = Boolean(user && trainer && trainer.id !== user.id)
 
   function handleFollowClick() {
-    if (!trainer || isFollowPending) {
+    if (!trainer || isFollowPending || !me) {
+      return
+    }
+
+    if (!me.profileCompleted) {
       return
     }
 

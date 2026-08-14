@@ -41,8 +41,8 @@ export function PageShell({
   })
 
   const mobileNavItems = [
+    { to: '/', label: 'Discover', icon: SearchIcon },
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboardIcon },
-    { to: '/discover', label: 'Discover', icon: SearchIcon },
     { to: '/library', label: 'Library', icon: BookOpenIcon },
     { to: '/forks', label: 'Forks', icon: GitForkIcon },
     { to: '/favorites', label: 'Favorites', icon: HeartIcon },
@@ -53,8 +53,9 @@ export function PageShell({
       <ul className="mx-auto grid max-w-md grid-cols-5 gap-1">
         {mobileNavItems.map((item) => {
           const isActive =
-            pathname === item.to ||
-            (item.to !== '/discover' && pathname.startsWith(`${item.to}/`))
+            item.to === '/'
+              ? pathname === '/' || pathname === '/discover'
+              : pathname === item.to || pathname.startsWith(`${item.to}/`)
 
           return (
             <li key={item.to}>

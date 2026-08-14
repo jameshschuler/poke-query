@@ -7,7 +7,12 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import {
+  createFileRoute,
+  Link,
+  redirect,
+  useNavigate,
+} from '@tanstack/react-router'
 import { useMemo, useState, useEffect, useRef } from 'react'
 import {
   ChevronsUpDownIcon,
@@ -52,11 +57,7 @@ import {
   TooltipTrigger,
 } from '#/components/ui/tooltip'
 import { useDiscoverSearch } from '#/hooks/use-discover-search'
-
-type DiscoverSearch = {
-  q?: string
-  filter?: string
-}
+import type { DiscoverSearchState } from '#/hooks/use-discover-search'
 
 type DiscoverRail =
   | 'weekly_picks'
@@ -67,6 +68,25 @@ type DiscoverRail =
 
 const DISCOVER_SESSION_STORAGE_KEY = 'poke-query:discover-session-key'
 const FEATURED_PAGE_SIZE = 3
+
+export function validateDiscoverSearch(
+  search: Record<string, unknown>,
+): DiscoverSearchState {
+  const q =
+    typeof search.q === 'string' && search.q.trim().length > 0
+      ? search.q
+      : undefined
+
+  const filter =
+    typeof search.filter === 'string' && search.filter.trim().length > 0
+      ? search.filter
+      : undefined
+
+  return {
+    q,
+    filter,
+  }
+}
 
 function getDiscoverSessionKey() {
   if (typeof window === 'undefined') {
@@ -89,28 +109,28 @@ function getDiscoverSessionKey() {
 
 export const Route = createFileRoute('/discover')({
   ssr: false,
-  validateSearch: (search): DiscoverSearch => {
-    const q =
-      typeof search.q === 'string' && search.q.trim().length > 0
-        ? search.q
-        : undefined
-
-    const filter =
-      typeof search.filter === 'string' && search.filter.trim().length > 0
-        ? search.filter
-        : undefined
-
-    return {
-      q,
-      filter,
-    }
+  validateSearch: validateDiscoverSearch,
+  component: DiscoverRedirectPlaceholder,
+  beforeLoad: ({ location }) => {
+    throw redirect({
+      to: '/',
+      search: location.search,
+    })
   },
-  component: DiscoverPage,
 })
 
-function DiscoverPage() {
+function DiscoverRedirectPlaceholder() {
+  return null
+}
+
+export function DiscoverPage({
+  routeSearch,
+  searchRoutePath,
+}: {
+  routeSearch: DiscoverSearchState
+  searchRoutePath: '/' | '/discover'
+}) {
   const navigate = useNavigate()
-  const routeSearch = Route.useSearch()
   const { user } = useAuth()
   const queryClient = useQueryClient()
   const [railPageByKey, setRailPageByKey] = useState<Record<string, number>>({})
@@ -144,6 +164,7 @@ function DiscoverPage() {
   } = useDiscoverSearch({
     routeSearch,
     availableTags,
+    searchRoutePath,
   })
 
   const { data: myFavoriteIds } = useQuery({

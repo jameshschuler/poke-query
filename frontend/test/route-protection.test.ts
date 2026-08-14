@@ -33,15 +33,20 @@ describe('Route protection configuration', () => {
     expect(source).toContain(`await requireAuthenticated('${expectedPath}'`)
   })
 
-  it.each(['index.tsx', 'login.tsx'])(
-    '%s requires guest access',
-    (fileName) => {
-      const source = readRoute(fileName)
+  it('login requires guest access', () => {
+    const source = readRoute('login.tsx')
 
-      expect(source).toContain('beforeLoad: async () => {')
-      expect(source).toContain('await requireGuest()')
-    },
-  )
+    expect(source).toContain('beforeLoad: async () => {')
+    expect(source).toContain('await requireGuest()')
+  })
+
+  it('index remains public', () => {
+    const source = readRoute('index.tsx')
+
+    expect(source).not.toContain('beforeLoad: async () => {')
+    expect(source).not.toContain('requireGuest()')
+    expect(source).not.toContain('requireAuthenticated(')
+  })
 
   it('discover remains public', () => {
     const source = readRoute('discover.tsx')

@@ -21,7 +21,6 @@ import {
   BellIcon,
   LogOutIcon,
   NewspaperIcon,
-  UsersIcon,
 } from 'lucide-react'
 import { useNavigate } from '@tanstack/react-router'
 
@@ -120,14 +119,6 @@ export function NavUser({
                     {unreadCount}
                   </span>
                 ) : null}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  void navigate({ to: '/following' })
-                }}
-              >
-                <UsersIcon />
-                Following
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {

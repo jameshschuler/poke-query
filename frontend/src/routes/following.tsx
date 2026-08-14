@@ -11,7 +11,7 @@ import { Input } from '#/components/ui/input'
 import { PageShell } from '#/components/page-shell'
 import { OfficialTrainerBadge } from '#/components/official-trainer-badge'
 import { useAuth } from '#/lib/auth-context'
-import { getMeFollowing, unfollowTrainer } from '#/lib/poke-query-api'
+import { getMe, getMeFollowing, unfollowTrainer } from '#/lib/poke-query-api'
 import { getMutationErrorMessage } from '#/lib/mutation-toast'
 import { requireAuthenticated } from '#/lib/route-auth'
 
@@ -44,10 +44,18 @@ function FollowingPage() {
   const queryClient = useQueryClient()
   const [searchText, setSearchText] = useState('')
 
+  const { data: me } = useQuery({
+    queryKey: ['me'],
+    queryFn: getMe,
+    enabled: Boolean(user),
+  })
+
+  const isUpgradeLocked = Boolean(user && me?.profileCompleted === false)
+
   const { data, isLoading, error } = useQuery({
     queryKey: ['me-following'],
     queryFn: getMeFollowing,
-    enabled: Boolean(user),
+    enabled: Boolean(user && me?.profileCompleted),
   })
 
   const unfollowMutation = useMutation({
@@ -86,6 +94,58 @@ function FollowingPage() {
   )
 
   const visibleCount = filteredFollowing.length
+
+  if (isUpgradeLocked) {
+    return (
+      <PageShell
+        title="Following"
+        subtitle="Manage the trainers you follow, quickly search them, and unfollow when needed."
+        contentHeaderVariant="floating"
+      >
+        <div className="relative min-h-[38rem] overflow-hidden rounded-2xl border border-border/70 bg-card/95 p-8 text-center shadow-sm">
+          <div className="pointer-events-none select-none blur-[3px] opacity-80">
+            <div className="mx-auto mb-4 flex max-w-md flex-wrap items-center justify-center gap-2">
+              <div className="rounded-full border border-border/70 bg-muted/60 px-3 py-1 text-xs font-medium text-muted-foreground">
+                Following: 0
+              </div>
+              <div className="rounded-full border border-border/70 bg-muted/60 px-3 py-1 text-xs font-medium text-muted-foreground">
+                Visible: 0
+              </div>
+            </div>
+            <div className="mx-auto max-w-md rounded-2xl border border-dashed border-border/70 bg-muted/40 p-5 text-sm text-muted-foreground">
+              Search by display name or username
+            </div>
+          </div>
+
+          <div className="absolute inset-0 flex items-center justify-center bg-background/55 p-4 backdrop-blur-[2px]">
+            <div className="max-w-md min-h-[22rem] w-full rounded-2xl border border-border/70 bg-card/95 p-6 shadow-lg">
+              <div className="flex h-full flex-col justify-between text-center">
+                <div className="space-y-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-primary">
+                    Account setup
+                  </p>
+                  <h3 className="text-3xl font-semibold text-foreground">
+                    Finish your account
+                  </h3>
+                  <p className="mx-auto max-w-xs text-sm leading-6 text-muted-foreground">
+                    Head to your account to finish setup and unlock this list.
+                  </p>
+                </div>
+
+                <Button
+                  type="button"
+                  className="mt-8 w-full rounded-xl"
+                  render={<Link to="/account" />}
+                >
+                  Go to account
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </PageShell>
+    )
+  }
 
   return (
     <PageShell
