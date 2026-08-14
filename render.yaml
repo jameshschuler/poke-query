@@ -42,7 +42,7 @@ projects:
             autoDeployTrigger: off
             buildCommand: npm ci --include=dev && npm run build
             startCommand: node .output/server/index.mjs
-            pullRequestPreviewsEnabled: true
+            pullRequestPreviewsEnabled: false
             envVars:
               - key: NODE_ENV
                 value: production
@@ -65,7 +65,7 @@ projects:
             autoDeployTrigger: off
             buildCommand: npm ci --prefix ../backend && npm ci && npm run docs:generate
             staticPublishPath: .
-            pullRequestPreviewsEnabled: true
+            pullRequestPreviewsEnabled: false
 
       - name: qa
         services:
@@ -108,7 +108,7 @@ projects:
             autoDeployTrigger: off
             buildCommand: npm ci --include=dev && npm run build
             startCommand: node .output/server/index.mjs
-            pullRequestPreviewsEnabled: true
+            pullRequestPreviewsEnabled: false
             envVars:
               - key: NODE_ENV
                 value: production
@@ -131,4 +131,4 @@ projects:
             autoDeployTrigger: off
             buildCommand: npm ci --prefix ../backend && npm ci && npm run docs:generate
             staticPublishPath: .
-            pullRequestPreviewsEnabled: true
+            pullRequestPreviewsEnabled: false
